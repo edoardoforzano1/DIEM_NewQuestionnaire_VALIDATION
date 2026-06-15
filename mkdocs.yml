@@ -1,0 +1,69 @@
+site_name: DIEM Questionnaire Validation
+site_description: Documentation for DIEM questionnaire validation workflows and logic.
+site_url: https://your-username.github.io/DIEM_Questionnaire_Validation/
+
+theme:
+  name: material
+  palette:
+    scheme: default
+    primary: custom
+    accent: custom
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - toc.follow
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+
+plugins:
+  - search
+  - offline
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - https://unpkg.com/mermaid@11/dist/mermaid.min.js
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Validation Workflow:
+      - Process Overview: workflow/process-overview.md
+      - Reference Modes: workflow/reference-modes.md
+      - Severity Reference: workflow/checks-and-severity.md
+      - GeoPoll Logic: workflow/geopoll-logic.md
+      - KoBo Logic: workflow/kobo-logic.md
+  - Data Sources:
+      - Overview: data-sources/index.md
+      - KoBo Inputs: data-sources/kobo.md
+      - GeoPoll Inputs: data-sources/geopoll.md
+      - Template and Previous Round: data-sources/template-and-previous-round.md
+  - Function Reference:
+      - Overview: function-reference/index.md
+      - Entrypoint: function-reference/entrypoint.md
+      - KoBo Validator: function-reference/kobo-validator.md
+      - GeoPoll Validator: function-reference/geopoll-validator.md
+  - Report Output:
+      - Overview: report-output/index.md
+      - GeoPoll Report: report-output/geopoll-report.md
+      - KoBo Report: report-output/kobo-report.md
+  - Tools:
+      - Admin Tools: tools/admin-tools.md
