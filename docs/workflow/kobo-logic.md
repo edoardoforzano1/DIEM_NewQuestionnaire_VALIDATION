@@ -346,6 +346,36 @@ flowchart LR
   </div>
 </div>
 
+### Block 4 · Authoring consistency checks
+
+A current-file-only check — no reference comparison is involved. The current template's `Mandatory` column carries six rich categories (`yes - core`, `yes - panel`, `no - low priority`, `no - but recommended in applicable contexts`, `no - but recommended if of interest`, `spiel`) instead of a simple yes/no flag; this check catches a value that doesn't match any of them, which usually means a typo.
+
+!!! note "Why this matters for KoBo specifically"
+    Module detection here continues to use the native XLSForm `begin_group`/`end_group` structure — unlike GeoPoll's old section-divider-row guessing, this was never fragile, so there is no equivalent "switch to a dedicated column" change to make for modules. The authoring-consistency gap that *did* exist was in `Mandatory` value recognition: the categorization helper only matched a short hardcoded list (`yes`, `true`, `mandatory`, exact `yes - panel`) and silently treated anything else — including `yes - core`, the single most common value in the template — as non-mandatory. This has been fixed; the check below catches any future typo in that column.
+
+```mermaid
+flowchart LR
+    AC["Block 4 · Authoring consistency"]
+    AC --> M["mandatory_category_unrecognized — MEDIUM"]
+
+    style AC fill:#f0f4f8,stroke:#8aaccc,color:#1f3558
+    style M  fill:#fff0de,stroke:#e08c00,color:#5a3200
+```
+
+#### Issue types
+
+<div class="issue-block">
+  <div class="issue-card issue-card-medium">
+    <span class="issue-card-name"><code>mandatory_category_unrecognized</code></span>
+    <span class="sev sev-medium">MEDIUM</span>
+    <span class="issue-card-body">The <code>Mandatory</code> value doesn't match any of the six known categories — usually a typo (e.g. a bare <code>no</code> instead of <code>no - low priority</code>).</span>
+  </div>
+  <div class="issue-action">
+    <span class="issue-action-label">What to do</span>
+    Fix the <code>Mandatory</code> value to match one of the known categories shown in the Reference column. An unrecognized value silently falls back to non-mandatory treatment elsewhere in the report.
+  </div>
+</div>
+
 ---
 
 ## 4  -  Replacement Issues Sheet
@@ -527,6 +557,7 @@ flowchart LR
     PM --> C["mandatory_to_optional — HIGH"]
     PM --> D["mandatory_column_mismatch — HIGH"]
     PM --> E["label_mismatch — MEDIUM"]
+    PM --> N["constraint_removed_mandatory — HIGH"]
 
     style PM fill:#f0f4f8,stroke:#8aaccc,color:#1f3558
     style A  fill:#fde2e2,stroke:#e05555,color:#5a0e0e
@@ -534,6 +565,7 @@ flowchart LR
     style C  fill:#fde2e2,stroke:#e05555,color:#5a0e0e
     style D  fill:#fde2e2,stroke:#e05555,color:#5a0e0e
     style E  fill:#fff0de,stroke:#e08c00,color:#5a3200
+    style N  fill:#fde2e2,stroke:#e05555,color:#5a0e0e
 ```
 
 #### Issue types
@@ -599,6 +631,18 @@ flowchart LR
   <div class="issue-action">
     <span class="issue-action-label">What to do</span>
     Read the Current value and Reference columns side by side. If the meaning is equivalent (minor phrasing refinement), no action needed. If the wording changed in a way that could shift respondent interpretation, align with the survey team before launch.
+  </div>
+</div>
+
+<div class="issue-block">
+  <div class="issue-card issue-card-high">
+    <span class="issue-card-name"><code>constraint_removed_mandatory</code></span>
+    <span class="sev sev-high">HIGH</span>
+    <span class="issue-card-body">The reference has a constraint rule for this question and the current form dropped it entirely — and the question is mandatory or mandatory-panel. A narrower, higher-severity sibling of <code>constraint_modified</code> (below): cosmetic rewording of constraint stays at MEDIUM, but a full removal on a mandatory question is treated as a real data-validation gap.</span>
+  </div>
+  <div class="issue-action">
+    <span class="issue-action-label">What to do</span>
+    Restore the constraint expression shown in the Reference column, or confirm with the survey team that removing it was intentional.
   </div>
 </div>
 
@@ -679,7 +723,7 @@ flowchart LR
   <div class="issue-card issue-card-medium">
     <span class="issue-card-name"><code>constraint_modified</code></span>
     <span class="sev sev-medium">MEDIUM</span>
-    <span class="issue-card-body">A constraint rule changed, which may alter input validation behavior for enumerators.</span>
+    <span class="issue-card-body">A constraint rule changed (reworded, not removed), which may alter input validation behavior for enumerators. A full removal on a mandatory question is reported separately, under Presence & mandatory changes, as <code>constraint_removed_mandatory</code> (HIGH).</span>
   </div>
   <div class="issue-action">
     <span class="issue-action-label">What to do</span>

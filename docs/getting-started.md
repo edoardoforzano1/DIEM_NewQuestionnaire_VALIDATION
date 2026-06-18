@@ -59,15 +59,15 @@ validate
 
 ### Path settings that are specific to each user
 
-These two paths differ for every user and must be set once on first setup:
-
-`templates_dir` — the folder containing all official template Excel files. This is a shared drive or local mirror of the templates repository. Set it to wherever those files are on your machine:
+`templates_dir` ships with the repo and normally needs no changes — it defaults to the repo-local `Template/` folder, which contains both the KoBo and GeoPoll official templates side by side:
 
 ```yaml
-templates_dir: "C:/Users/yourname/path/to/Questionnaire Templates"
+templates_dir: "c:/git/DIEM_NewQuestionnaire_VALIDATION/Template"
 ```
 
-`output_dir` — where reports are written. Each tool writes to its own subfolder:
+`latest_template` mode auto-selects the newest file in that folder matching the configured `tool` and `language`. Only change this if you keep templates somewhere else (e.g. a shared drive).
+
+`output_dir` — where reports are written. This path is specific to each user and must be set once on first setup. Each tool writes to its own subfolder:
 
 ```yaml
 output_dir: "C:/Temp/questionnaire_validation"

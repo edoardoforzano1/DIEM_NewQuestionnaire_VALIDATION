@@ -552,9 +552,11 @@ print(f"Configured language : {target_lang}")
 _step("Reading survey sheets")
 # ======================================================================
 # --- CODE CELL 4 ---
+PANELIST_RECENCY_COL = "To be asked to recent panelists (<6 months)?"
+
 CORE_COLUMNS = [
     "Q Name",
-    "Suggested Qname",
+    "module",
     "English",
     "French",
     "Spanish",
@@ -562,15 +564,11 @@ CORE_COLUMNS = [
     "Portuguese",
     "Q Type",
     "Mandatory",
-    "Randomize",
     "Conditional",
-    "Programming Instructions",
-    "Core questions only",
     "Skip Pattern",
     "Codes",
-    "Default skip patterns & conditional ",   # note: trailing space is in the real header
-    "Specify skip pattern variable (from blue text)",
-    "Additional notes",
+    "Universe",
+    PANELIST_RECENCY_COL,
     "excel_row",
     "source_file",
 ]
@@ -578,7 +576,7 @@ CORE_COLUMNS = [
 
 COLUMN_ALIASES: dict[str, list[str]] = {
     "Q Name": [
-        "Q Name", "QName", "Qname", "Q name", "Q_Name", "Q-Name",
+        "Q Name", "QName", "Qname", "Q name", "Q_Name", "Q-Name", "varname_new",
     ],
     "Q Type": [
         "Q Type", "QType", "Q type", "Qtype", "Question Type", "Question type",
@@ -602,7 +600,7 @@ COLUMN_ALIASES: dict[str, list[str]] = {
         "Core questions only", "Core question only", "Core questions only ",
     ],
     "Codes": [
-        "Codes", "Codes ", "Code", "code",
+        "Codes", "Codes ", "Code", "code", "varname_new_multiple",
     ],
     "Default skip patterns & conditional ": [
         "Default skip patterns & conditional", "Default skip patterns & conditional ",
@@ -692,12 +690,12 @@ def _close_workbook(wb) -> None:
                 pass
 
 
-def read_survey_sheet(path: Path, sheet_name: str = "survey", header_row: int = 3, _wb=None) -> pl.DataFrame:
+def read_survey_sheet(path: Path, sheet_name: str = "survey", header_row: int = 2, _wb=None) -> pl.DataFrame:
     """
     Reads the survey sheet from an xlsx file into a Polars DataFrame.
 
-    header_row=3 because the GeoPoll template has two title rows above the
-    real column headers.
+    header_row=2 because the GeoPoll template has one title/banner row above
+    the real column headers.
 
     Two columns are added automatically:
       excel_row    the actual row number in the Excel file (for tracing mismatches)
@@ -837,30 +835,21 @@ def _normalize_module_token(value) -> str:
 def _is_geopoll_module_row(row: dict) -> bool:
     """
     Detect GeoPoll module/section divider rows.
-    Typical pattern: "E. LIVESTOCK MARKETING" in Q Name, with blank Q Type.
+    The survey's own 'module' column is blank on divider rows (e.g. "E. LIVESTOCK
+    MARKETING") and populated with the module code on every real question row.
     """
     q_name = str(row.get("Q Name") or "").strip()
     if not q_name:
         return False
-
-    q_type = str(row.get("Q Type") or "").strip()
-    if q_type:
-        return False
-
-    if re.match(r"^[A-Za-z]\s*[\.\)]\s+\S", q_name):
-        return True
-
-    # Conservative fallback: section-like long uppercase labels.
-    if len(q_name) >= 8 and " " in q_name and q_name == q_name.upper():
-        return True
-    return False
+    module_val = str(row.get("module") or "").strip()
+    return module_val == ""
 
 
 def split_geopoll_questions_and_modules(df: pl.DataFrame) -> tuple[pl.DataFrame, pl.DataFrame]:
     """
     Split questionnaire rows into:
-      1) question rows annotated with module_key/module
-      2) module rows catalog
+      1) question rows, with module_key/module set from the survey's own 'module' column
+      2) module rows catalog (one entry per distinct module code)
     """
     q_schema = {
         **{c: df.schema[c] for c in df.columns},
@@ -877,50 +866,73 @@ def split_geopoll_questions_and_modules(df: pl.DataFrame) -> tuple[pl.DataFrame,
     if df is None or df.height == 0:
         return pl.DataFrame(schema=q_schema), pl.DataFrame(schema=m_schema)
 
-    current_module = ""
-    current_module_key = ""
     q_rows: list[dict] = []
-    m_rows: list[dict] = []
+    seen_keys: dict[str, dict] = {}
 
     sort_cols = ["excel_row"] if "excel_row" in df.columns else None
     src_rows = df.sort(sort_cols).to_dicts() if sort_cols else df.to_dicts()
     for row in src_rows:
-        q_name = str(row.get("Q Name") or "").strip()
         if _is_geopoll_module_row(row):
-            current_module = q_name
-            current_module_key = q_name
-            key_norm = _normalize_module_token(current_module_key)
-            if key_norm:
-                m_rows.append({
-                    "module_key_norm": key_norm,
-                    "module_key": current_module_key,
-                    "module": current_module,
-                    "excel_row": row.get("excel_row"),
-                    "source_file": str(row.get("source_file") or ""),
-                })
-            continue
+            continue  # section divider row -- not a question
 
+        module_code = str(row.get("module") or "").strip()
         out = dict(row)
-        out["module_key"] = current_module_key
-        out["module"] = current_module
+        out["module_key"] = module_code
+        out["module"] = module_code
         q_rows.append(out)
 
+        key_norm = _normalize_module_token(module_code)
+        if key_norm and key_norm not in seen_keys:
+            seen_keys[key_norm] = {
+                "module_key_norm": key_norm,
+                "module_key": module_code,
+                "module": module_code,
+                "excel_row": row.get("excel_row"),
+                "source_file": str(row.get("source_file") or ""),
+            }
+
     q_df = pl.DataFrame(q_rows, schema=q_schema) if q_rows else pl.DataFrame(schema=q_schema)
-    m_df = pl.DataFrame(m_rows, schema=m_schema) if m_rows else pl.DataFrame(schema=m_schema)
-    if m_df.height > 0:
-        m_df = (
-            m_df
-            .sort(["module_key_norm", "excel_row"])
-            .group_by("module_key_norm")
-            .agg([
-                pl.col("module_key").first().alias("module_key"),
-                pl.col("module").first().alias("module"),
-                pl.col("excel_row").first().alias("excel_row"),
-                pl.col("source_file").first().alias("source_file"),
-            ])
-            .sort("excel_row")
-        )
+    m_df = (
+        pl.DataFrame(list(seen_keys.values()), schema=m_schema).sort("excel_row")
+        if seen_keys else pl.DataFrame(schema=m_schema)
+    )
     return q_df, m_df
+
+
+def validate_module_column_integrity(questions_df: pl.DataFrame) -> pl.DataFrame:
+    """
+    Flags rows that look like real questions (Q Type populated) but have a
+    blank 'module' cell. split_geopoll_questions_and_modules() treats a blank
+    module as the signal for a section-divider row and silently drops it --
+    if this fires, a genuine question is being lost from every downstream check.
+    """
+    schema = {
+        "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
+        "field": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
+        "severity": pl.Utf8, "excel_row": pl.Int64,
+    }
+    if questions_df is None or questions_df.height == 0:
+        return pl.DataFrame(schema=schema)
+    if "Q Type" not in questions_df.columns or "module" not in questions_df.columns:
+        return pl.DataFrame(schema=schema)
+
+    flagged = questions_df.filter(
+        (pl.col("Q Type").cast(pl.Utf8).fill_null("").str.strip_chars() != "")
+        & (pl.col("module").cast(pl.Utf8).fill_null("").str.strip_chars() == "")
+    )
+    if flagged.height == 0:
+        return pl.DataFrame(schema=schema)
+
+    return flagged.select([
+        pl.lit("module_missing_for_question").alias("issue_type"),
+        pl.lit("").alias("set_name"),
+        pl.col("Q Name"),
+        pl.lit("module").alias("field"),
+        pl.lit("(blank)").alias("current"),
+        pl.lit("module code expected -- row is being dropped from all checks").alias("reference"),
+        pl.lit("high").alias("severity"),
+        pl.col("excel_row").cast(pl.Int64),
+    ])
 
 
 def _filter_questions_by_module_keys(df: pl.DataFrame, excluded_module_keys: set[str]) -> pl.DataFrame:
@@ -1117,6 +1129,20 @@ def extract_question_stem(text: str) -> str:
     m = OPTION_PATTERN.search(text)
     stem = text[:m.start()] if m else text
     return stem.strip()
+
+
+def _split_stem_and_options(text: str) -> tuple[str, str]:
+    """
+    Splits a question-text cell into (stem, options_block) at the first numbered
+    option, losslessly (stem + options_block == text). Unlike extract_question_stem,
+    this keeps the options block so callers can recombine pieces from different sources.
+    """
+    if not text or not isinstance(text, str):
+        return (text or "", "")
+    m = OPTION_PATTERN.search(text)
+    if not m:
+        return (text, "")
+    return (text[:m.start()], text[m.start():])
 
 
 def explode_options(questions_df: pl.DataFrame, text_col: str = "English") -> pl.DataFrame:
@@ -1351,25 +1377,49 @@ def has_placeholder(value) -> bool:
     return bool(PLACEHOLDER_PATTERN.search(str(value or "")))
 
 
+_OPTION_BEARING_RESTORE_COLUMNS = {"English", "French", "Spanish", "Arabic", "Portuguese"}
+
+
 def build_placeholder_restore_map(
+    current_questions: pl.DataFrame,
     reference_questions: pl.DataFrame,
     candidate_columns: Optional[list[str]] = None,
 ) -> dict[str, dict[str, str]]:
     """
     Returns a per-question map of columns whose template/reference cell still
-    contains a $...$ placeholder. Those exact reference cells are what we use
-    to restore the current questionnaire before comparison.
+    contains a $...$ placeholder. Those cells are restored to vanilla before
+    comparison so country-specific placeholder fills don't appear as false
+    text-change diffs.
+
+    For columns that can hold numbered answer options (English/French/etc.),
+    only the question stem is restored to the reference's vanilla text -- the
+    numbered options block is kept exactly as it is in the current questionnaire,
+    so a genuine option addition/removal still surfaces in Option Changes even
+    when the question stem also contains an unresolved placeholder.
     """
     columns = [c for c in (candidate_columns or RESTORE_TEXT_COLUMNS) if c in reference_questions.columns]
+    current_lookup = {
+        row["Q Name"]: row
+        for row in current_questions.select(
+            ["Q Name"] + [c for c in columns if c in current_questions.columns]
+        ).iter_rows(named=True)
+    }
     restore_map: dict[str, dict[str, str]] = {}
 
     for row in reference_questions.select(["Q Name"] + columns).iter_rows(named=True):
         qname = row["Q Name"]
-        hits = {
-            col: str(row[col] or "")
-            for col in columns
-            if has_placeholder(row.get(col))
-        }
+        hits: dict[str, str] = {}
+        for col in columns:
+            ref_val = str(row.get(col) or "")
+            if not has_placeholder(ref_val):
+                continue
+            if col in _OPTION_BEARING_RESTORE_COLUMNS:
+                ref_stem, _ = _split_stem_and_options(ref_val)
+                cur_val = str((current_lookup.get(qname) or {}).get(col) or "")
+                _, cur_options = _split_stem_and_options(cur_val)
+                hits[col] = ref_stem + cur_options
+            else:
+                hits[col] = ref_val
         if hits:
             restore_map[qname] = hits
     return restore_map
@@ -1385,7 +1435,7 @@ def restore_placeholder_cells(
     but only for cells where the reference still contains a $...$ placeholder.
     Returns (restored_questions, restore_log).
     """
-    restore_map = build_placeholder_restore_map(reference_questions, candidate_columns)
+    restore_map = build_placeholder_restore_map(current_questions, reference_questions, candidate_columns)
     if not restore_map:
         empty_log = pl.DataFrame(schema={"Q Name": pl.Utf8, "field": pl.Utf8, "restored_value": pl.Utf8})
         return current_questions.clone(), empty_log
@@ -2174,6 +2224,8 @@ def normalize_mandatory_expr(col_name: str) -> pl.Expr:
     return (
         pl.when(cleaned.is_in(["yes", "y", "true", "1"])).then(pl.lit("yes"))
         .when(cleaned.is_in(["no",  "n", "false", "0"])).then(pl.lit("no"))
+        .when(cleaned.str.starts_with("yes")).then(pl.lit("yes"))
+        .when(cleaned.str.starts_with("no")).then(pl.lit("no"))
         .otherwise(pl.lit(""))
     )
 
@@ -2186,8 +2238,6 @@ _step("Comparison functions")
 # --- CODE CELL 9 ---
 SKIP_PATTERN_COLS = [
     "Skip Pattern",
-    "Default skip patterns & conditional ",   # trailing space is intentional
-    "Specify skip pattern variable (from blue text)",
 ]
 
 
@@ -3787,17 +3837,6 @@ def collapse_option_issue_rows_by_qname(
         common = set(cur.keys()) & set(ref.keys())
         return any(cur[k] != ref[k] for k in common)
 
-    def _extract_codes(rows: list[dict], issue_types: set[str]) -> list[int]:
-        out: list[int] = []
-        for r in rows:
-            if str(r.get("issue_type") or "") not in issue_types:
-                continue
-            m = re.match(r"option_(\d+)$", str(r.get("field") or "").strip())
-            if not m:
-                continue
-            out.append(int(m.group(1)))
-        return out
-
     def _token_set(txt: str) -> set[str]:
         return {t for t in re.findall(r"[A-Za-z0-9\u0600-\u06FF]+", str(txt or "").lower()) if t}
 
@@ -3904,15 +3943,12 @@ def collapse_option_issue_rows_by_qname(
         explicit_drift = any(t in drift_types for t in q_types)
         common_labels_n = len(cur_label_norms & ref_label_norms)
         common_shift = _common_label_code_shift(cur_entries_en, ref_entries_en) or _common_label_code_shift(cur_entries_tgt, ref_entries_tgt)
-        added_codes = _extract_codes(q_items, {"added_option"})
-        removed_codes = _extract_codes(q_items, {"removed_option"})
         cur_total = len(cur_entries)
         ref_total = len(ref_entries)
-        removed_causes_shift = any(c <= cur_total for c in removed_codes) if cur_total > 0 else False
-        added_causes_shift = any(c <= ref_total for c in added_codes) if ref_total > 0 else False
-        # Drift is meaningful only when at least one label persists across sides.
+        # Drift is meaningful only when at least one label persists across sides
+        # AND that label's code actually differs between current and reference.
         # If no labels overlap, this is a full replacement (add/remove), not drift.
-        inferred_drift = common_labels_n > 0 and (explicit_drift or common_shift or removed_causes_shift or added_causes_shift)
+        inferred_drift = common_labels_n > 0 and (explicit_drift or common_shift)
 
         has_structural = any(t in structural_types for t in q_types) or (
             "option_label_mismatch" in q_types and any(t in {"added_option", "removed_option", "added_removed_option"} for t in q_types)
@@ -4230,7 +4266,7 @@ def _mandatory_cat_expr(qname_col: str, mandatory_col: str) -> pl.Expr:
     return (
         pl.when(qn.str.starts_with("o_")).then(pl.lit("optional"))
         .when(md.str.contains("panel")).then(pl.lit("mandatory-panel"))
-        .when(md.is_in(["yes", "y", "true", "1"])).then(pl.lit("mandatory"))
+        .when(md.is_in(["yes", "y", "true", "1"]) | md.str.starts_with("yes")).then(pl.lit("mandatory"))
         .otherwise(pl.lit("non-mandatory"))
     )
 
@@ -4503,6 +4539,60 @@ def compare_legacy_text_field_changes(
             pl.lit(column_name).alias("field"),
             pl.col("_curr").alias("current"),
             pl.col("_ref").alias("reference"),
+        ])
+        .select(["issue_type", "set_name", "Q Name", "field", "current", "reference", "severity", "excel_row"])
+    )
+
+
+def validate_conditional_removed_for_mandatory(
+    current_questions: pl.DataFrame,
+    reference_questions: pl.DataFrame,
+) -> pl.DataFrame:
+    """
+    High-severity, narrow sibling of the generic 'Conditional' comparison:
+    flags only the case where the reference has a constraint rule and the
+    current questionnaire dropped it entirely on a mandatory/mandatory-panel
+    question. Cosmetic rewording of Conditional is still handled separately
+    by compare_legacy_text_field_changes() at info severity.
+    """
+    EMPTY = {
+        "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
+        "field": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
+        "severity": pl.Utf8, "excel_row": pl.Int64,
+    }
+    if "Conditional" not in current_questions.columns or "Conditional" not in reference_questions.columns:
+        return pl.DataFrame(schema=EMPTY)
+
+    joined = (
+        current_questions
+        .select(["Q Name", "Conditional", "Mandatory", "excel_row"])
+        .join(
+            reference_questions.select(["Q Name", "Conditional", "Mandatory"]),
+            on="Q Name", how="inner", suffix="_ref",
+        )
+        .with_columns([
+            pl.col("Conditional").cast(pl.Utf8).fill_null("").str.strip_chars().alias("_curr"),
+            pl.col("Conditional_ref").cast(pl.Utf8).fill_null("").str.strip_chars().alias("_ref"),
+            _mandatory_cat_expr("Q Name", "Mandatory").alias("_mandatory_cat"),
+        ])
+        .filter(
+            (pl.col("_ref") != "")
+            & (pl.col("_curr") == "")
+            & pl.col("_mandatory_cat").is_in(["mandatory", "mandatory-panel"])
+        )
+    )
+    if joined.height == 0:
+        return pl.DataFrame(schema=EMPTY)
+
+    return (
+        joined
+        .with_columns([
+            pl.lit("conditional_removed_mandatory").alias("issue_type"),
+            pl.lit("").alias("set_name"),
+            pl.lit("Conditional").alias("field"),
+            pl.lit("(blank)").alias("current"),
+            pl.col("_ref").alias("reference"),
+            pl.lit("high").alias("severity"),
         ])
         .select(["issue_type", "set_name", "Q Name", "field", "current", "reference", "severity", "excel_row"])
     )
@@ -5609,6 +5699,72 @@ def validate_crop_harvest(
     return pl.DataFrame(issues)
 
 
+_KNOWN_MANDATORY_VALUES = {
+    "yes - core",
+    "yes - panel",
+    "no - low priority",
+    "no - but recommended in applicable contexts",
+    "no - but recommended if of interest",
+    "spiel",
+}
+
+
+def validate_authoring_consistency(current_questions: pl.DataFrame) -> pl.DataFrame:
+    """
+    Current-file-only authoring consistency checks (no reference comparison):
+      - panel_targeting_mismatch: 'Mandatory' says panel-specific but the
+        recent-panelist flag disagrees, or vice versa.
+      - mandatory_category_unrecognized: 'Mandatory' value doesn't match any
+        of the template's known categories (likely a typo).
+    """
+    schema = {
+        "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
+        "field": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
+        "severity": pl.Utf8, "excel_row": pl.Int64,
+    }
+    if "Mandatory" not in current_questions.columns:
+        return pl.DataFrame(schema=schema)
+
+    rows: list[dict] = []
+    has_panelist_col = PANELIST_RECENCY_COL in current_questions.columns
+    select_cols = ["Q Name", "Mandatory", "excel_row"] + ([PANELIST_RECENCY_COL] if has_panelist_col else [])
+
+    for r in current_questions.select(select_cols).iter_rows(named=True):
+        qname = r.get("Q Name")
+        mand_raw = str(r.get("Mandatory") or "").strip()
+        mand_norm = mand_raw.lower()
+        excel_row = r.get("excel_row")
+
+        if mand_norm and mand_norm not in _KNOWN_MANDATORY_VALUES:
+            rows.append({
+                "issue_type": "mandatory_category_unrecognized",
+                "set_name": "", "Q Name": qname, "field": "Mandatory",
+                "current": mand_raw,
+                "reference": "known categories: " + " | ".join(sorted(_KNOWN_MANDATORY_VALUES)),
+                "severity": "medium", "excel_row": excel_row,
+            })
+
+        if has_panelist_col:
+            mand_says_panel = "panel" in mand_norm
+            panel_flag = str(r.get(PANELIST_RECENCY_COL) or "").strip().lower()
+            if mand_says_panel and panel_flag in ("", "no"):
+                rows.append({
+                    "issue_type": "panel_targeting_mismatch",
+                    "set_name": "", "Q Name": qname, "field": PANELIST_RECENCY_COL,
+                    "current": f"Mandatory='{mand_raw}' but panelist flag='{panel_flag or '(blank)'}'",
+                    "reference": "panelist flag should be 'yes' when Mandatory marks the question panel-specific",
+                    "severity": "medium", "excel_row": excel_row,
+                })
+            elif not mand_says_panel and panel_flag == "yes":
+                rows.append({
+                    "issue_type": "panel_targeting_mismatch",
+                    "set_name": "", "Q Name": qname, "field": PANELIST_RECENCY_COL,
+                    "current": f"Mandatory='{mand_raw}' but panelist flag='yes'",
+                    "reference": "Mandatory should mention 'panel' when the panelist flag is 'yes'",
+                    "severity": "medium", "excel_row": excel_row,
+                })
+
+    return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
 
 
 # --- CODE CELL 13 ---
@@ -5639,30 +5795,23 @@ qtype_issues = compare_qtype_changes(
     current_options_en=current_options_en,
     reference_options_en=reference_options_en,
 )
-randomize_issues = compare_legacy_text_field_changes(
-    current_questions, reference_questions,
-    column_name="Randomize", issue_type="randomize_changed",
-    default_severity="info", high_when_mandatory=False,
-)
 conditional_issues = compare_legacy_text_field_changes(
     current_questions, reference_questions,
     column_name="Conditional", issue_type="conditional_changed",
     default_severity="info", high_when_mandatory=False,
 )
-programming_issues = compare_legacy_text_field_changes(
+conditional_removed_mandatory_issues = validate_conditional_removed_for_mandatory(
     current_questions, reference_questions,
-    column_name="Programming Instructions", issue_type="programming_instructions_changed",
-    default_severity="info", high_when_mandatory=False,
 )
-core_only_issues = compare_legacy_text_field_changes(
+universe_issues = compare_legacy_text_field_changes(
     current_questions, reference_questions,
-    column_name="Core questions only", issue_type="core_questions_only_changed",
-    default_severity="info", high_when_mandatory=False,
+    column_name="Universe", issue_type="universe_changed",
+    default_severity="medium", high_when_mandatory=True,
 )
 print(
-    f"QType: {qtype_issues.height}  Randomize: {randomize_issues.height}  "
-    f"Conditional: {conditional_issues.height}  Prog.Instr: {programming_issues.height}  "
-    f"Core-only: {core_only_issues.height}"
+    f"QType: {qtype_issues.height}  Conditional: {conditional_issues.height}  "
+    f"Conditional removed (mandatory): {conditional_removed_mandatory_issues.height}  "
+    f"Universe: {universe_issues.height}"
 )
 _tick("qtype + legacy control checks")
 
@@ -5805,7 +5954,7 @@ for _df in [reference_questions, current_questions]:
             _q_mand_map[_q] = "optional"
         elif "panel" in _m:
             _q_mand_map[_q] = "mandatory-panel"
-        elif _m in ("yes", "y", "true", "1"):
+        elif _m.startswith("yes"):
             _q_mand_map[_q] = "mandatory"
         else:
             _q_mand_map[_q] = "non-mandatory"
@@ -5859,10 +6008,9 @@ core_question_issues = pl.concat(
         presence_issues,
         mandatory_issues,
         qtype_issues,
-        randomize_issues,
         conditional_issues,
-        programming_issues,
-        core_only_issues,
+        conditional_removed_mandatory_issues,
+        universe_issues,
     ],
     how="vertical",
 )
@@ -5980,12 +6128,19 @@ module_issues = validate_module_presence(
     reference_modules=reference_modules,
     template_modules=template_modules,
 )
+module_integrity_issues = validate_module_column_integrity(current_questions_raw_all)
+if module_integrity_issues.height > 0:
+    module_issues = pl.concat([module_issues, module_integrity_issues], how="diagonal")
 _tick("validate module presence")
+
+authoring_consistency_issues = validate_authoring_consistency(current_questions)
+_tick("validate authoring consistency")
 
 #  Stack all issues
 all_issues = pl.concat(
     [question_issues, option_issues,
-     critical_issues, count_issues, harvest_issues, skip_issues, module_issues],
+     critical_issues, count_issues, harvest_issues, skip_issues, module_issues,
+     authoring_consistency_issues],
     how="diagonal",
 )
 
@@ -6257,7 +6412,7 @@ SKIP_PATTERN_ISSUE_TYPES = {
     "skip_pattern_empty",
 }
 QTYPE_ISSUE_TYPES = {"qtype_changed"}
-MODULE_ISSUE_TYPES = {"module_removed", "module_added"}
+MODULE_ISSUE_TYPES = {"module_removed", "module_added", "module_missing_for_question"}
 
 CORE_QUESTION_CHANGE_ISSUE_TYPES = {
     "mandatory_source_missing",
@@ -6266,13 +6421,17 @@ CORE_QUESTION_CHANGE_ISSUE_TYPES = {
     "removed_question",
     "added_question",
     "question_label_mismatch",
+    "conditional_removed_mandatory",
+    "universe_changed",
 }
 
 ADDITIONAL_QUESTION_FIELD_ISSUE_TYPES = {
     "conditional_changed",
-    "randomize_changed",
-    "programming_instructions_changed",
-    "core_questions_only_changed",
+}
+
+AUTHORING_CONSISTENCY_ISSUE_TYPES = {
+    "panel_targeting_mismatch",
+    "mandatory_category_unrecognized",
 }
 
 REPLACEMENT_ISSUE_TYPES = {
@@ -6321,10 +6480,7 @@ ISSUE_ACTION_MAP = {
     "mandatory_source_missing": "Mandatory values are unavailable in one file; verify source column completeness first",
     "qtype_changed": "Review Q Type change and questionnaire behavior impact",
     "question_label_mismatch": "Review question text mismatch",
-    "randomize_changed": "Review randomization behavior change",
     "conditional_changed": "Review conditional-routing text change",
-    "programming_instructions_changed": "Review programming instruction change",
-    "core_questions_only_changed": "Review core-questions-only flag change",
     "added_option": "Review added option and downstream logic",
     "removed_option": "Review removed option and downstream logic",
     "added_removed_option": "Review both added and removed options for the same question",
@@ -6358,6 +6514,11 @@ ISSUE_ACTION_MAP = {
     "duplicate_qname": "Rename duplicate Q Name(s) to unique identifiers",
     "module_removed": "Restore required template module in survey",
     "module_added": "Informational: module exists in current but not in selected reference",
+    "module_missing_for_question": "Fill in the 'module' cell for this question (it is being dropped from all checks)",
+    "conditional_removed_mandatory": "Restore the removed constraint rule or confirm its removal is intentional",
+    "universe_changed": "Review change to who this question is asked of (Universe)",
+    "panel_targeting_mismatch": "Align Mandatory panel category with the recent-panelist flag",
+    "mandatory_category_unrecognized": "Fix typo'd Mandatory value to match a known category",
     "replacement_additional_info_missing": "Populate Additional information sheet with replacement keys/values",
     "replacement_crop_selection_mismatch": "Review top-10 crop list selection and replacement outputs",
     "replacement_crop_round_delta": "Review crop-list round differences documented in Questionnaire Structure",
@@ -6466,6 +6627,7 @@ def _issues_table(ws, start_row, df, field_label: str = "Field"):
                 pl.coalesce([pl.col("action"), pl.col("_action_default")]).alias("action"),
             ]).drop("_action_default")
     cols = [(s, d) for s, d in _issues_col_map(field_label=field_label) if s in df.columns]
+    qname_col = next((i for i, (src, _) in enumerate(cols, start=1) if src == "Q Name"), None)
     _header_row(ws, start_row, [d for _, d in cols])
     r = start_row + 1
     if df.height == 0:
@@ -6476,6 +6638,8 @@ def _issues_table(ws, start_row, df, field_label: str = "Field"):
         for col, (src, _) in enumerate(cols, 1):
             ws.cell(row=r, column=col, value=row_data.get(src))
         _data_row(ws, r, len(cols), row_data.get("severity", ""))
+        if qname_col:
+            ws.cell(row=r, column=qname_col).font = Font(bold=True, size=10)
         r += 1
     ws.freeze_panes = f"A{start_row + 1}"
     ws.auto_filter.ref = f"A{start_row}:{get_column_letter(len(cols))}{start_row}"
@@ -6820,7 +6984,80 @@ def _reference_descriptor() -> str:
     return f"{mode} | {lang} template | {ref_name}"
 
 
-#  Sheet 1: Summary 
+def _write_category_breakdown_block(
+    ws,
+    r: int,
+    title: str,
+    categories: list[tuple],
+    all_issues: pl.DataFrame,
+) -> int:
+    """
+    Renders a category-count breakdown table (Total/Mandatory/M-Panel/Non-mand./
+    Optional/Severity). Non-zero categories are shown first (grouped, if a group
+    label is supplied); all-zero categories are folded into a single line instead
+    of one row each, so the table stays scannable as more categories are added.
+
+    Each entry in `categories` is (label, issue_type, severity_filter_or_None,
+    display_severity[, group_label]).
+    """
+    _section_header(ws, r, title, 7); r += 1
+    _header_row(ws, r, ["Category", "Total", "Mandatory", "M-Panel", "Non-mand.", "Optional", "Severity"]); r += 1
+
+    computed = []
+    for entry in categories:
+        label, itype, sev_filter, disp_sev = entry[:4]
+        group = entry[4] if len(entry) > 4 else None
+        q = all_issues.filter(pl.col("issue_type") == itype)
+        if sev_filter:
+            q = q.filter(pl.col("severity") == sev_filter)
+        computed.append({
+            "label": label,
+            "total": q.height,
+            "counts": _cat_counts(q),
+            "disp_sev": disp_sev if q.height > 0 else "none",
+            "group": group,
+        })
+
+    nonzero = [c for c in computed if c["total"] > 0]
+    zero = [c for c in computed if c["total"] == 0]
+
+    total_line = f"{len(nonzero)} categor{'y' if len(nonzero) == 1 else 'ies'} with issues"
+    if zero:
+        total_line += f"  --  {len(zero)} clean"
+    ws.cell(row=r, column=1, value=total_line).font = Font(bold=True, size=10, italic=True, color="1F4E78")
+    r += 1
+
+    seen_groups: list = []
+    for c in nonzero:
+        if c["group"] not in seen_groups:
+            seen_groups.append(c["group"])
+
+    for grp in seen_groups:
+        if grp:
+            ws.cell(row=r, column=1, value=grp).font = Font(bold=True, size=10, color="666666")
+            r += 1
+        for c in [x for x in nonzero if x["group"] == grp]:
+            ws.cell(row=r, column=1, value=c["label"])
+            ws.cell(row=r, column=2, value=c["total"])
+            ws.cell(row=r, column=3, value=c["counts"]["mandatory"])
+            ws.cell(row=r, column=4, value=c["counts"]["mandatory-panel"])
+            ws.cell(row=r, column=5, value=c["counts"]["non-mandatory"])
+            ws.cell(row=r, column=6, value=c["counts"]["optional"])
+            ws.cell(row=r, column=7, value=c["disp_sev"])
+            _data_row(ws, r, 7, c["disp_sev"])
+            r += 1
+
+    if zero:
+        zero_text = "No issues: " + ", ".join(c["label"] for c in zero)
+        ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=7)
+        ws.cell(row=r, column=1, value=zero_text)
+        _data_row(ws, r, 7, fill=FILL_PASS)
+        r += 1
+
+    return r
+
+
+#  Sheet 1: Summary
 def write_summary_sheet(wb, all_issues, rules, replacement_status=None):
     ws = wb.create_sheet("Summary")
     ws.sheet_view.showGridLines = False
@@ -6965,102 +7202,60 @@ def write_summary_sheet(wb, all_issues, rules, replacement_status=None):
 
     r += 1
     #  Core question changes (high/medium focus)
-    _section_header(ws, r, "QUESTION CHANGES (CORE)", 7); r += 1
-    _header_row(ws, r, ["Category", "Total", "Mandatory", "M-Panel", "Non-mand.", "Optional", "Severity"]); r += 1
-    for label, itype, sev_filter, disp_sev in [
-        ("Mandatory source unavailable", "mandatory_source_missing", None, "high"),
-        ("Mandatory flag changes",       "mandatory_column_mismatch", None, "high"),
-        ("Mandatory to optional",        "mandatory_to_optional", None, "high"),
-        ("Questions removed (high)",     "removed_question", "high", "high"),
-        ("Questions removed (info)",     "removed_question", "info", "info"),
-        ("Questions added (high)",       "added_question", "high", "high"),
-        ("Questions added (info)",       "added_question", "info", "info"),
-        ("Question labels changed",      "question_label_mismatch", None, "medium"),
-    ]:
-        q = all_issues.filter(pl.col("issue_type") == itype)
-        if sev_filter:
-            q = q.filter(pl.col("severity") == sev_filter)
-        counts = _cat_counts(q)
-        ws.cell(row=r, column=1, value=label)
-        ws.cell(row=r, column=2, value=q.height)
-        ws.cell(row=r, column=3, value=counts["mandatory"])
-        ws.cell(row=r, column=4, value=counts["mandatory-panel"])
-        ws.cell(row=r, column=5, value=counts["non-mandatory"])
-        ws.cell(row=r, column=6, value=counts["optional"])
-        if q.height == 0:
-            ws.cell(row=r, column=7, value="none")
-            _data_row(ws, r, 7, fill=FILL_PASS)
-        else:
-            ws.cell(row=r, column=7, value=disp_sev)
-            _data_row(ws, r, 7, disp_sev)
-        r += 1
+    r = _write_category_breakdown_block(
+        ws, r, "QUESTION CHANGES (CORE)",
+        [
+            ("Mandatory source unavailable", "mandatory_source_missing", None, "high"),
+            ("Mandatory flag changes",       "mandatory_column_mismatch", None, "high"),
+            ("Mandatory to optional",        "mandatory_to_optional", None, "high"),
+            ("Questions removed (high)",     "removed_question", "high", "high"),
+            ("Questions removed (info)",     "removed_question", "info", "info"),
+            ("Questions added (high)",       "added_question", "high", "high"),
+            ("Questions added (info)",       "added_question", "info", "info"),
+            ("Question labels changed",      "question_label_mismatch", None, "medium"),
+        ],
+        all_issues,
+    )
 
     r += 1
     #  Additional control-field diffs
-    _section_header(ws, r, "QUESTION CHANGES (ADDITIONAL FIELDS)", 7); r += 1
-    _header_row(ws, r, ["Category", "Total", "Mandatory", "M-Panel", "Non-mand.", "Optional", "Severity"]); r += 1
-    for label, itype in [
-        ("Conditional changed", "conditional_changed"),
-        ("Randomize changed", "randomize_changed"),
-        ("Programming instructions changed", "programming_instructions_changed"),
-        ("Core questions-only changed", "core_questions_only_changed"),
-    ]:
-        q = all_issues.filter(pl.col("issue_type") == itype)
-        counts = _cat_counts(q)
-        ws.cell(row=r, column=1, value=label)
-        ws.cell(row=r, column=2, value=q.height)
-        ws.cell(row=r, column=3, value=counts["mandatory"])
-        ws.cell(row=r, column=4, value=counts["mandatory-panel"])
-        ws.cell(row=r, column=5, value=counts["non-mandatory"])
-        ws.cell(row=r, column=6, value=counts["optional"])
-        if q.height == 0:
-            ws.cell(row=r, column=7, value="none")
-            _data_row(ws, r, 7, fill=FILL_PASS)
-        else:
-            ws.cell(row=r, column=7, value="info")
-            _data_row(ws, r, 7, "info")
-        r += 1
+    r = _write_category_breakdown_block(
+        ws, r, "QUESTION CHANGES (ADDITIONAL FIELDS)",
+        [
+            ("Conditional changed", "conditional_changed", None, "info"),
+            ("Conditional removed (mandatory)", "conditional_removed_mandatory", None, "high"),
+            ("Universe changed", "universe_changed", None, "medium"),
+        ],
+        all_issues,
+    )
 
     r += 1
     #  Option changes (7 cols with mandatory breakdown)
-    _section_header(ws, r, "OPTION CHANGES (questions present in both files)", 7); r += 1
-    _header_row(ws, r, ["Category", "Total", "Mandatory", "M-Panel", "Non-mand.", "Optional", "Severity"]); r += 1
-    for label, itype, disp_sev in [
-        ("Options added/removed",          "added_removed_option",                "high"),
-        ("Options removed",                 "removed_option",                     "high"),
-        ("Options added with drift",        "added_option_with_drift",            "high"),
-        ("Options removed with drift",      "removed_option_with_drift",          "high"),
-        ("Add/remove with drift",           "added_removed_option_with_drift",    "high"),
-        ("Removed + cascading drift",       "removed_option_cascading_drift",     "high"),
-        ("Options added",                   "added_option",                       "medium"),
-        ("Option labels changed",           "option_label_mismatch",              "medium"),
-        ("Option positions changed",        "option_position_drift",              "high"),
-        ("Codes token mismatch",            "codes_token_mismatch",               "high"),
-        ("Codes removed",                   "codes_removed",                      "high"),
-        ("Codes added",                     "codes_added",                        "high"),
-        ("Codes added/removed",             "added_removed_codes",                "high"),
-        ("Codes added with drift",          "added_codes_with_drift",             "high"),
-        ("Codes removed with drift",        "removed_codes_with_drift",           "high"),
-        ("Codes add/remove with drift",     "added_removed_codes_with_drift",     "high"),
-        ("Codes renumbered (same token)",   "codes_position_drift",               "high"),
-        ("Codes count vs options mismatch", "codes_option_count_mismatch",        "high"),
-        ("Codes not comparable",            "codes_not_comparable",               "info"),
-    ]:
-        q = all_issues.filter(pl.col("issue_type") == itype)
-        counts = _cat_counts(q)
-        ws.cell(row=r, column=1, value=label)
-        ws.cell(row=r, column=2, value=q.height)
-        ws.cell(row=r, column=3, value=counts["mandatory"])
-        ws.cell(row=r, column=4, value=counts["mandatory-panel"])
-        ws.cell(row=r, column=5, value=counts["non-mandatory"])
-        ws.cell(row=r, column=6, value=counts["optional"])
-        if q.height == 0:
-            ws.cell(row=r, column=7, value="none")
-            _data_row(ws, r, 7, fill=FILL_PASS)
-        else:
-            ws.cell(row=r, column=7, value=disp_sev)
-            _data_row(ws, r, 7, disp_sev)
-        r += 1
+    r = _write_category_breakdown_block(
+        ws, r, "OPTION CHANGES (questions present in both files)",
+        [
+            ("Options added/removed",          "added_removed_option",                None, "high",   "OPTIONS"),
+            ("Options removed",                 "removed_option",                     None, "high",   "OPTIONS"),
+            ("Options added with drift",        "added_option_with_drift",            None, "high",   "OPTIONS"),
+            ("Options removed with drift",      "removed_option_with_drift",          None, "high",   "OPTIONS"),
+            ("Add/remove with drift",           "added_removed_option_with_drift",    None, "high",   "OPTIONS"),
+            ("Removed + cascading drift",       "removed_option_cascading_drift",     None, "high",   "OPTIONS"),
+            ("Options added",                   "added_option",                       None, "medium", "OPTIONS"),
+            ("Option labels changed",           "option_label_mismatch",              None, "medium", "OPTIONS"),
+            ("Option positions changed",        "option_position_drift",              None, "high",   "OPTIONS"),
+            ("Codes token mismatch",            "codes_token_mismatch",               None, "high",   "CODES"),
+            ("Codes removed",                   "codes_removed",                      None, "high",   "CODES"),
+            ("Codes added",                     "codes_added",                        None, "high",   "CODES"),
+            ("Codes added/removed",             "added_removed_codes",                None, "high",   "CODES"),
+            ("Codes added with drift",          "added_codes_with_drift",             None, "high",   "CODES"),
+            ("Codes removed with drift",        "removed_codes_with_drift",           None, "high",   "CODES"),
+            ("Codes add/remove with drift",     "added_removed_codes_with_drift",     None, "high",   "CODES"),
+            ("Codes renumbered (same token)",   "codes_position_drift",               None, "high",   "CODES"),
+            ("Codes count vs options mismatch", "codes_option_count_mismatch",        None, "high",   "CODES"),
+            ("Codes not comparable",            "codes_not_comparable",               None, "info",   "CODES"),
+        ],
+        all_issues,
+    )
 
 
 #  Sheet: Structure/SkipPattern 
@@ -7087,6 +7282,7 @@ def write_structure_skip_sheet(wb, all_issues: pl.DataFrame):
     dup_df = _sorted(all_issues.filter(pl.col("issue_type") == "duplicate_qname"))
     module_df = _sorted(all_issues.filter(pl.col("issue_type").is_in(list(MODULE_ISSUE_TYPES))))
     dup_module_df = _sorted(pl.concat([dup_df, module_df], how="diagonal")) if (dup_df.height > 0 or module_df.height > 0) else dup_df
+    authoring_df = _sorted(all_issues.filter(pl.col("issue_type").is_in(list(AUTHORING_CONSISTENCY_ISSUE_TYPES))))
 
     _section_header(ws, 1, "QUESTIONNAIRE STRUCTURE  Skip pattern issues", 8)
     next_row = _issues_table(ws, 2, skip_df)
@@ -7095,7 +7291,10 @@ def write_structure_skip_sheet(wb, all_issues: pl.DataFrame):
     next_row = _issues_table(ws, next_row + 1, qtype_df)
 
     _section_header(ws, next_row, "QUESTIONNAIRE STRUCTURE  (Duplicates, modules)", 8)
-    _issues_table(ws, next_row + 1, dup_module_df)
+    next_row = _issues_table(ws, next_row + 1, dup_module_df)
+
+    _section_header(ws, next_row, "AUTHORING CONSISTENCY CHECKS  (Mandatory / panel targeting)", 8)
+    _issues_table(ws, next_row + 1, authoring_df)
 
     ws.freeze_panes = "A3"
     _autofit(ws)
@@ -7188,7 +7387,7 @@ def write_question_changes_sheet(wb, question_changes_view):
         ws,
         2,
         core_df,
-        {"question_label_mismatch"},
+        {"question_label_mismatch", "conditional_removed_mandatory", "universe_changed"},
     )
 
     _section_header(ws, next_row, "QUESTION CHANGES (ADDITIONAL FIELDS)", 10)
@@ -7197,7 +7396,7 @@ def write_question_changes_sheet(wb, question_changes_view):
         ws,
         next_row + 1,
         additional_df,
-        {"conditional_changed", "programming_instructions_changed", "core_questions_only_changed"},
+        {"conditional_changed"},
     )
     # Keep navigation stable even with multiple tables in this sheet.
     # Without resetting here, the second table can push freeze panes far down.
@@ -7889,14 +8088,14 @@ def write_validated_questionnaire(
 
     wb = openpyxl.load_workbook(output_questionnaire_path)
     ws = _resolve_survey_sheet(wb)
-    header_map = _sheet_header_map(ws, header_row=3)
+    header_map = _sheet_header_map(ws, header_row=2)
 
     q_col = header_map.get("Q Name")
     if not q_col:
         raise KeyError("Column 'Q Name' not found in survey header row.")
 
     qname_to_row = {}
-    for row_idx in range(4, ws.max_row + 1):
+    for row_idx in range(3, ws.max_row + 1):
         qname = ws.cell(row=row_idx, column=q_col).value
         key = str(qname).strip() if qname is not None else ""
         if key:
@@ -7932,30 +8131,40 @@ def write_validated_questionnaire(
 
     if _skip_keys_norm or _skip_q:
         rows_to_delete: list[int] = []
-        qtype_col = header_map.get("Q Type")
-        active_module_skip = False
+        module_col = header_map.get("module")
 
-        for row_idx in range(4, ws.max_row + 1):
+        # Each question row carries its own module code. Divider rows (blank
+        # module cell) belong visually to the module that follows them, so
+        # backfill blanks from the next populated row (look-ahead).
+        row_module: dict[int, str] = {}
+        for row_idx in range(3, ws.max_row + 1):
+            module_val = str(ws.cell(row=row_idx, column=module_col).value or "").strip() if module_col else ""
+            row_module[row_idx] = module_val
+
+        next_code = ""
+        for row_idx in range(ws.max_row, 2, -1):
+            if row_module[row_idx]:
+                next_code = row_module[row_idx]
+            else:
+                row_module[row_idx] = next_code
+
+        for row_idx in range(3, ws.max_row + 1):
             q_name_val = ws.cell(row=row_idx, column=q_col).value
             q_name = str(q_name_val or "").strip()
-            q_type = str(ws.cell(row=row_idx, column=qtype_col).value or "").strip() if qtype_col else ""
-            row_is_module = _is_geopoll_module_row({"Q Name": q_name, "Q Type": q_type})
+            is_divider_row = module_col and not str(ws.cell(row=row_idx, column=module_col).value or "").strip() and q_name
+            key_norm = _normalize_module_token(row_module.get(row_idx, ""))
+            module_skip = key_norm in _skip_keys_norm if key_norm else False
 
-            if row_is_module:
-                key_norm = _normalize_module_token(q_name)
-                active_module_skip = key_norm in _skip_keys_norm if key_norm else False
-                if active_module_skip:
-                    rows_to_delete.append(row_idx)
-                    _module_skip_stats["removed_rows"] += 1
-                    _module_skip_stats["removed_module_rows"] += 1
-                    _module_skip_stats["removed_module_blocks"] += 1
-                continue
-
-            remove_here = active_module_skip or (q_name in _skip_q if q_name else False)
+            remove_here = module_skip or (q_name in _skip_q if q_name else False)
             if remove_here:
                 rows_to_delete.append(row_idx)
                 _module_skip_stats["removed_rows"] += 1
-                _module_skip_stats["removed_question_rows"] += 1
+                if is_divider_row:
+                    _module_skip_stats["removed_module_rows"] += 1
+                    if module_skip:
+                        _module_skip_stats["removed_module_blocks"] += 1
+                else:
+                    _module_skip_stats["removed_question_rows"] += 1
 
         for row_idx in sorted(set(rows_to_delete), reverse=True):
             ws.delete_rows(row_idx, 1)

@@ -60,7 +60,7 @@ Shows whether all required critical questions are present and correctly flagged 
 
 ![KoBo Summary - Questionnaire Structure](../assets/images/reports/kobo-sum-structure.png)
 
-Two rows: one for skip logic references (relevant), one for Q type integrity, duplicates, and KoBo `${var}` syntax. Any HIGH here must be resolved before launch.
+Three rows: skip logic references (relevant); Q type integrity, duplicates, and KoBo `${var}` syntax; and Mandatory category values. Any HIGH here must be resolved before launch.
 
 ### REPLACEMENT STATUS
 
@@ -101,7 +101,7 @@ Checks whether all structurally required questions are present and correctly fla
 
 ## 3 - Questionnaire Structure Sheet
 
-Three sub-blocks: skip logic references (`relevant`), Q type integrity, and duplicates / KoBo reference syntax / modules.
+Four sub-blocks: skip logic references (`relevant`), Q type integrity, duplicates / KoBo reference syntax / modules, and authoring consistency checks.
 
 ![KoBo Questionnaire Structure](../assets/images/reports/kobo-structure.png)
 
@@ -132,6 +132,10 @@ Validates the `relevant` column for broken references, inexact matches, and drif
 - `kobo_ref_loose_syntax` HIGH/MEDIUM: `$var` syntax found — replace with `${var}`.
 - `module_removed` HIGH: a template module is absent from the current form — restore the module or get explicit approval before launch.
 - `module_added` INFO: a module in the current form was not in the reference — confirm it is intentional.
+
+### AUTHORING CONSISTENCY CHECKS
+
+`mandatory_category_unrecognized` MEDIUM: the `Mandatory` value doesn't match any of the six known categories (`yes - core`, `yes - panel`, `no - low priority`, `no - but recommended in applicable contexts`, `no - but recommended if of interest`, `spiel`) — usually a typo. Current-file-only check, no reference comparison involved.
 
 **Key columns (all sub-blocks):** Issue type, Q Name, Field, Current value, Reference / rule, Severity, Excel row.
 
@@ -180,6 +184,7 @@ Compares the current XLSForm against the reference question by question — pres
 - `mandatory_to_optional` HIGH: a mandatory question moved to optional counterpart (`o_` prefix). Coverage risk — the question may not be collected for all eligible households.
 - `mandatory_column_mismatch` HIGH: the mandatory column value differs from baseline.
 - `label_mismatch` MEDIUM: question label text changed. Read both versions and check for meaning drift.
+- `constraint_removed_mandatory` HIGH: the reference has a constraint rule and the current form dropped it entirely on a mandatory/mandatory-panel question. Narrower and higher-severity than `constraint_modified` below, which covers rewording only.
 - Field-level changes (`required_modified`, `choice_filter_modified`, `appearance_modified`, `calculation_modified`, `constraint_modified`, `hint_changed`, `choices_list_changed`) are all MEDIUM — review whether the change is intentional and test in KoBo before launch.
 
 **Key columns:** Issue type, Type, Q Name, Field, Current value, Reference / rule, Severity, Excel row.

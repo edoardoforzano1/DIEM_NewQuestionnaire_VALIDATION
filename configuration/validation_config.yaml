@@ -22,13 +22,13 @@ tool: "geopoll"
 working_dir: "C:/Temp"
 
 # Current questionnaire filename (resolved under working_dir).
-questionnaire_file: "questionnaire_geopoll_ar_YEM_20260611.xlsx"
+questionnaire_file: "draft_household_questionnaire_COD_R1_geopoll_EN_20260609_clean_copy.xlsx"
 
 # Language code: en | fr | ar | es
-language: "ar"
+language: "en"
 
 # ISO3 country code
-iso3: "YEM"
+iso3: "COD"
 
 # Reference mode:
 #   latest_template -> auto-detect newest matching file in templates_dir
@@ -69,11 +69,15 @@ housekeeping:
 
 # Module names to ignore in comparison (shared by KoBo and GeoPoll).
 # Differences inside these modules are excluded from issue reporting.
-# Accepts either module keys or visible module labels.
+# KoBo: accepts either the begin_group name or the visible group label.
+# GeoPoll (new template): use the short module code from the survey's 'module'
+# column (e.g. "resp_info", "shock"), not the section title text.
 ignore_modules_from_comparison: []
 
 # Module names to skip entirely from validated output (shared by KoBo and GeoPoll).
 # These modules are excluded from comparison and removed from validated questionnaire output.
+# GeoPoll (new template): use the short module code from the 'module' column
+# (e.g. "resp_info", "shock"), not the section title text.
 skip_modules_from_validated_output: []
 
 

@@ -572,6 +572,8 @@ def _normalize_mandatory(val) -> str:
         return "mandatory-panel"
     if v in ("no", "false"):
         return "non-mandatory"
+    if v.startswith("yes"):
+        return "mandatory"
     return ""
 
 
@@ -580,6 +582,7 @@ def read_kobo_survey(path: str, language: str = "en", _wb=None) -> pl.DataFrame:
         "Q Name": pl.Utf8, "Q Type": pl.Utf8, "list_name": pl.Utf8,
         "module_key": pl.Utf8, "module": pl.Utf8, "module_en": pl.Utf8,
         "label": pl.Utf8, "label_en": pl.Utf8, "required": pl.Utf8, "mandatory_category": pl.Utf8,
+        "mandatory_raw": pl.Utf8,
         "relevant": pl.Utf8, "constraint": pl.Utf8, "choice_filter": pl.Utf8,
         "appearance": pl.Utf8, "calculation": pl.Utf8, "hint": pl.Utf8,
         "excel_row": pl.Int64, "source_file": pl.Utf8,
@@ -690,6 +693,7 @@ def read_kobo_survey(path: str, language: str = "en", _wb=None) -> pl.DataFrame:
             "label_en"          : str(get(row, label_col_en) or "") if label_col_en else "",
             "required"          : str(get(row, "required")    or "").strip().lower(),
             "mandatory_category": mand_cat,
+            "mandatory_raw"     : str(get(row, mand_col) or "").strip() if mand_col else "",
             "relevant"          : str(get(row, "relevant")    or "").strip(),
             "constraint"        : str(get(row, "constraint")  or "").strip(),
             "choice_filter"     : str(get(row, "choice_filter") or "").strip(),
@@ -1886,6 +1890,46 @@ def compare_mandatory_kobo(current, reference):
     )
 
 
+_KNOWN_MANDATORY_VALUES = {
+    "yes - core",
+    "yes - panel",
+    "no - low priority",
+    "no - but recommended in applicable contexts",
+    "no - but recommended if of interest",
+    "spiel",
+}
+
+
+def validate_mandatory_category_unrecognized(survey: pl.DataFrame) -> pl.DataFrame:
+    """
+    Current-file-only authoring consistency check: flags a 'Mandatory' value
+    that doesn't match any of the template's known categories -- usually a
+    typo (e.g. a bare 'no' instead of 'no - low priority').
+    """
+    schema = {
+        "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
+        "field": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
+        "severity": pl.Utf8, "excel_row": pl.Int64,
+    }
+    if "mandatory_raw" not in survey.columns:
+        return pl.DataFrame(schema=schema)
+
+    rows = []
+    for r in survey.select(["Q Name", "mandatory_raw", "excel_row"]).iter_rows(named=True):
+        raw = str(r.get("mandatory_raw") or "").strip()
+        if not raw or raw.lower() in _KNOWN_MANDATORY_VALUES:
+            continue
+        rows.append({
+            "issue_type": "mandatory_category_unrecognized",
+            "set_name": "", "Q Name": r.get("Q Name"), "field": "Mandatory",
+            "current": raw,
+            "reference": "known categories: " + " | ".join(sorted(_KNOWN_MANDATORY_VALUES)),
+            "severity": "medium", "excel_row": r.get("excel_row"),
+        })
+
+    return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
+
+
 def compare_list_name_changes(current, reference):
     """Flag questions where the choices list (list_name from type) changed."""
     EMPTY = {
@@ -2130,6 +2174,61 @@ def compare_constraint_changes(current_vanilla, reference, current_orig=None):
             pl.col("constraint").alias("current"),
             pl.col("constraint_ref").alias("reference"),
             pl.lit("medium").alias("severity"),
+        ])
+        .select(["issue_type", "set_name", "Q Name", "field", "current", "reference", "severity", "excel_row"])
+    )
+
+
+def validate_constraint_removed_for_mandatory(
+    current_vanilla: pl.DataFrame,
+    reference: pl.DataFrame,
+) -> pl.DataFrame:
+    """
+    High-severity, narrow sibling of compare_constraint_changes(): flags only
+    the case where the reference has a constraint expression and the current
+    questionnaire dropped it entirely on a mandatory/mandatory-panel question.
+    Cosmetic rewording of constraint is still handled separately by
+    compare_constraint_changes() at medium severity.
+    """
+    EMPTY = {
+        "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
+        "field": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
+        "severity": pl.Utf8, "excel_row": pl.Int64,
+    }
+    if "constraint" not in current_vanilla.columns or "constraint" not in reference.columns:
+        return pl.DataFrame(schema=EMPTY)
+    if "mandatory_category" not in current_vanilla.columns:
+        return pl.DataFrame(schema=EMPTY)
+
+    joined = (
+        current_vanilla
+        .select(["Q Name", "constraint", "mandatory_category", "excel_row"])
+        .join(
+            reference.select(["Q Name", "constraint"]),
+            on="Q Name", how="inner", suffix="_ref",
+        )
+        .with_columns([
+            pl.col("constraint").cast(pl.Utf8).fill_null("").str.strip_chars().alias("_curr"),
+            pl.col("constraint_ref").cast(pl.Utf8).fill_null("").str.strip_chars().alias("_ref"),
+        ])
+        .filter(
+            (pl.col("_ref") != "")
+            & (pl.col("_curr") == "")
+            & pl.col("mandatory_category").is_in(["mandatory", "mandatory-panel"])
+        )
+    )
+    if joined.height == 0:
+        return pl.DataFrame(schema=EMPTY)
+
+    return (
+        joined
+        .with_columns([
+            pl.lit("constraint_removed_mandatory").alias("issue_type"),
+            pl.lit("").alias("set_name"),
+            pl.lit("constraint").alias("field"),
+            pl.lit("(blank)").alias("current"),
+            pl.col("_ref").alias("reference"),
+            pl.lit("high").alias("severity"),
         ])
         .select(["issue_type", "set_name", "Q Name", "field", "current", "reference", "severity", "excel_row"])
     )
@@ -5110,12 +5209,16 @@ print(f"Questions added: {added.height}  removed: {removed.height}")
 mandatory_diff = compare_mandatory_kobo(current_cmp_q, reference_cmp_q)
 print(f"Mandatory mismatches: {mandatory_diff.height}")
 
+mandatory_category_issues = validate_mandatory_category_unrecognized(current_cmp_q)
+print(f"Mandatory category typos: {mandatory_category_issues.height}")
+
 list_name_issues = compare_list_name_changes(current_cmp_q, reference_cmp_q)
 print(f"Choices-list changes: {list_name_issues.height}")
 
 # Field-level comparisons -- vanilla versions for label/constraint
 label_issues       = compare_question_labels(current_van_q, reference_cmp_q, current_cmp_q, language=str(cfg.get("language", "en")))
 constraint_issues  = compare_constraint_changes(current_van_q, reference_cmp_q, current_cmp_q)
+constraint_removed_mandatory_issues = validate_constraint_removed_for_mandatory(current_van_q, reference_cmp_q)
 type_issues        = compare_type_changes(
     current_cmp_q,
     reference_cmp_q,
@@ -5464,6 +5567,8 @@ all_issues = pl.concat(
      _with_choice_cols(list_name_issues),
      _with_choice_cols(label_issues),
      _with_choice_cols(constraint_issues),
+     _with_choice_cols(constraint_removed_mandatory_issues),
+     _with_choice_cols(mandatory_category_issues),
      _with_choice_cols(type_issues),
      _with_choice_cols(required_issues),
      _with_choice_cols(choice_filter_issues),
@@ -5687,6 +5792,8 @@ _ISSUE_LABELS = {
     "appearance_modified"      : "Appearance changed",
     "calculation_modified"     : "Calculation changed",
     "constraint_modified"      : "Constraint changed",
+    "constraint_removed_mandatory" : "Constraint removed on mandatory question",
+    "mandatory_category_unrecognized": "Mandatory value not a known category",
     "hint_changed"             : "Hint text changed",
     "crop_harvest_violation"   : "Crop harvest rule violation",
     "choices_list_changed"     : "Choices list changed",
@@ -5770,6 +5877,8 @@ ISSUE_ACTION_MAP = {
     "choices_list_changed": "Review list_name change and downstream skip/relevance",
     "label_mismatch": "Review question label mismatch",
     "constraint_modified": "Review constraint change and respondent impact",
+    "constraint_removed_mandatory": "Restore the removed constraint rule or confirm its removal is intentional",
+    "mandatory_category_unrecognized": "Fix typo'd Mandatory value to match a known category",
     "required_modified": "Review required flag change",
     "choice_filter_modified": "Review choice_filter change and dependent list filtering",
     "appearance_modified": "Review appearance change",
@@ -6169,7 +6278,7 @@ REPLACEMENT_ISSUE_TYPES = {
 
 CORE_QUESTION_CHANGE_ISSUE_TYPES = {
     "mandatory_column_mismatch", "added_question", "removed_question", "mandatory_to_optional",
-    "label_mismatch",
+    "label_mismatch", "constraint_removed_mandatory",
 }
 
 ADDITIONAL_QUESTION_FIELD_ISSUE_TYPES = {
@@ -6177,6 +6286,8 @@ ADDITIONAL_QUESTION_FIELD_ISSUE_TYPES = {
     "required_modified", "choice_filter_modified", "appearance_modified", "calculation_modified",
     "hint_changed",
 }
+
+KOBO_AUTHORING_CONSISTENCY_ISSUE_TYPES = {"mandatory_category_unrecognized"}
 
 QUESTION_CHANGE_TYPES = CORE_QUESTION_CHANGE_ISSUE_TYPES | ADDITIONAL_QUESTION_FIELD_ISSUE_TYPES
 
@@ -6208,6 +6319,7 @@ def _ensure_question_field_detail(df: pl.DataFrame) -> pl.DataFrame:
         .when(pl.col("issue_type") == "appearance_modified").then(pl.lit("appearance"))
         .when(pl.col("issue_type") == "calculation_modified").then(pl.lit("calculation"))
         .when(pl.col("issue_type") == "constraint_modified").then(pl.lit("constraint"))
+        .when(pl.col("issue_type") == "constraint_removed_mandatory").then(pl.lit("constraint"))
         .when(pl.col("issue_type") == "hint_changed").then(pl.lit("hint"))
         .otherwise(pl.lit(""))
     )
@@ -6453,6 +6565,14 @@ def write_summary_sheet(wb, all_issues, rules=None, critical_issues=None,
     )
     _check_row(ws, r, "Module presence (template-required)", _module_ok, _module_det); r += 1
 
+    _mand_typo_n = all_issues.filter(pl.col("issue_type") == "mandatory_category_unrecognized").height
+    _mand_typo_ok = _mand_typo_n == 0
+    _mand_typo_det = (
+        f"{_mand_typo_n} unrecognized Mandatory value(s)" if not _mand_typo_ok
+        else "All Mandatory values match a known category"
+    )
+    _check_row(ws, r, "Mandatory category values", _mand_typo_ok, _mand_typo_det); r += 1
+
     r += 1
 
     # -- Replacement Status ---------------------------------------------------
@@ -6590,7 +6710,15 @@ def write_questionnaire_structure_sheet(wb, all_issues):
         ])
     ).sort(["severity", "Q Name", "field"])
     _sect(ws, row, "QUESTIONNAIRE STRUCTURE CHECKS  (Duplicates, KoBO references, modules)", 8)
-    _table(ws, row + 1, struct_df, apply_view=False, col_map=_COL_MAP_STRUCT)
+    row = _table(ws, row + 1, struct_df, apply_view=False, col_map=_COL_MAP_STRUCT)
+
+    # Box 4: authoring consistency checks (current questionnaire only, no reference comparison)
+    row += 1
+    authoring_df = all_issues.filter(
+        pl.col("issue_type").is_in(list(KOBO_AUTHORING_CONSISTENCY_ISSUE_TYPES))
+    ).sort(["severity", "Q Name", "field"])
+    _sect(ws, row, "AUTHORING CONSISTENCY CHECKS", 8)
+    _table(ws, row + 1, authoring_df, apply_view=False, col_map=_COL_MAP_STRUCT)
 
     # Avoid frozen panes in multi-box sheets (this was causing navigation/display issues).
     ws.freeze_panes = "A1"
@@ -6670,7 +6798,7 @@ def write_question_changes_sheet(wb, all_issues):
         2,
         core_view,
         core_cols,
-        {"label_mismatch"},
+        {"label_mismatch", "constraint_removed_mandatory"},
     )
 
     additional_view = _prepare_table_df(additional_df)

@@ -142,7 +142,10 @@ flowchart TD
 
 ### Block 1 · Skip Pattern checks
 
-GeoPoll uses a three-column priority system to determine the effective skip rule per question: `Specify skip pattern variable` overrides everything when filled, then `Skip Pattern`, then `Default skip patterns & conditional` as a fallback. The validator resolves this priority for both the current and reference questionnaire before comparing. Issues arise when the resolved rule targets a Q Name that doesn't exist, uses an incorrect category, or has drifted from the baseline without an obvious reason.
+The current GeoPoll template has a single routing column, `Skip Pattern`. The validator still resolves an **effective skip rule** using the same three-tier priority it has always supported (`Specify skip pattern variable` > `Skip Pattern` > `Default skip patterns & conditional`), so older files with the legacy three-column layout keep working — but on the current template, `Specify` and `Default` simply don't exist as columns, so the effective rule collapses to whatever is in `Skip Pattern`. Issues arise when the resolved rule targets a Q Name that doesn't exist, uses an incorrect category, or has drifted from the baseline without an obvious reason.
+
+!!! note "skip_pattern_empty and default_skip_modified are dormant on the current template"
+    These two issue types depend on the `Default skip patterns & conditional` column existing with content. Since the current template doesn't have that column, both checks never fire today — they remain documented here for files using the legacy layout.
 
 ```mermaid
 flowchart LR
@@ -171,10 +174,10 @@ The validator resolves an **effective skip rule** per question using this column
 
 <div class="logic-box">
 <strong>Priority (highest first):</strong><br>
-1. <code>Specify skip pattern variable (from blue text)</code> - user-authored override, always authoritative when filled<br>
-2. <code>Skip Pattern</code> - the standard routing field<br>
-3. <code>Default skip patterns &amp; conditional</code> - fallback rule used when the above two are empty<br><br>
-Both the current questionnaire and the reference use the same priority to determine their respective effective rules before comparing them.
+1. <code>Specify skip pattern variable (from blue text)</code> - legacy override column, authoritative when filled and present<br>
+2. <code>Skip Pattern</code> - the standard routing field, the only one of the three present in the current template<br>
+3. <code>Default skip patterns &amp; conditional</code> - legacy fallback rule, used when the above two are empty and present<br><br>
+Both the current questionnaire and the reference use the same priority to determine their respective effective rules before comparing them. On the current template, only tier 2 ever has content.
 </div>
 
 ### Skip Pattern Issues
@@ -300,17 +303,21 @@ flowchart LR
 
 Two independent checks run here. The first flags duplicate Q Names — all Q Names must be unique across the questionnaire because they serve as identifiers in skip routing and data joins. The second checks module-level structure against the template: every module present in the template must appear in the current form, and any module present in the current form but absent from the reference is flagged for traceability.
 
+The current template carries a dedicated `module` column with a short code per question row (e.g. `resp_info`, `shock`) — the validator uses that column directly as the module identity instead of inferring it from section-divider text, which is both simpler and more reliable. Section-divider rows are identified the same way: their `module` cell is blank while the row still has text in the question-name column.
+
 ```mermaid
 flowchart LR
     DQ["Block 3 · Duplicate Q Names & modules"]
     DQ --> J["duplicate_qname — HIGH"]
     DQ --> K["module_removed — HIGH"]
     DQ --> L["module_added — INFO"]
+    DQ --> M["module_missing_for_question — HIGH"]
 
     style DQ fill:#f0f4f8,stroke:#8aaccc,color:#1f3558
     style J  fill:#fde2e2,stroke:#e05555,color:#5a0e0e
     style K  fill:#fde2e2,stroke:#e05555,color:#5a0e0e
     style L  fill:#e4f1ff,stroke:#3a8ec9,color:#0a3557
+    style M  fill:#fde2e2,stroke:#e05555,color:#5a0e0e
 ```
 
 #### Issue types
@@ -348,6 +355,61 @@ flowchart LR
   <div class="issue-action">
     <span class="issue-action-label">What to do</span>
     Confirm the addition is intentional. If so, no action needed — document the new module in the round notes.
+  </div>
+</div>
+
+<div class="issue-block">
+  <div class="issue-card issue-card-high">
+    <span class="issue-card-name"><code>module_missing_for_question</code></span>
+    <span class="sev sev-high">HIGH</span>
+    <span class="issue-card-body">A row has real question content (a populated Q Type) but a blank <code>module</code> cell. Because a blank <code>module</code> is the validator's signal for "this is a section divider, not a question," this row would otherwise be silently dropped from every check in the report — critical sets, option comparison, everything.</span>
+  </div>
+  <div class="issue-action">
+    <span class="issue-action-label">What to do</span>
+    Fill in the <code>module</code> cell for this row with the correct module code. Until fixed, this question is invisible to the rest of the validation — re-run validation after fixing it to confirm it is now being checked.
+  </div>
+</div>
+
+---
+
+### Block 4 · Authoring consistency checks
+
+Two checks compare metadata columns against each other within the current questionnaire only — no reference file is involved. They catch authoring slips that a cross-file comparison can't see, because the same inconsistency could exist in both the current file and the reference.
+
+```mermaid
+flowchart LR
+    AC["Block 4 · Authoring consistency"]
+    AC --> N["panel_targeting_mismatch — MEDIUM"]
+    AC --> O["mandatory_category_unrecognized — MEDIUM"]
+
+    style AC fill:#f0f4f8,stroke:#8aaccc,color:#1f3558
+    style N  fill:#fff0de,stroke:#e08c00,color:#5a3200
+    style O  fill:#fff0de,stroke:#e08c00,color:#5a3200
+```
+
+#### Issue types
+
+<div class="issue-block">
+  <div class="issue-card issue-card-medium">
+    <span class="issue-card-name"><code>panel_targeting_mismatch</code></span>
+    <span class="sev sev-medium">MEDIUM</span>
+    <span class="issue-card-body">The <code>Mandatory</code> column marks the question as panel-specific (<code>yes - panel</code>) but the <code>To be asked to recent panelists (&lt;6 months)?</code> flag says no/blank, or vice versa.</span>
+  </div>
+  <div class="issue-action">
+    <span class="issue-action-label">What to do</span>
+    Align the two columns — a panel-specific question should have the recent-panelist flag set to <code>yes</code>, and vice versa. Check with the survey design team if you're unsure which one is wrong.
+  </div>
+</div>
+
+<div class="issue-block">
+  <div class="issue-card issue-card-medium">
+    <span class="issue-card-name"><code>mandatory_category_unrecognized</code></span>
+    <span class="sev sev-medium">MEDIUM</span>
+    <span class="issue-card-body">The <code>Mandatory</code> value doesn't match any of the six known categories (<code>yes - core</code>, <code>yes - panel</code>, <code>no - low priority</code>, <code>no - but recommended in applicable contexts</code>, <code>no - but recommended if of interest</code>, <code>spiel</code>) — usually a typo.</span>
+  </div>
+  <div class="issue-action">
+    <span class="issue-action-label">What to do</span>
+    Fix the <code>Mandatory</code> value to match one of the known categories shown in the Reference column. An unrecognized value silently falls back to "non-mandatory" treatment elsewhere in the report.
   </div>
 </div>
 
@@ -565,72 +627,58 @@ flowchart LR
   </div>
 </div>
 
-### Question Changes (Operational Fields)
-
-*Report block: "QUESTION CHANGES (OPERATIONAL FIELDS)"*
-
-Operational field changes are tracked for traceability only — all rows in this block are INFO. These columns (Randomize, Conditional, Programming Instructions, Core questions only) control execution behavior rather than question content, so drift here does not affect data comparability but may affect how the survey runs or how indicator outputs are scoped.
-
-```mermaid
-flowchart LR
-    QO(["Question Changes — Operational"])
-    QO --> A["randomize_changed — INFO"]
-    QO --> B["conditional_changed — INFO"]
-    QO --> C["programming_instructions_changed — INFO"]
-    QO --> D["core_questions_only_changed — INFO"]
-
-    style QO fill:#f0f4f8,stroke:#8aaccc,color:#1f3558
-    style A  fill:#e4f1ff,stroke:#3a8ec9,color:#0a3557
-    style B  fill:#e4f1ff,stroke:#3a8ec9,color:#0a3557
-    style C  fill:#e4f1ff,stroke:#3a8ec9,color:#0a3557
-    style D  fill:#e4f1ff,stroke:#3a8ec9,color:#0a3557
-```
-
 <div class="issue-block">
-  <div class="issue-card issue-card-info">
-    <span class="issue-card-name"><code>randomize_changed</code></span>
-    <span class="sev sev-info">INFO</span>
-    <span class="issue-card-body">The Randomize column changed. Review for execution impact on option ordering.</span>
+  <div class="issue-card issue-card-high">
+    <span class="issue-card-name"><code>conditional_removed_mandatory</code></span>
+    <span class="sev sev-high">HIGH</span>
+    <span class="issue-card-body">The reference has a constraint rule in the Conditional column for this question and the current questionnaire dropped it entirely — and the question is mandatory or mandatory-panel. A narrower, higher-severity sibling of <code>conditional_changed</code> (below): cosmetic rewording of Conditional stays at INFO, but a full removal on a mandatory question is treated as a real data-validation gap.</span>
   </div>
   <div class="issue-action">
     <span class="issue-action-label">What to do</span>
-    Check whether option order randomization should still apply for this question. Update the Randomize column if the change was unintentional.
+    Restore the constraint rule shown in the Reference column, or confirm with the survey design team that removing it was intentional.
   </div>
 </div>
+
+<div class="issue-block">
+  <div class="issue-block-label"><code>universe_changed</code> <span class="issue-dynamic-note">- severity is dynamic</span></div>
+  <div class="issue-card issue-card-high">
+    <span class="sev sev-high">HIGH</span>
+    <span class="issue-card-body">The Universe column (who this question is asked to) changed, and the question is mandatory or mandatory-panel.</span>
+  </div>
+  <div class="issue-card issue-card-medium">
+    <span class="sev sev-medium">MEDIUM</span>
+    <span class="issue-card-body">The Universe column changed on a non-mandatory or optional question.</span>
+  </div>
+  <div class="issue-action">
+    <span class="issue-action-label">What to do</span>
+    Compare the Current value and Reference columns to see how the targeted respondent group changed. Confirm the new Universe definition is intentional and that Skip Pattern routing still matches it.
+  </div>
+</div>
+
+### Question Changes (Additional Fields)
+
+*Report block: "QUESTION CHANGES (ADDITIONAL FIELDS)"*
+
+This block tracks one column for traceability: changes to the Conditional constraint text that don't meet the higher-severity bar above (i.e. the rule was reworded rather than removed, or the question isn't mandatory). The older `Randomize`, `Programming Instructions`, and `Core questions only` columns from the legacy format no longer exist in the current template, so those checks are retired.
+
+```mermaid
+flowchart LR
+    QO(["Question Changes — Additional Fields"])
+    QO --> B["conditional_changed — INFO"]
+
+    style QO fill:#f0f4f8,stroke:#8aaccc,color:#1f3558
+    style B  fill:#e4f1ff,stroke:#3a8ec9,color:#0a3557
+```
 
 <div class="issue-block">
   <div class="issue-card issue-card-info">
     <span class="issue-card-name"><code>conditional_changed</code></span>
     <span class="sev sev-info">INFO</span>
-    <span class="issue-card-body">The Conditional column changed. Track for traceability.</span>
+    <span class="issue-card-body">The Conditional column changed, but the rule still exists on both sides (a rewording, not a removal). Track for traceability.</span>
   </div>
   <div class="issue-action">
     <span class="issue-action-label">What to do</span>
     Compare the Current value and Reference columns to see what changed in the conditional routing text. Confirm the new logic is correct and intentional.
-  </div>
-</div>
-
-<div class="issue-block">
-  <div class="issue-card issue-card-info">
-    <span class="issue-card-name"><code>programming_instructions_changed</code></span>
-    <span class="sev sev-info">INFO</span>
-    <span class="issue-card-body">The Programming Instructions column changed.</span>
-  </div>
-  <div class="issue-action">
-    <span class="issue-action-label">What to do</span>
-    Review what changed in the instructions. Confirm the change doesn't affect how the question is programmed or displayed to the enumerator.
-  </div>
-</div>
-
-<div class="issue-block">
-  <div class="issue-card issue-card-info">
-    <span class="issue-card-name"><code>core_questions_only_changed</code></span>
-    <span class="sev sev-info">INFO</span>
-    <span class="issue-card-body">The Core questions only flag changed, which may alter inclusion logic for core indicator calculations.</span>
-  </div>
-  <div class="issue-action">
-    <span class="issue-action-label">What to do</span>
-    Check whether this question should be included in core indicator outputs. Update the flag to match the intended scope for this round.
   </div>
 </div>
 
@@ -815,6 +863,7 @@ flowchart LR
     Review the highlighted complete code lists and update routing and downstream mappings for every removed, added, or renumbered code.
   </div>
 </div>
+
 <div class="issue-block">
   <div class="issue-card issue-card-high">
     <span class="issue-card-name"><code>codes_added</code></span>

@@ -107,6 +107,7 @@
 /* Individual card row */
 .issue-card {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 0.55rem;
   padding: 0.5rem 0.75rem;
@@ -127,13 +128,17 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   font-weight: 700;
   font-size: 0.88rem;
-  white-space: nowrap;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .issue-card-body {
   color: inherit;
-  flex: 1;
+  flex: 1 1 200px;
+  min-width: 0;
 }
 
 /* Severity-tinted card variants */

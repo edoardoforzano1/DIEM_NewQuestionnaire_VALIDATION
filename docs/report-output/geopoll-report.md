@@ -27,7 +27,7 @@ All detail sheets (Critical Sets, Questionnaire Structure, Replacement Issues, Q
 | **Issue type** | Machine identifier for the issue (e.g. `removed_question`, `skip_pattern_empty`). Matches the identifiers used in the Severity Reference and Logic pages. |
 | **Type** | Mandatory category of the affected question: `mandatory`, `mandatory-panel`, or `optional`. Blank for issues not tied to a specific question. |
 | **Set** | Critical set name, for rows produced by Critical Sets checks. Blank otherwise. |
-| **Q Name** | Question identifier from the questionnaire. The same Q Name used in skip patterns and data joins. |
+| **Q Name** | Question identifier from the questionnaire. The same Q Name used in skip patterns and data joins. Rendered in **bold** in every detail sheet so it stands out when scanning a long table. |
 | **Field** | Which column or property was checked (e.g. `Skip Pattern`, `Mandatory`, `label`, `count`). |
 | **Current value** | The value found in the current questionnaire being validated. |
 | **Reference / rule** | The baseline value from the reference questionnaire, or the rule being violated. |
@@ -54,6 +54,7 @@ The Summary sheet is the entry point. It contains six status tables, each coveri
 - Status cells are `PASS` (green), `INFO` (blue), `MEDIUM` (orange), or `HIGH` (red).
 - A `HIGH` in any table means the questionnaire should not be launched until that issue is resolved.
 - Use the table to decide which detail sheets to open. If everything is `PASS`, you are done.
+- The category-breakdown tables (Question Changes, Option Changes) lead with a bold total line (e.g. "8 categories with issues -- 11 clean"), then list only the categories that actually found something. All-zero categories are folded into a single green "No issues: ..." line at the bottom instead of one row each — open the detail sheet only for the categories listed above that line.
 
 ### CRITICAL SETS STATUS
 
@@ -79,11 +80,11 @@ Summarizes placeholder resolution. In the previous-round workflow, an `INFO` row
 
 Covers presence changes (added/removed questions), mandatory status, and label drift. HIGH here means a mandatory question is missing or has changed.
 
-### QUESTION CHANGES (OPERATIONAL FIELDS)
+### QUESTION CHANGES (ADDITIONAL FIELDS)
 
-![GeoPoll Summary - Question Changes Operational](../assets/images/reports/geopoll-sum-question-ops.png){: .sheet-placeholder }
+![GeoPoll Summary - Question Changes Additional](../assets/images/reports/geopoll-sum-question-ops.png){: .sheet-placeholder }
 
-Covers Randomize, Conditional, Programming Instructions, and Core questions only. All rows are INFO — no action required unless the change was unintentional.
+Tracks Conditional rewordings that don't meet the higher-severity bar (a full removal on a mandatory question is reported separately, under QUESTION CHANGES (CORE), as `conditional_removed_mandatory`). Rows here are INFO — no action required unless the change was unintentional. The older Randomize / Programming Instructions / Core questions only columns no longer exist in the current template, so they no longer appear here.
 
 ### OPTION CHANGES
 
@@ -112,7 +113,7 @@ Checks whether all structurally required questions are present and correctly fla
 
 ## 3 - Questionnaire Structure Sheet
 
-Three sub-blocks: skip pattern issues, Q type integrity, and duplicate Q Names / module checks.
+Four sub-blocks: skip pattern issues, Q type integrity, duplicate Q Names / module checks, and authoring consistency checks.
 
 ### Skip pattern issues
 
@@ -141,6 +142,11 @@ Use `Q Name` + `Field` to locate the question and column. `Current value` shows 
 - `duplicate_qname` HIGH: duplicate Q Name — rename one before launch.
 - `module_removed` HIGH: a template module is missing from the current questionnaire — restore the module or get explicit approval before launch.
 - `module_added` INFO: a module in the current questionnaire was absent from the reference — confirm the addition is intentional.
+- `module_missing_for_question` HIGH: a real question row has a blank `module` cell. The validator uses a blank `module` cell to identify section-divider rows, so this row is being silently dropped from every other check until the cell is filled in.
+
+### Authoring consistency checks
+
+`panel_targeting_mismatch` MEDIUM and `mandatory_category_unrecognized` MEDIUM compare metadata columns within the current questionnaire only — no reference file involved. `panel_targeting_mismatch` flags a disagreement between the `Mandatory` panel category and the `To be asked to recent panelists (<6 months)?` flag. `mandatory_category_unrecognized` flags a `Mandatory` value that doesn't match any of the six known categories — usually a typo.
 
 **Key columns (all sub-blocks):** Issue type, Q Name, Field, Current value, Reference / rule, Severity, Excel row.
 
@@ -178,18 +184,20 @@ Presence, mandatory status, labels, and Q type (for context — Q type integrity
 - `removed_question` / `added_question`: presence diff. For removals, `Type` column (mandatory/optional) drives severity.
 - `question_label_mismatch`: `Current value (EN)` and `Reference / rule (EN)` show the before/after wording with inline word-diff highlighting in the cells — changed words are underlined or colored.
 - `mandatory_source_missing` HIGH: the Mandatory column is largely empty in one file. All mandatory-based results below this row should be treated with caution.
+- `conditional_removed_mandatory` HIGH: the reference has a constraint rule for this question and the current file dropped it entirely, on a mandatory/mandatory-panel question. Word-diff highlighting applies here too.
+- `universe_changed` HIGH (mandatory) / MEDIUM (optional): who the question is asked of (`Universe`) changed from the reference.
 
 **Key columns:** Issue type, Type, Q Name, Field, Current value (EN), Reference / rule (EN), Severity, Excel row.
 
-### QUESTION CHANGES (OPERATIONAL FIELDS)
+### QUESTION CHANGES (ADDITIONAL FIELDS)
 
-Randomize, Conditional, Programming Instructions, Core questions only. All at INFO severity.
+Tracks Conditional rewordings that don't meet the higher-severity bar above (the rule still exists on both sides, just reworded). All at INFO severity. The older Randomize / Programming Instructions / Core questions only columns no longer exist in the current template.
 
-![GeoPoll Question Changes - Operational](../assets/images/reports/geopoll-question-ops.png)
+![GeoPoll Question Changes - Additional](../assets/images/reports/geopoll-question-ops.png)
 
 **How to read it:**
 
-- These rows track operational metadata drift for traceability. No action required unless the change was unintentional.
+- These rows track Conditional metadata drift for traceability. No action required unless the change was unintentional.
 - Use `Field` to identify which column changed; `Current value` and `Reference / rule` show the before/after content.
 
 ---

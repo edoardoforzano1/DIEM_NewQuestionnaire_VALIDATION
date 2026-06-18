@@ -2,7 +2,7 @@
 
 ## Template Baseline
 
-In `latest_template` mode, the validator auto-selects the newest matching template from `templates_dir`.
+In `latest_template` mode, the validator auto-selects the newest matching template from `templates_dir`. By default this is the repo-local `Template/` folder, which holds both the KoBo and GeoPoll official templates side by side — selection is filtered by `tool` and `language`, not just file date.
 
 ## Previous Round Baseline
 

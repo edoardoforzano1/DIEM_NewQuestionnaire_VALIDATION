@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from textwrap import indent
 
-ROOT = Path(r"c:/git/DIEM_Questionnaire_Validation")
+ROOT = Path(__file__).resolve().parent.parent
 
 TARGETS = [
     {
