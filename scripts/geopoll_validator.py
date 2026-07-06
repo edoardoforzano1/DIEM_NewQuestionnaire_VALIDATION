@@ -690,12 +690,17 @@ def _close_workbook(wb) -> None:
                 pass
 
 
+_SURVEY_HEADER_SIGNALS = {"varname_new", "module", "q type", "mandatory", "varname_new_multiple"}
+
+
 def read_survey_sheet(path: Path, sheet_name: str = "survey", header_row: int = 2, _wb=None) -> pl.DataFrame:
     """
     Reads the survey sheet from an xlsx file into a Polars DataFrame.
 
-    header_row=2 because the GeoPoll template has one title/banner row above
-    the real column headers.
+    Auto-detects whether the file has a banner row: if row 1 contains known
+    header column names (varname_new, module, etc.) it is used directly as the
+    header row; otherwise the file is treated as having one title/banner row
+    above the real column headers (header_row=2, the legacy format).
 
     Two columns are added automatically:
       excel_row    the actual row number in the Excel file (for tracing mismatches)
@@ -715,19 +720,31 @@ def read_survey_sheet(path: Path, sheet_name: str = "survey", header_row: int = 
             raise KeyError(f"Sheet '{sheet_name}' not found. Available sheets: {wb.sheetnames}")
 
         row_iter = ws.iter_rows(values_only=True)
-        for _ in range(header_row - 1):
-            next(row_iter, None)   # skip title rows safely
+        row1 = next(row_iter, None)
+        if row1 is None:
+            raise ValueError(f"Sheet '{sheet_name}' is empty in file {path.name}")
 
-        raw_headers = next(row_iter, None)
-        if raw_headers is None:
-            raise ValueError(f"Header row {header_row} is missing in sheet '{sheet_name}' for file {path.name}")
+        row1_cells = {str(v).replace("\n", " ").strip().lower() for v in row1 if v is not None}
+        if row1_cells & _SURVEY_HEADER_SIGNALS:
+            # New format: headers are on row 1, no banner row
+            raw_headers = row1
+            actual_header_row = 1
+        else:
+            # Legacy format: row 1 is a banner; skip remaining rows up to header_row
+            for _ in range(header_row - 2):
+                next(row_iter, None)
+            raw_headers = next(row_iter, None)
+            if raw_headers is None:
+                raise ValueError(f"Header row {header_row} is missing in sheet '{sheet_name}' for file {path.name}")
+            actual_header_row = header_row
+
         headers = [
             str(h).replace("\n", " ").strip() if h is not None else f"unnamed_{i}"
             for i, h in enumerate(raw_headers, 1)
         ]
 
         rows      = []
-        excel_row = header_row + 1
+        excel_row = actual_header_row + 1
 
         for values in row_iter:
             if all(v is None for v in values):
@@ -1243,6 +1260,7 @@ def explode_codes(questions_df: pl.DataFrame, codes_col: str = "Codes") -> pl.Da
 
 
 
+# SECTION: ## Step 5  Normalising placeholders
 _step("Normalising placeholders")
 # --- CODE CELL 6 ---
 PLACEHOLDER_PATTERN = re.compile(r"\$[^$\r\n]+\$")
@@ -1260,16 +1278,49 @@ RESTORE_TEXT_COLUMNS = [
     "Additional notes",
 ]
 
-SEASON_PHASE_EXPECTED_VALUES = {
-    "not yet in season",
-    "land preparation",
-    "planting",
-    "early growing",
-    "growing",
-    "maturing",
-    "Harvesting",
-    "Recently finished"
+# Phases where harvest HAS occurred — kept for backward compat with questionnaires
+# that still use the old "season phase" row in the Additional information sheet.
+SEASON_PHASE_HARVESTED_VALUES = {"harvesting", "recently finished"}
+
+# Internal key injected into per-language replacement maps to carry the tense mode
+# through to apply_text_replacements without changing the function signature.
+# Not a real placeholder — never matched by the $...$ regex.
+_TENSE_MODE_KEY = "\x00tense_mode"
+
+# Language-specific word inserted for $expected or nothing$ in present/ongoing tense.
+_EXPECTED_WORD_BY_LANG: dict[str, str] = {
+    "EN": "expected",
+    "FR": "attendue",
+    "ES": "esperada",
+    "PT": "esperada",
+    "AR": "المتوقعة",
 }
+
+# Matches tense-sensitive placeholders of the form $past form [present/future form]$.
+_TENSE_BRACKET_RE = re.compile(r"^\$(.+?)\s*\[(.+?)\]\$$")
+
+
+def _detect_verb_tense_mode(raw_value: str) -> str:
+    """Return 'past', 'present', or 'both' from a crop production verb tense value.
+
+    Handles the new 'crop production verb tense' Additional-info row as well as
+    the legacy 'season phase' values for backward compatibility.
+    """
+    v = str(raw_value or "").lower().strip()
+    if not v:
+        return "past"
+    both_signals = ("both", "les deux", "deux tenses", "les 2")
+    present_signals = ("present", "présent", "ongoing", "cours", "upcoming", "coming", "futur", "future")
+    past_signals = ("past", "passé", "passe", "last", "recently", "finished", "harvesting", "harvest", "récolte")
+    if any(s in v for s in both_signals):
+        return "both"
+    has_present = any(s in v for s in present_signals)
+    has_past = any(s in v for s in past_signals)
+    if has_present and has_past:
+        return "both"
+    if has_present:
+        return "present"
+    return "past"  # default — covers explicit "past" and all legacy harvest-phase values
 
 CROP_MARKER_HINTS = {
     "$TEN MOST COMMON CROP$",
@@ -1661,7 +1712,13 @@ def build_additional_info_replacements_by_language(path: Path, _wb=None) -> dict
         )
 
     out = {lang: {} for lang in ["EN", "FR", "ES", "AR", "PT"]}
-    season_phase_by_lang = {lang: "" for lang in out.keys()}
+    # Tracks the raw tense/phase value per language for post-processing.
+    # "crop production verb tense" (new) takes precedence; "season phase" (legacy) is fallback.
+    verb_tense_raw_by_lang: dict[str, str] = {lang: "" for lang in out.keys()}
+    season_phase_raw_by_lang: dict[str, str] = {lang: "" for lang in out.keys()}
+
+    _verb_tense_key_variants = {"$crop production verb tense$", "$crop production verb tense $"}
+    _season_phase_key_variants = {"$season phase$", "$season phase $"}
 
     for row in df.iter_rows(named=True):
         key = _normalize_placeholder_key(str(row.get(original_col) or "").strip())
@@ -1680,13 +1737,19 @@ def build_additional_info_replacements_by_language(path: Path, _wb=None) -> dict
 
             if replacement:
                 out[lang][key] = replacement
-                if key.lower() in {"$season phase$", "$season phase $"}:
-                    season_phase_by_lang[lang] = replacement.lower()
+                if key.lower() in _verb_tense_key_variants:
+                    verb_tense_raw_by_lang[lang] = replacement
+                elif key.lower() in _season_phase_key_variants:
+                    season_phase_raw_by_lang[lang] = replacement
 
     for lang, mapping in out.items():
-        if "$expected or nothing$" in mapping:
-            phase = season_phase_by_lang.get(lang, "")
-            mapping["$expected or nothing$"] = "expected" if phase in SEASON_PHASE_EXPECTED_VALUES else ""
+        # New row takes precedence; fall back to legacy season phase.
+        raw = verb_tense_raw_by_lang.get(lang) or season_phase_raw_by_lang.get(lang, "")
+        tense_mode = _detect_verb_tense_mode(raw)
+
+        mapping[_TENSE_MODE_KEY] = tense_mode
+        expected_word = _EXPECTED_WORD_BY_LANG.get(lang, "expected")
+        mapping["$expected or nothing$"] = "" if tense_mode == "past" else expected_word
 
     return out
 
@@ -1704,6 +1767,26 @@ def apply_text_replacements(
     default_map = replacements or {}
     default_idx = _build_placeholder_index(default_map)
     lang_idx_cache: dict[str, dict[str, str]] = {}
+
+    # Precompute tense mode once — used by both the $X [Y]$ and the literal
+    # word [alternative] handlers below.
+    # Primary source: _TENSE_MODE_KEY injected by build_additional_info_replacements_by_language.
+    # Fallback: infer from $expected or nothing$ ("" = past, non-empty = present/both).
+    _tense_mode: Optional[str] = default_map.get(_TENSE_MODE_KEY)
+    if _tense_mode is None and replacements_by_language:
+        for _lm in (replacements_by_language or {}).values():
+            if _lm and _TENSE_MODE_KEY in _lm:
+                _tense_mode = _lm[_TENSE_MODE_KEY]
+                break
+    if _tense_mode is None:
+        _eor = default_map.get("$expected or nothing$")
+        if _eor is None and replacements_by_language:
+            for _lm in (replacements_by_language or {}).values():
+                if _lm and "$expected or nothing$" in _lm:
+                    _eor = _lm["$expected or nothing$"]
+                    break
+        if _eor is not None:
+            _tense_mode = "past" if _eor == "" else "present"
 
     def _lang_map(lang: str) -> dict[str, str]:
         if not replacements_by_language:
@@ -1736,8 +1819,46 @@ def apply_text_replacements(
                     lang_idx_cache["EN"] = _build_placeholder_index(en_map)
                 replacement = _lookup_placeholder_replacement(token, en_map, lang_idx_cache["EN"])
 
+        # Auto-resolve tense placeholder: $past form [present/future form]$.
+        # past   → past form (group 1)
+        # present → present/future form (group 2)
+        # both   → keep both as "past [present]" (literal brackets, no $ markers)
+        if replacement is None and _tense_mode is not None:
+            m = _TENSE_BRACKET_RE.match(token)
+            if m:
+                if _tense_mode == "past":
+                    replacement = m.group(1).strip()
+                elif _tense_mode == "present":
+                    replacement = m.group(2).strip()
+                else:  # "both"
+                    replacement = f"{m.group(1).strip()} [{m.group(2).strip()}]"
+
         if replacement is not None:
             text = text.replace(token, replacement)
+
+    # Handle legacy tense tokens written as plain "past form [present form]" without
+    # $ delimiters (questionnaires not using the $...$ marker style).
+    # Safety filter: bracket content must start with a lowercase letter and contain
+    # no colon — this excludes [OPERATOR: ...], [IDP], [Cantaloupe], [0%] etc.
+    # past:    remove " [present-form]", keeping the preceding past form.
+    # present: replace the immediately-preceding word and " [present-form]" with the
+    #          present form (reliable for 1-word past forms; multi-word past forms
+    #          require the $..$ marker style).
+    # both:    leave as-is — literal brackets are already the desired output.
+    if _tense_mode in ("past", "present"):
+        if _tense_mode == "past":
+            text = re.sub(
+                r'\s+\[([a-zà-ÿ][^:\]]{0,50})\]',
+                lambda _: "",
+                text,
+            )
+        else:
+            text = re.sub(
+                r'\b([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\'-]*)\s+\[([a-zà-ÿ][^:\]]{0,50})\]',
+                lambda m: m.group(2),
+                text,
+            )
+
     return text
 
 
@@ -2031,6 +2152,8 @@ else:
 # - ignore_modules_from_comparison: exclude module content from difference checks
 # - skip_modules_from_validated_output: exclude module content entirely (comparison + validated output)
 _geopoll_opt = (_y.get("geopoll_options", {}) or {}) if isinstance(_y, dict) else {}
+_max_qname_length: int = int(_geopoll_opt.get("max_qname_length", 28))
+_modality: str = str(_geopoll_opt.get("modality", "cati")).strip().lower()
 _ignore_module_raw = (
     _y.get("ignore_modules_from_comparison")
     if isinstance(_y, dict) and "ignore_modules_from_comparison" in _y
@@ -2936,33 +3059,39 @@ def make_presence_issues(
     Converts added/removed question lists into the common issues schema.
 
     Severity rules:
-      - Optional questions (o_ prefix): 'info'   tracked but not a blocker
+      - Custom questions (c_ prefix): 'info'   tracked but not a blocker
       - Non-optional added            : 'medium'  unexpected addition, review needed
       - Non-optional removed          : 'high'    mandatory question missing
     """
+    _custom_prefix = pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.starts_with("c_") \
+                   | pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.starts_with("o_")
     added_opt_lookup = (
         added
         .with_columns([
             pl.col("Q Name").cast(pl.Utf8).str.strip_chars().alias("_q"),
-            pl.when(pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.starts_with("o_"))
+            pl.when(_custom_prefix)
             .then(pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.slice(2))
             .otherwise(pl.col("Q Name").cast(pl.Utf8).str.strip_chars())
             .str.to_lowercase()
             .alias("_core"),
         ])
-        .filter(pl.col("_q").str.starts_with("o_"))
+        .filter(pl.col("_q").str.starts_with("c_") | pl.col("_q").str.starts_with("o_"))
         .select(["_core", pl.col("Q Name").alias("_optional_qname")])
         .unique(subset=["_core"], keep="first")
     )
 
     if reference_questions is not None and "Mandatory" in reference_questions.columns:
+        _custom_prefix_rem = (
+            pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.starts_with("c_")
+            | pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.starts_with("o_")
+        )
         removed_aug = (
             removed.join(
                 reference_questions.select(["Q Name", "Mandatory"]),
                 on="Q Name", how="left"
             )
             .with_columns(
-                pl.when(pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.starts_with("o_"))
+                pl.when(_custom_prefix_rem)
                 .then(pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.slice(2))
                 .otherwise(pl.col("Q Name").cast(pl.Utf8).str.strip_chars())
                 .str.to_lowercase()
@@ -2983,7 +3112,10 @@ def make_presence_issues(
     else:
         removed_aug = removed.with_columns([
             pl.lit("").alias("Mandatory"),
-            pl.when(pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.starts_with("o_"))
+            pl.when(
+                pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.starts_with("c_")
+                | pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.starts_with("o_")
+            )
             .then(pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.slice(2))
             .otherwise(pl.col("Q Name").cast(pl.Utf8).str.strip_chars())
             .str.to_lowercase()
@@ -4054,16 +4186,18 @@ def compare_question_presence(
     """
     key_col = "Q Name"
 
+    _is_non_mandatory = pl.col(key_col).str.starts_with("o_") | pl.col(key_col).str.starts_with("c_")
+
     added = (
         current_questions.select([key_col])
         .join(reference_questions.select([key_col]), on=key_col, how="anti")
-        .with_columns(pl.col(key_col).str.starts_with("o_").alias("is_optional"))
+        .with_columns(_is_non_mandatory.alias("is_optional"))
     )
 
     removed = (
         reference_questions.select([key_col])
         .join(current_questions.select([key_col]), on=key_col, how="anti")
-        .with_columns(pl.col(key_col).str.starts_with("o_").alias("is_optional"))
+        .with_columns(_is_non_mandatory.alias("is_optional"))
     )
 
     return added, removed
@@ -4264,9 +4398,10 @@ def _mandatory_cat_expr(qname_col: str, mandatory_col: str) -> pl.Expr:
     qn = pl.col(qname_col).cast(pl.Utf8).fill_null("").str.strip_chars().str.to_lowercase()
     md = pl.col(mandatory_col).cast(pl.Utf8).fill_null("").str.strip_chars().str.to_lowercase()
     return (
-        pl.when(qn.str.starts_with("o_")).then(pl.lit("optional"))
+        pl.when(qn.str.starts_with("c_") | qn.str.starts_with("o_")).then(pl.lit("optional"))
         .when(md.str.contains("panel")).then(pl.lit("mandatory-panel"))
         .when(md.is_in(["yes", "y", "true", "1"]) | md.str.starts_with("yes")).then(pl.lit("mandatory"))
+        .when(md == "spiel").then(pl.lit("mandatory"))
         .otherwise(pl.lit("non-mandatory"))
     )
 
@@ -5153,6 +5288,7 @@ def apply_codes_severity_by_mandatory(
     qmap = {str(k): str(v or "").strip().lower() for k, v in (q_mandatory_map or {}).items()}
     code_types = {
         "codes_added", "codes_removed", "codes_token_mismatch", "codes_position_drift",
+        "codes_option_count_mismatch",
     }
     return (
         codes_df
@@ -5160,13 +5296,54 @@ def apply_codes_severity_by_mandatory(
             pl.col("Q Name").cast(pl.Utf8).map_elements(lambda q: qmap.get(str(q), ""), return_dtype=pl.Utf8).alias("_mand_cat"),
         ])
         .with_columns([
-            pl.when(pl.col("issue_type") == "codes_option_count_mismatch")
-            .then(pl.lit("high"))
+            pl.when(
+                pl.col("issue_type").is_in(list(code_types))
+                & pl.col("_mand_cat").is_in(["optional"])
+            ).then(pl.lit("info"))
             .when(
                 pl.col("issue_type").is_in(list(code_types))
                 & pl.col("_mand_cat").is_in(["mandatory", "mandatory-panel"])
             ).then(pl.lit("high"))
-            .otherwise(pl.col("severity").cast(pl.Utf8).fill_null("info"))
+            .otherwise(pl.col("severity").cast(pl.Utf8).fill_null("medium"))
+            .alias("severity")
+        ])
+        .drop("_mand_cat")
+    )
+
+
+def apply_option_severity_by_mandatory(
+    option_df: pl.DataFrame,
+    q_mandatory_map: dict[str, str] | None,
+) -> pl.DataFrame:
+    """
+    Downgrade option-change severities for custom/optional questions (c_/o_ prefix,
+    or mapped as 'optional' in q_mandatory_map) to 'info'.
+    Mandatory / mandatory-panel option changes retain their original severity.
+    """
+    if option_df is None or option_df.height == 0:
+        return option_df
+    if "issue_type" not in option_df.columns or "Q Name" not in option_df.columns:
+        return option_df
+    qmap = {str(k): str(v or "").strip().lower() for k, v in (q_mandatory_map or {}).items()}
+    opt_types = {
+        "added_option", "removed_option", "option_label_mismatch",
+        "added_option_with_drift", "removed_option_with_drift",
+        "added_removed_option", "added_removed_option_with_drift",
+        "option_position_drift",
+    }
+    return (
+        option_df
+        .with_columns([
+            pl.col("Q Name").cast(pl.Utf8).map_elements(
+                lambda q: qmap.get(str(q), ""), return_dtype=pl.Utf8
+            ).alias("_mand_cat"),
+        ])
+        .with_columns([
+            pl.when(
+                pl.col("issue_type").is_in(list(opt_types))
+                & (pl.col("_mand_cat") == "optional")
+            ).then(pl.lit("info"))
+            .otherwise(pl.col("severity"))
             .alias("severity")
         ])
         .drop("_mand_cat")
@@ -5183,7 +5360,10 @@ def collapse_codes_issue_rows_by_qname(codes_df: pl.DataFrame) -> pl.DataFrame:
       - removed_codes_with_drift
       - added_removed_codes_with_drift
       - codes_position_drift (pure drift only)
-    Non-structural code issues (token mismatch, count mismatch, not comparable) are preserved.
+    Non-structural code issues (count mismatch, not comparable) are preserved.
+    codes_token_mismatch rows are preserved only when the Q Name has no structural
+    drift row — when a drift row exists, the per-position mismatches are cascade
+    noise already explained by the drift row's full code lists.
     """
     if codes_df is None or codes_df.height == 0:
         return codes_df
@@ -5313,6 +5493,12 @@ def collapse_codes_issue_rows_by_qname(codes_df: pl.DataFrame) -> pl.DataFrame:
         if col not in collapsed.columns:
             collapsed = collapsed.with_columns(pl.lit(None).alias(col))
     collapsed = collapsed.select(noisy.columns)
+    # Suppress per-position token mismatches for Q Names already covered by a structural drift row.
+    if rows_out:
+        structural_qnames = pl.Series(list({r["Q Name"] for r in rows_out}))
+        keep_df = keep_df.filter(
+            ~((pl.col("issue_type") == "codes_token_mismatch") & pl.col("Q Name").is_in(structural_qnames))
+        )
     return pl.concat([keep_df, collapsed], how="vertical")
 
 
@@ -5564,7 +5750,7 @@ def validate_critical_sets(
     def _wealth_optional_variant(q_name: str) -> str:
         q = str(q_name or "").strip()
         if q.startswith("hh_wealth_"):
-            return "o_hh_wealth_" + q[len("hh_wealth_"):]
+            return "c_hh_wealth_" + q[len("hh_wealth_"):]
         return ""
 
     issues = []
@@ -5644,7 +5830,7 @@ def validate_prefix_counts(
         prefix    = rule.get("prefix", "")
         min_count = rule.get("min_count", 1)
         desc      = rule.get("description", f"At least {min_count} '{prefix}*' questions required")
-        prefix_alt = "o_hh_wealth_" if str(prefix) == "hh_wealth_" or str(set_name).upper() == "WEALTH" else ""
+        prefix_alt = "c_hh_wealth_" if str(prefix) == "hh_wealth_" or str(set_name).upper() == "WEALTH" else ""
         matched = sorted(
             q for q in all_qnames
             if (prefix and q.startswith(prefix)) or (prefix_alt and q.startswith(prefix_alt))
@@ -5709,13 +5895,197 @@ _KNOWN_MANDATORY_VALUES = {
 }
 
 
-def validate_authoring_consistency(current_questions: pl.DataFrame) -> pl.DataFrame:
+def _indicator_present(qnames: set[str], indicator_cfg: dict) -> bool:
+    """Returns True if the indicator has at least one question in the questionnaire."""
+    prefix = indicator_cfg.get("anchor_prefix")
+    qname  = indicator_cfg.get("anchor_qname")
+    if prefix and any(q.startswith(prefix) for q in qnames):
+        return True
+    if qname and qname in qnames:
+        return True
+    return False
+
+
+def validate_fs_indicators(
+    current_questions: pl.DataFrame,
+    rules: dict,
+    modality: str = "cati",
+) -> pl.DataFrame:
+    """
+    Checks Food Security indicator presence and CAPI ceiling rules:
+      - Each mandatory indicator (FIES, FCS, LCSI) must have at least one
+        question present (detected via anchor_prefix or anchor_qname).
+      - When modality='capi', the total number of FS indicators (mandatory +
+        optional found) must not exceed capi_max.
+    Rules come from the fs_indicators block in critical_sets.yaml.
+    """
+    schema = {
+        "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
+        "field": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
+        "severity": pl.Utf8, "excel_row": pl.Int64,
+    }
+    fs_rules = rules.get("fs_indicators", {})
+    if not fs_rules:
+        return pl.DataFrame(schema=schema)
+
+    qnames: set[str] = set(current_questions["Q Name"].to_list())
+    mandatory_cfg: dict = fs_rules.get("mandatory", {})
+    optional_cfg:  dict = fs_rules.get("optional", {})
+    capi_max: int       = int(fs_rules.get("capi_max", 4))
+
+    rows: list[dict] = []
+
+    found_mandatory: list[str] = []
+    for name, ind_cfg in mandatory_cfg.items():
+        if _indicator_present(qnames, ind_cfg):
+            found_mandatory.append(name)
+        else:
+            rows.append({
+                "issue_type": "fs_indicator_missing",
+                "set_name": "FS_INDICATORS", "Q Name": "",
+                "field": name,
+                "current": "not found",
+                "reference": f"mandatory indicator — expected prefix/qname: "
+                             f"{ind_cfg.get('anchor_prefix') or ind_cfg.get('anchor_qname')}",
+                "severity": "high", "excel_row": None,
+            })
+
+    found_optional: list[str] = []
+    for name, ind_cfg in optional_cfg.items():
+        if _indicator_present(qnames, ind_cfg):
+            found_optional.append(name)
+
+    if modality == "capi":
+        total = len(found_mandatory) + len(found_optional)
+        if total > capi_max:
+            rows.append({
+                "issue_type": "fs_indicator_capi_excess",
+                "set_name": "FS_INDICATORS", "Q Name": "",
+                "field": "indicator count",
+                "current": f"{total} indicators present: "
+                           f"{', '.join(found_mandatory + found_optional)}",
+                "reference": f"max {capi_max} for CAPI modality",
+                "severity": "high", "excel_row": None,
+            })
+
+    return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
+
+
+def validate_agri_cs_count(
+    current_questions: pl.DataFrame,
+    rules: dict,
+) -> pl.DataFrame:
+    """
+    Counts how many coping strategy questions (matching cs_prefixes) have a
+    Conditional column referencing hh_agricactivity or income_main/sec/third
+    with agriculturally relevant values (as configured in agri_cs_check in
+    critical_sets.yaml).  If fewer than min_agri_cs are found, a high-severity
+    issue is raised.
+    """
+    import re as _re
+
+    schema = {
+        "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
+        "field": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
+        "severity": pl.Utf8, "excel_row": pl.Int64,
+    }
+    agri_cfg = rules.get("agri_cs_check", {})
+    if not agri_cfg:
+        return pl.DataFrame(schema=schema)
+
+    cs_prefixes: list[str]  = agri_cfg.get("cs_prefixes", [])
+    min_agri_cs: int        = int(agri_cfg.get("min_agri_cs", 4))
+    agri_signals: list[dict] = agri_cfg.get("agri_signals", [])
+
+    cond_col = next((c for c in ["Conditional", "conditional"] if c in current_questions.columns), None)
+    if cond_col is None:
+        return pl.DataFrame(schema=schema)
+
+    cs_mask = pl.lit(False)
+    for pfx in cs_prefixes:
+        cs_mask = cs_mask | pl.col("Q Name").str.starts_with(pfx)
+    cs_df = current_questions.filter(cs_mask).select(["Q Name", cond_col])
+
+    signal_patterns: list[tuple[str, "_re.Pattern[str]"]] = []
+    for sig in agri_signals:
+        var = _re.escape(sig["variable"])
+        val_pat = "|".join(_re.escape(str(v)) for v in sig.get("values", []))
+        if val_pat:
+            pat = _re.compile(rf"\b{var}\b[^=]*=\s*({val_pat})\b", _re.IGNORECASE)
+            signal_patterns.append((sig["variable"], pat))
+
+    agri_cs: list[str] = []
+    for row in cs_df.iter_rows(named=True):
+        cond_text = str(row[cond_col] or "").strip()
+        if any(pat.search(cond_text) for _, pat in signal_patterns):
+            agri_cs.append(str(row["Q Name"]))
+
+    rows: list[dict] = []
+    if len(agri_cs) < min_agri_cs:
+        rows.append({
+            "issue_type": "agri_cs_count_insufficient",
+            "set_name": "AGRI_CS", "Q Name": "",
+            "field": "agri-related CS count",
+            "current": f"{len(agri_cs)} found" + (f": {', '.join(agri_cs)}" if agri_cs else ""),
+            "reference": f"minimum {min_agri_cs} agriculture-related CS required",
+            "severity": "high", "excel_row": None,
+        })
+    return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
+
+
+def validate_variable_pairs(
+    current_questions: pl.DataFrame,
+    rules: dict,
+) -> pl.DataFrame:
+    """
+    Checks that variable pairs are consistent: if either question in a pair is
+    present in the questionnaire, both must be.  Pairs are configured under
+    variable_pairs in critical_sets.yaml.
+    """
+    schema = {
+        "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
+        "field": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
+        "severity": pl.Utf8, "excel_row": pl.Int64,
+    }
+    pairs_cfg: list[dict] = rules.get("variable_pairs", [])
+    if not pairs_cfg:
+        return pl.DataFrame(schema=schema)
+
+    qnames: set[str] = set(current_questions["Q Name"].to_list())
+    rows: list[dict] = []
+
+    for pair in pairs_cfg:
+        a, b, label = pair.get("a", ""), pair.get("b", ""), pair.get("label", "")
+        a_present, b_present = a in qnames, b in qnames
+        if a_present and not b_present:
+            missing, present = b, a
+        elif b_present and not a_present:
+            missing, present = a, b
+        else:
+            continue
+        rows.append({
+            "issue_type": "variable_pair_incomplete",
+            "set_name": "VAR_PAIRS", "Q Name": present,
+            "field": label,
+            "current": f"'{present}' present but '{missing}' absent",
+            "reference": f"both variables required when either is included",
+            "severity": "medium", "excel_row": None,
+        })
+
+    return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
+
+
+def validate_authoring_consistency(
+    current_questions: pl.DataFrame,
+    max_qname_length: int = 28,
+) -> pl.DataFrame:
     """
     Current-file-only authoring consistency checks (no reference comparison):
       - panel_targeting_mismatch: 'Mandatory' says panel-specific but the
         recent-panelist flag disagrees, or vice versa.
       - mandatory_category_unrecognized: 'Mandatory' value doesn't match any
         of the template's known categories (likely a typo).
+      - qname_too_long: variable name exceeds max_qname_length characters.
     """
     schema = {
         "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
@@ -5734,6 +6104,15 @@ def validate_authoring_consistency(current_questions: pl.DataFrame) -> pl.DataFr
         mand_raw = str(r.get("Mandatory") or "").strip()
         mand_norm = mand_raw.lower()
         excel_row = r.get("excel_row")
+
+        if qname and len(str(qname)) > max_qname_length:
+            rows.append({
+                "issue_type": "qname_too_long",
+                "set_name": "", "Q Name": qname, "field": "Q Name",
+                "current": f"length={len(str(qname))} ('{qname}')",
+                "reference": f"max {max_qname_length} characters",
+                "severity": "medium", "excel_row": excel_row,
+            })
 
         if mand_norm and mand_norm not in _KNOWN_MANDATORY_VALUES:
             rows.append({
@@ -5938,9 +6317,12 @@ codes_token_diff = compare_codes_token_mismatch_single(current_codes, reference_
 codes_added, codes_removed = compare_codes_presence_single(current_codes, reference_codes)
 _tick("compare Codes column")
 
-critical_issues = validate_critical_sets(current_questions, rules["exact_sets"])
+critical_issues = validate_critical_sets(current_questions, rules.get("exact_sets") or {})
 count_issues = validate_prefix_counts(current_questions, rules["min_count_sets"])
 harvest_issues = validate_crop_harvest(current_questions, rules["crop_harvest"])
+fs_issues = validate_fs_indicators(current_questions, rules, modality=_modality)
+agri_cs_issues = validate_agri_cs_count(current_questions, rules)
+pair_issues = validate_variable_pairs(current_questions, rules)
 
 _tick("critical/count/harvest checks")
 
@@ -5950,11 +6332,11 @@ for _df in [reference_questions, current_questions]:
     for _r in _df.select(["Q Name", "Mandatory"]).iter_rows(named=True):
         _q = _r["Q Name"]
         _m = str(_r.get("Mandatory") or "").strip().lower()
-        if str(_q).startswith("o_"):
+        if str(_q).startswith("c_") or str(_q).startswith("o_"):
             _q_mand_map[_q] = "optional"
         elif "panel" in _m:
             _q_mand_map[_q] = "mandatory-panel"
-        elif _m.startswith("yes"):
+        elif _m.startswith("yes") or _m == "spiel":
             _q_mand_map[_q] = "mandatory"
         else:
             _q_mand_map[_q] = "non-mandatory"
@@ -6098,6 +6480,7 @@ option_changes_view = pl.concat([option_changes_view, codes_changes_view], how="
 option_issues = option_changes_view.select([
     "issue_type", "set_name", "Q Name", "field", "current", "reference", "severity", "excel_row"
 ])
+option_issues = apply_option_severity_by_mandatory(option_issues, _q_mand_map)
 _tick("build question/option issue frames")
 
 #  Filter option issues: only report options for questions in BOTH files
@@ -6133,13 +6516,14 @@ if module_integrity_issues.height > 0:
     module_issues = pl.concat([module_issues, module_integrity_issues], how="diagonal")
 _tick("validate module presence")
 
-authoring_consistency_issues = validate_authoring_consistency(current_questions)
+authoring_consistency_issues = validate_authoring_consistency(current_questions, max_qname_length=_max_qname_length)
 _tick("validate authoring consistency")
 
 #  Stack all issues
 all_issues = pl.concat(
     [question_issues, option_issues,
-     critical_issues, count_issues, harvest_issues, skip_issues, module_issues,
+     critical_issues, count_issues, harvest_issues, fs_issues, agri_cs_issues, pair_issues,
+     skip_issues, module_issues,
      authoring_consistency_issues],
     how="diagonal",
 )
@@ -6195,7 +6579,9 @@ _mand_lookup = (
         pl.col("Mandatory").cast(pl.Utf8).fill_null("").str.strip_chars().str.to_lowercase().alias("_m"),
     ])
     .with_columns([
-        pl.when(pl.col("Q Name").str.starts_with("o_")).then(pl.lit("optional"))
+        pl.when(
+            pl.col("Q Name").str.starts_with("c_") | pl.col("Q Name").str.starts_with("o_")
+        ).then(pl.lit("optional"))
         .when(pl.col("_m").str.contains("panel")).then(pl.lit("mandatory-panel"))
         .when(pl.col("_m").is_in(["yes", "y", "true", "1"])).then(pl.lit("mandatory"))
         .otherwise(pl.lit("non-mandatory"))
@@ -6292,7 +6678,7 @@ _found_info = {}
 _cur_qnames = current_questions["Q Name"].to_list()
 
 # Exact sets (for example HDDS)
-for _set_name, _set_rules in rules.get("exact_sets", {}).items():
+for _set_name, _set_rules in rules.get("exact_sets") or {}.items():
     _expected = [str(r.get("q_name", "")).strip() for r in _set_rules]
     _matched = []
     for q in _expected:
@@ -6302,7 +6688,7 @@ for _set_name, _set_rules in rules.get("exact_sets", {}).items():
             _matched.append(q)
             continue
         if q.startswith("hh_wealth_"):
-            _alt = "o_hh_wealth_" + q[len("hh_wealth_"):]
+            _alt = "c_hh_wealth_" + q[len("hh_wealth_"):]
             if _alt in _cur_qnames:
                 _matched.append(f"{q} (matched via {_alt})")
     _found_info[_set_name] = _matched
@@ -6310,7 +6696,7 @@ for _set_name, _set_rules in rules.get("exact_sets", {}).items():
 # Prefix-based sets (for example WEALTH / CS groups)
 for _set_name, _rule in rules.get("min_count_sets", {}).items():
     _prefix = str(_rule.get("prefix", "")).strip()
-    _prefix_alt = "o_hh_wealth_" if _prefix == "hh_wealth_" or _set_name.upper() == "WEALTH" else ""
+    _prefix_alt = "c_hh_wealth_" if _prefix == "hh_wealth_" or _set_name.upper() == "WEALTH" else ""
     _matched = sorted(
         q for q in _cur_qnames
         if (_prefix and q.startswith(_prefix)) or (_prefix_alt and q.startswith(_prefix_alt))
@@ -6400,6 +6786,9 @@ STATUS_FILL   = {"PASS": FILL_PASS, "FAIL": FILL_HIGH, "WARNING": FILL_MEDIUM, "
 CRITICAL_SET_ISSUE_TYPES = {
     "missing_critical_question", "advisory_question",
     "critical_mandatory_mismatch", "crop_harvest_violation",
+    "fs_indicator_missing", "fs_indicator_capi_excess",
+    "agri_cs_count_insufficient",
+    "variable_pair_incomplete",
 }
 
 SKIP_PATTERN_ISSUE_TYPES = {
@@ -6432,6 +6821,7 @@ ADDITIONAL_QUESTION_FIELD_ISSUE_TYPES = {
 AUTHORING_CONSISTENCY_ISSUE_TYPES = {
     "panel_targeting_mismatch",
     "mandatory_category_unrecognized",
+    "qname_too_long",
 }
 
 REPLACEMENT_ISSUE_TYPES = {
@@ -6557,9 +6947,9 @@ def _optional_counterparts_for_missing_skip_targets(source_q: str, current_text:
         )
         hits = []
         for t in invalid_targets:
-            if str(t).startswith("o_"):
+            if str(t).startswith("c_") or str(t).startswith("o_"):
                 continue
-            cand = f"o_{t}"
+            cand = f"c_{t}"
             if cand in curr_qnames:
                 hits.append(cand)
         return sorted(set(hits))
@@ -6881,7 +7271,7 @@ def _apply_codes_alignment_marker_highlights(ws, start_row, df):
 
 def _set_status(all_issues, rules):
     results = []
-    for set_name in rules.get("exact_sets", {}).keys():
+    for set_name in rules.get("exact_sets") or {}.keys():
         si   = all_issues.filter(pl.col("set_name") == set_name)
         high = si.filter(pl.col("severity") == "high").height
         med  = si.filter(pl.col("severity") == "medium").height
@@ -6909,6 +7299,36 @@ def _set_status(all_issues, rules):
         else:
             status, details = "PASS", "Crop harvest rule respected"
         results.append({"set": "CRP_HARV", "status": status, "details": details})
+
+    if rules.get("fs_indicators"):
+        si = all_issues.filter(pl.col("set_name") == "FS_INDICATORS")
+        high = si.filter(pl.col("severity") == "high").height
+        if high > 0:
+            details = "; ".join(r["field"] for r in si.filter(pl.col("severity") == "high").to_dicts())
+            status = "FAIL"
+        else:
+            status = "PASS"
+            details = "All mandatory FS indicators present"
+        results.append({"set": "FS_INDICATORS", "status": status, "details": details})
+
+    if rules.get("agri_cs_check"):
+        si = all_issues.filter(pl.col("set_name") == "AGRI_CS")
+        if si.filter(pl.col("severity") == "high").height > 0:
+            status, details = "FAIL", si["current"].to_list()[0]
+        else:
+            min_count = rules["agri_cs_check"].get("min_agri_cs", 4)
+            status  = "PASS"
+            details = f">={min_count} agriculture-related CS confirmed"
+        results.append({"set": "AGRI_CS", "status": status, "details": details})
+
+    if rules.get("variable_pairs"):
+        si = all_issues.filter(pl.col("set_name") == "VAR_PAIRS")
+        if si.height > 0:
+            status  = "WARNING"
+            details = "; ".join(r["field"] for r in si.to_dicts())
+        else:
+            status, details = "PASS", "All variable pairs complete"
+        results.append({"set": "VAR_PAIRS", "status": status, "details": details})
 
     return results
 
@@ -7171,6 +7591,42 @@ def write_summary_sheet(wb, all_issues, rules, replacement_status=None):
         ),
     )
     _data_row(ws, r, 7, fill=STATUS_FILL.get(_mod_status)); r += 1
+
+    r += 1
+    #  Authoring consistency checks
+    _section_header(ws, r, "AUTHORING CONSISTENCY CHECKS", 7); r += 1
+    _header_row(ws, r, ["Check", "Status", "Details", "", "", "", ""]); r += 1
+
+    _qname_long = all_issues.filter(pl.col("issue_type") == "qname_too_long")
+    _qname_n = _qname_long.height
+    _qname_st = "WARN" if _qname_n > 0 else "PASS"
+    ws.cell(row=r, column=1, value="Variable name length (max 28 chars)")
+    ws.cell(row=r, column=2, value=_qname_st)
+    ws.cell(row=r, column=3, value=f"{_qname_n} variable(s) exceed 28 chars" if _qname_n else "All variable names within limit")
+    _data_row(ws, r, 7, fill=STATUS_FILL.get(_qname_st)); r += 1
+
+    _c_prefix = all_issues.filter(pl.col("issue_type") == "added_question").filter(
+        pl.col("Q Name").cast(pl.Utf8).str.starts_with("c_")
+    )
+    _c_n = _c_prefix.height
+    ws.cell(row=r, column=1, value="Custom questions (c_ prefix)")
+    ws.cell(row=r, column=2, value="INFO")
+    ws.cell(row=r, column=3, value=f"{_c_n} custom question(s) detected (option/code changes shown as info)")
+    _data_row(ws, r, 7, fill=STATUS_FILL.get("PASS")); r += 1
+
+    _panel_n = all_issues.filter(pl.col("issue_type") == "panel_targeting_mismatch").height
+    _panel_st = "FAIL" if _panel_n > 0 else "PASS"
+    ws.cell(row=r, column=1, value="Panel targeting consistency")
+    ws.cell(row=r, column=2, value=_panel_st)
+    ws.cell(row=r, column=3, value=f"{_panel_n} mismatch(es) found" if _panel_n else "Panel targeting consistent")
+    _data_row(ws, r, 7, fill=STATUS_FILL.get(_panel_st)); r += 1
+
+    _mcat_n = all_issues.filter(pl.col("issue_type") == "mandatory_category_unrecognized").height
+    _mcat_st = "FAIL" if _mcat_n > 0 else "PASS"
+    ws.cell(row=r, column=1, value="Mandatory values recognized")
+    ws.cell(row=r, column=2, value=_mcat_st)
+    ws.cell(row=r, column=3, value=f"{_mcat_n} unrecognized value(s)" if _mcat_n else "All mandatory values recognized")
+    _data_row(ws, r, 7, fill=STATUS_FILL.get(_mcat_st)); r += 1
 
     r += 1
     #  Replacement status

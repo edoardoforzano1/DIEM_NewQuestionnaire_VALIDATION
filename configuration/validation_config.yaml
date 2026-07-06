@@ -22,10 +22,10 @@ tool: "geopoll"
 working_dir: "C:/Temp"
 
 # Current questionnaire filename (resolved under working_dir).
-questionnaire_file: "draft_household_questionnaire_COD_R1_geopoll_EN_20260609_clean_copy.xlsx"
+questionnaire_file: "draft_household_questionnaire_fr_geopoll_DRC_20262906.xlsx"
 
 # Language code: en | fr | ar | es
-language: "en"
+language: "fr"
 
 # ISO3 country code
 iso3: "COD"
@@ -115,6 +115,19 @@ kobo_options:
   exclude_qnames_from_option_compare:
     - "enumerator"
     - "enum_team"
+
+# =============================================================================
+#  GEOPOLL-SPECIFIC OPTIONS  (only read by the geopoll notebook)
+# =============================================================================
+
+geopoll_options:
+  # Maximum allowed length for variable names (Q Name column).
+  # Names exceeding this are flagged as medium issues.
+  max_qname_length: 28
+
+  # Survey modality: capi | cati
+  # Controls whether the FS indicator ceiling check (capi_max in critical_sets.yaml) applies.
+  modality: "cati"
 
 # Report metadata
 validation_number: 1

@@ -166,6 +166,30 @@ The validators are large, tightly coupled scripts where a change in one place ca
 - `site/` — MkDocs build output, not source
 - `batch_output/` — runtime output, not tracked in git
 
+## GeoPoll questionnaire conventions
+
+### Question name prefixes
+
+- `c_` prefix marks **custom questions** — questions the country team added or modified beyond the template. Option and code changes on `c_` questions are downgraded to `info` severity (expected customisation). This prefix replaced the legacy `o_` prefix; `o_` is still recognised for backward compatibility when validating against previous-round files.
+- No prefix: standard mandatory or non-mandatory template question. All changes flagged at full severity.
+
+### New validation checks (GeoPoll only)
+
+These checks are config-driven via `configuration/critical_sets.yaml` and appear in the **Critical Sets** and **Summary** sheets of the report.
+
+| Rule type | Config key | What it checks |
+|---|---|---|
+| `fs_indicators` | `critical_sets.yaml` → `fs_indicators` | Mandatory FS indicators (FIES, FCS, LCSI) must be present. CAPI ceiling applied when `modality=capi` in `validation_config.yaml`. |
+| `agri_cs_check` | `critical_sets.yaml` → `agri_cs_check` | At least N CS questions must reference `hh_agricactivity` or `income_main/sec/third` with agri values in the Conditional column. |
+| `variable_pairs` | `critical_sets.yaml` → `variable_pairs` | If one variable of a pair is present, both must be (e.g. `crp_harv_vol` + `crp_harv_unit`). |
+| `qname_too_long` | `geopoll_options.max_qname_length` in `validation_config.yaml` | Variable names exceeding the limit (default 28 chars) are flagged as medium. |
+
+HDDS is no longer a `critical_set` — it is treated as a regular template question and checked via the standard question presence / mandatory comparison.
+
+### Template header row auto-detection
+
+`read_survey_sheet` detects whether the file has a banner row: if row 1 contains known column names (`varname_new`, `module`, etc.) it uses row 1 as headers. Older templates had a title/banner row above the headers on row 2. Both formats are handled automatically.
+
 ## Known gotchas
 
 **Hidden Excel sheets**: `openpyxl` reads sheets with `sheet_state='hidden'` or `'veryHidden'` silently — `wb.sheetnames` includes them and `wb["Sheet Name"]` succeeds even though the tab is invisible in Excel. Always check `.sheet_state` if you need to distinguish user-visible from hidden sheets.

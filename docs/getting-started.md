@@ -56,6 +56,7 @@ validate
 | `questionnaire_file` | Filename of the questionnaire to validate | Filename only — the file must be inside `working_dir` |
 | `previous_round_file` | Filename of the previous-round baseline | Only used when `reference_mode: previous_round` |
 | `config_profile` | Optional YAML overlay for quick switching between run configurations | Resolved from `config_profiles_dir`, or `<output_dir>/config_profiles/` by default |
+| `config_profiles_dir` | Custom folder containing profile files | Optional; defaults to `<output_dir>/config_profiles/` when empty |
 
 ### Path settings that are specific to each user
 
@@ -115,6 +116,39 @@ housekeeping:
 - A sidecar file named `<filename>.keep` protects that file from retention and
   archive purging.
 - The configured `previous_round_file` is also protected.
+
+### Module filtering
+
+Two settings let you narrow what gets compared or what appears in the validated output:
+
+```yaml
+ignore_modules_from_comparison: []
+skip_modules_from_validated_output: []
+```
+
+`ignore_modules_from_comparison` — differences inside the listed modules are excluded from issue reporting. The modules are still read; they just produce no report rows. Useful for optional country-specific modules that are expected to diverge from the template.
+
+`skip_modules_from_validated_output` — goes further: the listed modules are excluded from both comparison and the validated output file.
+
+For GeoPoll, use the short module code from the `module` column (e.g. `"migration"`, `"remit"`). For KoBo, use the `begin_group` name or the visible group label.
+
+```yaml
+ignore_modules_from_comparison:
+  - migration
+skip_modules_from_validated_output:
+  - remit
+```
+
+### Report metadata
+
+Two optional fields recorded in the report header:
+
+```yaml
+validation_number: 1
+user_name: "Edoardo"
+```
+
+`validation_number` is a sequential counter — increment it when you run multiple passes for the same questionnaire (e.g. after corrections). `user_name` identifies who ran the validation in the report header.
 
 ### KoBo replacement and admin options
 

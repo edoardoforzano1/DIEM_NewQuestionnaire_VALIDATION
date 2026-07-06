@@ -3,9 +3,12 @@
 # Edit this file to update rules when questionnaire structure changes.
 # No code changes needed — the notebook loads this file automatically.
 #
-# Three rule types:
+# Rule types:
 #   exact_sets      — specific named questions that must be present (and optionally mandatory)
 #   min_count_sets  — question groups that must reach a minimum count by prefix
+#   fs_indicators   — FS indicator presence + CAPI ceiling check
+#   agri_cs_check   — agriculture-related coping strategy minimum count via Conditional column
+#   variable_pairs  — variable pairs where both must be present if either is
 #   crop_harvest    — special rule: either the minimal set OR the full set must be present
 
 # ── Exact question sets ────────────────────────────────────────────────────────
@@ -15,15 +18,11 @@
 # NOTE: RCSI was NOT a critical set in the original GeoPoll validation.
 # It is included here as an optional check — remove the RCSI block below if not needed.
 
-exact_sets:
-
-  HDDS:
-    - q_name: hdds
-      expected_mandatory: "yes"
-      required: true
-    - q_name: hdds_confirmation
-      expected_mandatory: "yes"
-      required: false   # warning if absent, not a hard error
+# HDDS is no longer a critical set — it is treated as a regular template question
+# and compared via the standard question presence / mandatory checks.
+# Add entries here only for questions that need explicit critical-set handling
+# beyond what the standard template comparison provides.
+exact_sets: {}
 
 
 
@@ -35,8 +34,8 @@ exact_sets:
 #          (4 STRESS + 3 CRISIS + 3 EMERGENCY).
 #
 # WEALTH rule: at least one wealth question must be present
-#              (hh_wealth_* OR optional variant o_hh_wealth_*)
-#              Examples: hh_wealth_toilet / o_hh_wealth_toilet
+#              (hh_wealth_* OR custom variant c_hh_wealth_*)
+#              Examples: hh_wealth_toilet / c_hh_wealth_toilet
 #              More than one is fine.
 
 min_count_sets:
@@ -44,7 +43,7 @@ min_count_sets:
   WEALTH:
     prefix: hh_wealth_
     min_count: 1
-    description: "At least 1 wealth question required (hh_wealth_* or o_hh_wealth_*)"
+    description: "At least 1 wealth question required (hh_wealth_* or c_hh_wealth_*)"
 
 
   CS_stress:
@@ -61,6 +60,83 @@ min_count_sets:
     prefix: cs_emergency
     min_count: 3
     description: "At least 3 EMERGENCY coping strategy questions required (cs_emergency_*)"
+
+# ── Food security indicator rules ─────────────────────────────────────────────
+# mandatory: indicators that must be present (at least one question with the
+#            given prefix must exist in the questionnaire).
+# optional:  indicators that are allowed but not required.
+# capi_max:  maximum total FS indicators for CAPI modality (set modality in
+#            validation_config.yaml under geopoll_options.modality).
+#            Each indicator counts as 1 regardless of how many questions it has.
+#
+# To identify whether an indicator is present, the validator checks for at least
+# one Q Name starting with anchor_prefix, or exactly matching anchor_qname.
+
+fs_indicators:
+  mandatory:
+    FIES:
+      anchor_prefix: "fies_"
+      description: "Food Insecurity Experience Scale"
+    FCS:
+      anchor_prefix: "fcs_"
+      description: "Food Consumption Score"
+    LCSI:
+      anchor_prefix: "cs_"
+      description: "Livelihoods-based Coping Strategy Index (CS questions)"
+  optional:
+    HDDS:
+      anchor_qname: "hdds"
+      description: "Household Dietary Diversity Score"
+    rCSI:
+      anchor_prefix: "rcsi_"
+      description: "Reduced Coping Strategy Index"
+  capi_max: 4
+
+# ── Agriculture-related coping strategy count ─────────────────────────────────
+# CS questions (matching cs_prefixes) that have a Conditional referencing
+# hh_agricactivity = 1/2/3 or income_main/sec/third = 1/2/3/4/6 count as
+# agriculture-related CS.  At least min_agri_cs such questions are required.
+#
+# agri_signals list:
+#   variable — exact variable name to look for in the Conditional text
+#   values   — which values of that variable signal agricultural relevance
+
+agri_cs_check:
+  cs_prefixes:
+    - "cs_stress_"
+    - "cs_crisis_"
+    - "cs_emergency_"
+  min_agri_cs: 4
+  agri_signals:
+    - variable: "hh_agricactivity"
+      values: [1, 2, 3]
+    - variable: "income_main"
+      values: [1, 2, 3, 4, 6]
+    - variable: "income_sec"
+      values: [1, 2, 3, 4, 6]
+    - variable: "income_third"
+      values: [1, 2, 3, 4, 6]
+
+# ── Variable pair rules ────────────────────────────────────────────────────────
+# If either variable in a pair is present, the other must also be present.
+# Each pair has a label (used in the issue message) and two q_names.
+
+variable_pairs:
+  - label: "crop land size"
+    a: "crp_landsize_num"
+    b: "crp_landsize_unit"
+  - label: "crop harvest volume"
+    a: "crp_harv_vol"
+    b: "crp_harv_unit"
+  - label: "crop sales price"
+    a: "crp_salesprice_amount"
+    b: "crp_salesprice_unit"
+  - label: "livestock sales price"
+    a: "ls_salesprice_amount"
+    b: "ls_salesprice_unit"
+  - label: "fish sales price"
+    a: "fish_salesprice_amount"
+    b: "fish_salesprice_unit"
 
 # ── Crop harvest rule ──────────────────────────────────────────────────────────
 # The questionnaire must contain EITHER:
