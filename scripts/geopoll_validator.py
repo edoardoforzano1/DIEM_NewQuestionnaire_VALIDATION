@@ -200,6 +200,15 @@ if _cfg_profile_path:
 _info("File", cfg.questionnaire_file)
 _info("Output", str(cfg.output_dir / cfg.output_subfolder))
 
+# Read early (before build_additional_info_replacements_by_language() is first
+# called further down) -- placeholders with a documented, sensible fallback
+# (e.g. "$CRISIS OR EVENT$" defaulting to "crisis or event" when the country
+# team leaves it blank) auto-resolve to their configured default instead of
+# being flagged as a missing/broken Additional-information entry.
+_placeholder_optional_defaults: dict[str, str] = (
+    (_y.get("geopoll_options", {}) or {}).get("placeholder_optional_defaults", {}) or {}
+) if isinstance(_y, dict) else {}
+
 
 def _reference_scope_label() -> str:
     mode = str(getattr(globals().get("cfg", None), "reference_mode", "") or "").strip().lower()
@@ -569,6 +578,7 @@ CORE_COLUMNS = [
     "Codes",
     "Universe",
     PANELIST_RECENCY_COL,
+    "Weighted duration",
     "excel_row",
     "source_file",
 ]
@@ -1693,12 +1703,33 @@ def build_additional_info_replacements(path: Path, language: str, _wb=None) -> d
     return {}
 
 
-def build_additional_info_replacements_by_language(path: Path, _wb=None) -> dict[str, dict[str, str]]:
-    """Build per-language substitution maps from Additional information."""
+def build_additional_info_replacements_by_language(
+    path: Path, _wb=None, optional_defaults: dict[str, str] | None = None,
+) -> dict[str, dict[str, str]]:
+    """
+    Build per-language substitution maps from Additional information.
+
+    optional_defaults: keys (bare "Original"-style labels, e.g. "CRISIS OR
+    EVENT") that fall back to a documented default value when the sheet
+    leaves them blank or omits the row entirely -- these are NOT missing
+    replacements, they're intentionally-optional placeholders with a known
+    resolution, so they must not surface as replacement_missing_key issues.
+    A real, non-blank value from the sheet always takes precedence.
+    """
+    def _apply_optional_defaults(out: dict[str, dict[str, str]]) -> dict[str, dict[str, str]]:
+        for default_key_raw, default_value in (optional_defaults or {}).items():
+            default_key = _normalize_placeholder_key(str(default_key_raw or ""))
+            if not default_key:
+                continue
+            for mapping in out.values():
+                if not mapping.get(default_key):
+                    mapping[default_key] = str(default_value or "")
+        return out
+
     df = read_additional_information(path, _wb=_wb)
     original_col = _find_column(df.columns, "Original")
     if not original_col or df.height == 0:
-        return {lang: {} for lang in ["EN", "FR", "ES", "AR", "PT"]}
+        return _apply_optional_defaults({lang: {} for lang in ["EN", "FR", "ES", "AR", "PT"]})
 
     generic_replacement_col = _find_column(df.columns, "Replacement")
     en_replacement_col = _find_column(df.columns, "Replacement (EN)", "Replacement EN")
@@ -1751,7 +1782,7 @@ def build_additional_info_replacements_by_language(path: Path, _wb=None) -> dict
         expected_word = _EXPECTED_WORD_BY_LANG.get(lang, "expected")
         mapping["$expected or nothing$"] = "" if tense_mode == "past" else expected_word
 
-    return out
+    return _apply_optional_defaults(out)
 
 
 def apply_text_replacements(
@@ -2104,7 +2135,9 @@ try:
     reference_crop_list = read_crop_list(run["reference_path"])
 except Exception:
     reference_crop_list = pl.DataFrame()
-current_text_replacements_by_language = build_additional_info_replacements_by_language(run["questionnaire_path"], _wb=current_wb)
+current_text_replacements_by_language = build_additional_info_replacements_by_language(
+    run["questionnaire_path"], _wb=current_wb, optional_defaults=_placeholder_optional_defaults,
+)
 current_text_replacements = current_text_replacements_by_language.get(cfg.language, {}) or current_text_replacements_by_language.get("EN", {})
 _close_workbook(current_wb)
 restore_log                = pl.DataFrame(schema={"Q Name": pl.Utf8, "field": pl.Utf8, "restored_value": pl.Utf8})
@@ -2228,6 +2261,67 @@ if _excluded_module_keys_for_comparison:
     reference_questions = _filter_questions_by_module_keys(reference_questions, _excluded_module_keys_for_comparison)
 if _skip_module_keys:
     validated_output_questions = _filter_questions_by_module_keys(validated_output_questions, _skip_module_keys)
+
+
+def build_duration_summary_line(questions: pl.DataFrame) -> str | None:
+    """
+    Estimated LOI (length of interview), summed from the 'Weighted duration'
+    (seconds) column over the actual final question set -- mirrors the
+    template's own native 'LoI estimation_weighted' sheet (SUMIF by Mandatory
+    category, /60 for minutes), but computed from the post-module-skip
+    question set in Python rather than trusted Excel formulas, since our own
+    module-skip row deletion does not repair that sheet's fixed cell ranges
+    and can leave it showing stale numbers.
+
+    Category matching mirrors the template's own wildcard rules: Mandatory
+    text containing "yes" -> Core mandatory, "recommended" -> Optional
+    recommended, "low priority" -> Optional low priority, anything else ->
+    a catch-all Other/Customized bucket.
+    """
+    if "Weighted duration" not in questions.columns or "Mandatory" not in questions.columns:
+        return None
+
+    totals = {
+        "Core mandatory": 0.0,
+        "Optional recommended": 0.0,
+        "Optional low priority": 0.0,
+        "Other/Customized": 0.0,
+    }
+    for row in questions.select(["Mandatory", "Weighted duration"]).iter_rows(named=True):
+        raw = str(row.get("Weighted duration") or "").strip()
+        if not raw:
+            continue
+        try:
+            seconds = float(raw)
+        except ValueError:
+            try:
+                seconds = float(raw.replace(",", "."))
+            except ValueError:
+                continue
+
+        mand = str(row.get("Mandatory") or "").strip().lower()
+        if "yes" in mand:
+            category = "Core mandatory"
+        elif "recommended" in mand:
+            category = "Optional recommended"
+        elif "low priority" in mand:
+            category = "Optional low priority"
+        else:
+            category = "Other/Customized"
+        totals[category] += seconds
+
+    minutes = {k: v / 60.0 for k, v in totals.items()}
+    total_minutes = sum(minutes.values())
+    return (
+        f"Estimated duration (LOI): {total_minutes:.1f} min total "
+        f"(Core mandatory: {minutes['Core mandatory']:.1f}, "
+        f"Optional recommended: {minutes['Optional recommended']:.1f}, "
+        f"Optional low priority: {minutes['Optional low priority']:.1f}, "
+        f"Other/Customized: {minutes['Other/Customized']:.1f})"
+    )
+
+
+_duration_summary_line = build_duration_summary_line(validated_output_questions)
 
 current_modules = _filter_module_rows_by_keys(current_modules_raw, _excluded_module_keys_for_comparison)
 reference_modules = _filter_module_rows_by_keys(reference_modules_raw, _excluded_module_keys_for_comparison)
@@ -3048,7 +3142,7 @@ def validate_skip_patterns(
                 "issue_type": "skip_pattern_empty",
                 "set_name": "",
                 "Q Name": qname,
-                "field": SKIP_COL,
+                "field": f"skip pattern is empty but default present: {def_text[:150]}",
                 "current": "Specify + Skip Pattern are empty",
                 "reference": f"default present: {def_text[:200]}",
                 "severity": "high",
@@ -3076,7 +3170,7 @@ def validate_skip_patterns(
                     "issue_type": "default_skip_modified",
                     "set_name": "",
                     "Q Name": qname,
-                    "field": SKIP_COL,
+                    "field": "; ".join(_default_consistency_issues)[:200],
                     "current": skip_text[:220],
                     "reference": f"default: {def_text[:200]}",
                     "severity": "info",
@@ -3113,7 +3207,7 @@ def validate_skip_patterns(
                 issues.append({
                     "issue_type": issue_type,
                     "set_name": "",
-                    "Q Name": qname, "field": SKIP_COL,
+                    "Q Name": qname, "field": desc[:200],
                     "current": current_effective[:220], "reference": reference_effective[:220],
                     "severity": severity,
                     "excel_row": excel_row,
@@ -3130,7 +3224,8 @@ def validate_skip_patterns(
                 if invalid:
                     issues.append({
                         "issue_type": "skipPattern_range_invalid", "set_name": "",
-                        "Q Name": qname, "field": SKIP_COL,
+                        "Q Name": qname,
+                        "field": f"invalid option code(s) {invalid} not among valid codes {sorted(available)}",
                         "current": f"invalid option code(s): {invalid}",
                         "reference": f"valid codes: {sorted(available)}",
                         "severity": "high", "excel_row": excel_row,
@@ -3147,6 +3242,84 @@ def validate_skip_patterns(
         .unique(subset=["issue_type", "Q Name", "field", "current", "reference"], keep="first")
     )
 
+
+_SKIP_PATTERN_ISSUE_TAGS = {
+    "skipPattern_invalid_qname": "broken target",
+    "skipPattern_invalid_qnameCategory": "invalid target category",
+    "skipPattern_range_mismatch": "range mismatch",
+    "skipPattern_range_invalid": "invalid codes",
+    "skipPattern_changes": "routing changed",
+    "skip_pattern_empty": "empty pattern",
+    "default_skip_modified": "inconsistent with default",
+}
+
+# Issue types whose current/reference hold a synthesized message (e.g.
+# "invalid option code(s): [...]") rather than the raw skip-pattern cell
+# text -- deprioritized when picking which row's current/reference to show
+# for a collapsed multi-issue question.
+_SKIP_PATTERN_SYNTHETIC_TEXT_TYPES = {"skipPattern_range_invalid"}
+
+
+def collapse_skip_pattern_issue_rows_by_qname(df: pl.DataFrame) -> pl.DataFrame:
+    """
+    Collapse multiple distinct skip-pattern issues for the same question into
+    one row instead of one row per issue_type, so a question with e.g. both
+    an invalid-range problem and a routing mismatch shows as a single entry
+    listing both. Unlike collapse_option_issue_rows_by_qname(), skip-pattern
+    issue types are independent findings (no added/removed/drift precedence
+    hierarchy applies), so they are simply enumerated together, worst
+    severity wins.
+    """
+    if df is None or df.height == 0:
+        return df
+    if not {"issue_type", "Q Name"}.issubset(set(df.columns)):
+        return df
+
+    sev_rank = {"high": 0, "medium": 1, "info": 2}
+
+    by_q: dict[str, list[dict]] = {}
+    for rd in df.to_dicts():
+        q = str(rd.get("Q Name") or "").strip()
+        if not q:
+            continue
+        by_q.setdefault(q, []).append(rd)
+
+    rows_out = []
+    for q, q_items in by_q.items():
+        if len(q_items) == 1:
+            rows_out.append(q_items[0])
+            continue
+
+        text_row = next(
+            (r for r in q_items if str(r.get("issue_type") or "") not in _SKIP_PATTERN_SYNTHETIC_TEXT_TYPES),
+            q_items[0],
+        )
+
+        parts = []
+        for r in q_items:
+            tag = _SKIP_PATTERN_ISSUE_TAGS.get(str(r.get("issue_type") or ""), str(r.get("issue_type") or ""))
+            msg = str(r.get("field") or "").strip()
+            parts.append(f"[{tag}] {msg}" if msg else f"[{tag}]")
+        detail = f"{len(q_items)} issues: " + "; ".join(parts)
+
+        best_sev = min(
+            (str(r.get("severity") or "info") for r in q_items),
+            key=lambda s: sev_rank.get(s, 2),
+        )
+        excel_rows = [r.get("excel_row") for r in q_items if r.get("excel_row") is not None]
+
+        merged = dict(text_row)
+        merged["issue_type"] = "skipPattern_multiple_issues"
+        merged["field"] = detail
+        merged["severity"] = best_sev
+        merged["excel_row"] = min(excel_rows) if excel_rows else text_row.get("excel_row")
+        rows_out.append(merged)
+
+    collapsed = pl.DataFrame(rows_out) if rows_out else pl.DataFrame(schema=df.schema)
+    for col in df.columns:
+        if col not in collapsed.columns:
+            collapsed = collapsed.with_columns(pl.lit(None).alias(col))
+    return collapsed.select(df.columns)
 
 
 
@@ -4840,6 +5013,124 @@ def validate_conditional_removed_for_mandatory(
     )
 
 
+# 'variable(/variable)* = code(s)' -- e.g. "income_main / income_sec = 1-8 or 10-20".
+# Matched anywhere in the text via finditer, independent of whatever logical
+# connective (OR/and/free text) sits between clauses -- deliberately does not
+# try to parse the cell's full boolean structure, only pulls out clean
+# "variable = code(s)" islands and validates each one.
+_COND_EQ_CLAUSE_RE = re.compile(
+    r'([A-Za-z_]\w*(?:\s*/\s*[A-Za-z_]\w*)*)\s*=\s*'
+    r'(\d+(?:\s*-\s*\d+)?(?:\s*(?:or|,)\s*\d+(?:\s*-\s*\d+)?)*)',
+    re.IGNORECASE,
+)
+# 'variable <|<=|>|>= variable_or_number' -- lightweight, variable-existence only.
+_COND_INEQ_RE = re.compile(r'([A-Za-z_]\w*)\s*(?:<=|>=|<|>)\s*([A-Za-z_]\w*|\d+(?:\.\d+)?)')
+
+
+def validate_conditional_routing(
+    current_questions: pl.DataFrame,
+    current_options_en: pl.DataFrame | None = None,
+) -> pl.DataFrame:
+    """
+    Semantic checks on the 'Conditional' column -- the inbound relevance gate
+    ("variable = code(s)", possibly with multiple '/'-separated variables and
+    'or'-separated codes/ranges), as opposed to Skip Pattern which routes OUT
+    of a question. Deliberately scoped: only cells matching the recognizable
+    "variable(s) = code(s)" or inequality ("variable <|<=|>|>= variable_or_number")
+    shapes are checked; free-text/procedural cells are left alone rather than
+    force-parsed, though clean "variable = code(s)" fragments embedded inside
+    otherwise free-text cells are still found and checked.
+
+    Current-file self-consistency only (no reference/template comparison --
+    mirrors Skip Pattern's option-validity layer, not its routing-drift layer):
+      - conditional_invalid_qname (high): referenced variable does not exist
+        in the current questionnaire. Checked for both the '=' and inequality
+        forms; inequality forms only get this check, not option-code validity.
+      - conditional_range_invalid (high): referenced option code(s) do not
+        exist among the referenced variable's real answer options.
+    """
+    EMPTY = {
+        "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
+        "field": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
+        "severity": pl.Utf8, "excel_row": pl.Int64,
+    }
+    if "Conditional" not in current_questions.columns:
+        return pl.DataFrame(schema=EMPTY)
+
+    curr_qnames = set(current_questions["Q Name"].to_list())
+
+    curr_opt_map: dict[str, set[int]] = {}
+    if current_options_en is not None and current_options_en.height > 0:
+        for row in current_options_en.select(["Q Name", "option_code"]).iter_rows(named=True):
+            q, c = row.get("Q Name"), row.get("option_code")
+            if q and c is not None:
+                curr_opt_map.setdefault(q, set()).add(int(c))
+
+    def _looks_like_qname(token: str) -> bool:
+        return "_" in token or token in curr_qnames
+
+    issues = []
+    for row in current_questions.select(["Q Name", "Conditional", "excel_row"]).iter_rows(named=True):
+        qname = row.get("Q Name")
+        cond_text = _normalize_skip_text(row.get("Conditional") or "")
+        if not cond_text:
+            continue
+        excel_row = row.get("excel_row")
+
+        problems: list[str] = []
+
+        for m in _COND_EQ_CLAUSE_RE.finditer(cond_text):
+            var_list = [v.strip() for v in m.group(1).split("/") if v.strip()]
+            codes = _extract_codes_from_numeric_spec(m.group(2))
+            for var in var_list:
+                if not _looks_like_qname(var):
+                    continue
+                if var not in curr_qnames:
+                    problems.append(f"referenced variable '{var}' not found in current questionnaire")
+                    continue
+                available = curr_opt_map.get(var)
+                if available and codes:
+                    invalid = sorted(c for c in codes if c not in available)
+                    if invalid:
+                        problems.append(
+                            f"'{var}': invalid option code(s) {invalid} not among valid codes {sorted(available)}"
+                        )
+
+        for m in _COND_INEQ_RE.finditer(cond_text):
+            for var in (m.group(1), m.group(2)):
+                if re.fullmatch(r'\d+(?:\.\d+)?', var):
+                    continue
+                if not _looks_like_qname(var):
+                    continue
+                if var not in curr_qnames:
+                    problems.append(f"referenced variable '{var}' not found in current questionnaire")
+
+        if not problems:
+            continue
+
+        seen = set()
+        deduped = [p for p in problems if not (p in seen or seen.add(p))]
+
+        has_broken = any(p.startswith("referenced variable") for p in deduped)
+        issue_type = "conditional_invalid_qname" if has_broken else "conditional_range_invalid"
+        field = f"{len(deduped)} issues: " + "; ".join(deduped) if len(deduped) > 1 else deduped[0]
+
+        issues.append({
+            "issue_type": issue_type,
+            "set_name": "",
+            "Q Name": qname,
+            "field": field,
+            "current": cond_text[:220],
+            "reference": "",
+            "severity": "high",
+            "excel_row": excel_row,
+        })
+
+    if not issues:
+        return pl.DataFrame(schema=EMPTY)
+    return pl.DataFrame(issues)
+
+
 def compare_question_labels_single(
     current_questions : pl.DataFrame,
     reference_questions: pl.DataFrame,
@@ -6289,6 +6580,40 @@ conditional_issues = compare_legacy_text_field_changes(
 conditional_removed_mandatory_issues = validate_conditional_removed_for_mandatory(
     current_questions, reference_questions,
 )
+conditional_routing_semantic_issues = validate_conditional_routing(
+    current_questions, current_options_en=current_options_en,
+)
+conditional_routing_issues = pl.concat(
+    [conditional_issues, conditional_removed_mandatory_issues, conditional_routing_semantic_issues],
+    how="diagonal",
+)
+
+# Reduce noisy duplication: when a high-severity broken Conditional issue
+# exists for a Q, suppress the informational "changed" row for the same Q --
+# the high-severity row's current text already shows what it changed to.
+if conditional_routing_issues.height > 0:
+    _high_conditional_types = {
+        "conditional_invalid_qname",
+        "conditional_range_invalid",
+        "conditional_removed_mandatory",
+    }
+    _info_conditional_types = {"conditional_changed"}
+    _high_cond_q = set(
+        conditional_routing_issues
+        .filter((pl.col("severity") == "high") & pl.col("issue_type").is_in(list(_high_conditional_types)))
+        .get_column("Q Name")
+        .drop_nulls()
+        .to_list()
+    )
+    if _high_cond_q:
+        conditional_routing_issues = conditional_routing_issues.filter(
+            ~(
+                pl.col("Q Name").is_in(list(_high_cond_q))
+                & pl.col("issue_type").is_in(list(_info_conditional_types))
+                & (pl.col("severity") == "info")
+            )
+        )
+
 universe_issues = compare_legacy_text_field_changes(
     current_questions, reference_questions,
     column_name="Universe", issue_type="universe_changed",
@@ -6297,6 +6622,7 @@ universe_issues = compare_legacy_text_field_changes(
 print(
     f"QType: {qtype_issues.height}  Conditional: {conditional_issues.height}  "
     f"Conditional removed (mandatory): {conditional_removed_mandatory_issues.height}  "
+    f"Conditional routing (invalid qname/codes): {conditional_routing_semantic_issues.height}  "
     f"Universe: {universe_issues.height}"
 )
 _tick("qtype + legacy control checks")
@@ -6488,6 +6814,9 @@ if skip_issues.height > 0:
             )
         )
 
+skip_issues = collapse_skip_pattern_issue_rows_by_qname(skip_issues)
+_tick("collapse_skip_pattern_issue_rows_by_qname")
+
 
 #  Convert to common schema
 presence_issues = make_presence_issues(added, removed, reference_questions=reference_questions)
@@ -6497,8 +6826,6 @@ core_question_issues = pl.concat(
         presence_issues,
         mandatory_issues,
         qtype_issues,
-        conditional_issues,
-        conditional_removed_mandatory_issues,
         universe_issues,
     ],
     how="vertical",
@@ -6630,7 +6957,7 @@ _tick("validate authoring consistency")
 all_issues = pl.concat(
     [question_issues, option_issues,
      critical_issues, count_issues, harvest_issues, fs_issues, agri_cs_issues, pair_issues,
-     skip_issues, module_issues,
+     skip_issues, conditional_routing_issues, module_issues,
      authoring_consistency_issues],
     how="diagonal",
 )
@@ -6906,9 +7233,20 @@ SKIP_PATTERN_ISSUE_TYPES = {
     "skipPattern_invalid_qname",
     "skipPattern_invalid_qnameCategory",
     "skip_pattern_empty",
+    "skipPattern_multiple_issues",
 }
 QTYPE_ISSUE_TYPES = {"qtype_changed"}
 MODULE_ISSUE_TYPES = {"module_removed", "module_added", "module_missing_for_question"}
+
+# 'Conditional' is the inbound relevance gate (as opposed to Skip Pattern,
+# which routes out of a question) -- lives in Questionnaire Structure
+# alongside Skip Pattern, not in Question Changes.
+CONDITIONAL_ISSUE_TYPES = {
+    "conditional_changed",
+    "conditional_removed_mandatory",
+    "conditional_invalid_qname",
+    "conditional_range_invalid",
+}
 
 CORE_QUESTION_CHANGE_ISSUE_TYPES = {
     "mandatory_source_missing",
@@ -6917,13 +7255,9 @@ CORE_QUESTION_CHANGE_ISSUE_TYPES = {
     "removed_question",
     "added_question",
     "question_label_mismatch",
-    "conditional_removed_mandatory",
-    "universe_changed",
 }
 
-ADDITIONAL_QUESTION_FIELD_ISSUE_TYPES = {
-    "conditional_changed",
-}
+UNIVERSE_ISSUE_TYPES = {"universe_changed"}
 
 AUTHORING_CONSISTENCY_ISSUE_TYPES = {
     "panel_targeting_mismatch",
@@ -6978,6 +7312,8 @@ ISSUE_ACTION_MAP = {
     "qtype_changed": "Review Q Type change and questionnaire behavior impact",
     "question_label_mismatch": "Review question text mismatch",
     "conditional_changed": "Review conditional-routing text change",
+    "conditional_invalid_qname": "Fix Conditional reference to a variable that does not exist in the current questionnaire",
+    "conditional_range_invalid": "Fix invalid option code(s) referenced in Conditional",
     "added_option": "Review added option and downstream logic",
     "removed_option": "Review removed option and downstream logic",
     "added_removed_option": "Review both added and removed options for the same question",
@@ -7004,6 +7340,7 @@ ISSUE_ACTION_MAP = {
     "skipPattern_invalid_qname": "Fix Skip Pattern target question name (target does not exist)",
     "skipPattern_invalid_qnameCategory": "Fix Skip Pattern target category (must route to optional/non-mandatory target)",
     "skip_pattern_empty": "Default skip rule exists but both Specify and Skip Pattern are empty",
+    "skipPattern_multiple_issues": "Review the multiple flagged skip-pattern problems for this question",
     "missing_critical_question": "Add missing critical question",
     "advisory_question": "Review advisory question omission",
     "critical_mandatory_mismatch": "Align mandatory flag for critical question",
@@ -7624,6 +7961,10 @@ def write_summary_sheet(wb, all_issues, rules, replacement_status=None):
     if _mod_skip_unres:
         _summary_info_lines.append(f"Unresolved skipped-module entries: {_mod_skip_unres}")
 
+    _duration_line = str(globals().get("_duration_summary_line") or "").strip()
+    if _duration_line:
+        _summary_info_lines.append(_duration_line)
+
     for _i, _line in enumerate(_summary_info_lines, start=2):
         ws.merge_cells(f"A{_i}:G{_i}")
         ws[f"A{_i}"] = _line
@@ -7665,6 +8006,20 @@ def write_summary_sheet(wb, all_issues, rules, replacement_status=None):
     ws.cell(row=r, column=2, value="WARN" if _skip_warn_total > 0 else "PASS")
     ws.cell(row=r, column=3, value=(f"Medium severity issues: {_skip_med}; Info: {_skip_info}" if _skip_warn_total > 0 else "No medium/info issues"))
     _data_row(ws, r, 7, fill=STATUS_FILL.get("WARN" if _skip_warn_total > 0 else "PASS")); r += 1
+
+    _cond_df = all_issues.filter(pl.col("issue_type").is_in(list(CONDITIONAL_ISSUE_TYPES)))
+    _cond_high = _cond_df.filter(pl.col("severity") == "high").height
+    _cond_warn_total = _cond_df.filter(pl.col("severity").is_in(["medium", "info"])).height
+
+    ws.cell(row=r, column=1, value="Conditional references")
+    ws.cell(row=r, column=2, value="FAIL" if _cond_high > 0 else "PASS")
+    ws.cell(row=r, column=3, value=(f"High severity issues: {_cond_high}" if _cond_high > 0 else "No high severity issues"))
+    _data_row(ws, r, 7, fill=STATUS_FILL.get("FAIL" if _cond_high > 0 else "PASS")); r += 1
+
+    ws.cell(row=r, column=1, value="Conditional references")
+    ws.cell(row=r, column=2, value="WARN" if _cond_warn_total > 0 else "PASS")
+    ws.cell(row=r, column=3, value=(f"Medium/info issues: {_cond_warn_total}" if _cond_warn_total > 0 else "No medium/info issues"))
+    _data_row(ws, r, 7, fill=STATUS_FILL.get("WARN" if _cond_warn_total > 0 else "PASS")); r += 1
 
     _dup_n = all_issues.filter(pl.col("issue_type") == "duplicate_qname").height
     _dup_st = "FAIL" if _dup_n > 0 else "PASS"
@@ -7781,12 +8136,12 @@ def write_summary_sheet(wb, all_issues, rules, replacement_status=None):
     )
 
     r += 1
-    #  Additional control-field diffs
+    #  Universe (audience) changes, in their own block. (Conditional issues
+    #  are covered by the Conditional references PASS/WARN/FAIL rollup above,
+    #  and detailed in the Questionnaire Structure sheet, not here.)
     r = _write_category_breakdown_block(
-        ws, r, "QUESTION CHANGES (ADDITIONAL FIELDS)",
+        ws, r, "QUESTION CHANGES  Universe (audience)",
         [
-            ("Conditional changed", "conditional_changed", None, "info"),
-            ("Conditional removed (mandatory)", "conditional_removed_mandatory", None, "high"),
             ("Universe changed", "universe_changed", None, "medium"),
         ],
         all_issues,
@@ -7841,6 +8196,7 @@ def write_structure_skip_sheet(wb, all_issues: pl.DataFrame):
         )
 
     skip_df = _sorted(all_issues.filter(pl.col("issue_type").is_in(list(SKIP_PATTERN_ISSUE_TYPES))))
+    conditional_df = _sorted(all_issues.filter(pl.col("issue_type").is_in(list(CONDITIONAL_ISSUE_TYPES))))
     qtype_df = _sorted(all_issues.filter(pl.col("issue_type").is_in(list(QTYPE_ISSUE_TYPES))))
     dup_df = _sorted(all_issues.filter(pl.col("issue_type") == "duplicate_qname"))
     module_df = _sorted(all_issues.filter(pl.col("issue_type").is_in(list(MODULE_ISSUE_TYPES))))
@@ -7849,6 +8205,16 @@ def write_structure_skip_sheet(wb, all_issues: pl.DataFrame):
 
     _section_header(ws, 1, "QUESTIONNAIRE STRUCTURE  Skip pattern issues", 8)
     next_row = _issues_table(ws, 2, skip_df)
+
+    _section_header(ws, next_row, "QUESTIONNAIRE STRUCTURE  Conditional issues", 8)
+    _cond_start = next_row + 1
+    next_row = _issues_table(ws, _cond_start, conditional_df)
+    _apply_inline_diff_for_issue(
+        ws,
+        _cond_start,
+        conditional_df,
+        {"conditional_changed", "conditional_removed_mandatory"},
+    )
 
     _section_header(ws, next_row, "Q TYPE INTEGRITY ISSUES", 8)
     next_row = _issues_table(ws, next_row + 1, qtype_df)
@@ -7919,9 +8285,11 @@ def write_critical_sets_sheet(wb, all_issues, found_info=None):
 #  Sheet 3: Question Changes 
 def write_question_changes_sheet(wb, question_changes_view):
     """
-    Question-level changes split into:
+    Question-level changes, split into:
     1) core changes (presence/mandatory/label)
-    2) additional informational control-field changes.
+    2) universe (audience) changes, in their own section.
+    Conditional issues (changed/removed/invalid reference/invalid codes) live
+    in the Questionnaire Structure sheet instead, alongside Skip Pattern.
     """
     ws = wb.create_sheet("Question Changes")
     ws.sheet_view.showGridLines = False
@@ -7941,8 +8309,7 @@ def write_question_changes_sheet(wb, question_changes_view):
         df = df.drop("set_name")
 
     core_df = df.filter(pl.col("issue_type").is_in(list(CORE_QUESTION_CHANGE_ISSUE_TYPES)))
-    additional_df = df.filter(pl.col("issue_type").is_in(list(ADDITIONAL_QUESTION_FIELD_ISSUE_TYPES)))
-    additional_df = additional_df.with_columns(pl.lit("info").alias("severity"))
+    universe_df = df.filter(pl.col("issue_type").is_in(list(UNIVERSE_ISSUE_TYPES)))
 
     _section_header(ws, 1, "QUESTION CHANGES (CORE)  Presence, mandatory, labels", 10)
     next_row = _issues_table(ws, 2, core_df)
@@ -7950,19 +8317,18 @@ def write_question_changes_sheet(wb, question_changes_view):
         ws,
         2,
         core_df,
-        {"question_label_mismatch", "conditional_removed_mandatory", "universe_changed"},
+        {"question_label_mismatch"},
     )
 
-    _section_header(ws, next_row, "QUESTION CHANGES (ADDITIONAL FIELDS)", 10)
-    _issues_table(ws, next_row + 1, additional_df)
+    _section_header(ws, next_row, "QUESTION CHANGES  Universe (audience)", 10)
+    _issues_table(ws, next_row + 1, universe_df)
     _apply_inline_diff_for_issue(
         ws,
         next_row + 1,
-        additional_df,
-        {"conditional_changed"},
+        universe_df,
+        {"universe_changed"},
     )
-    # Keep navigation stable even with multiple tables in this sheet.
-    # Without resetting here, the second table can push freeze panes far down.
+
     ws.freeze_panes = "A3"
     _cols = [(s, d) for s, d in _issues_col_map() if s in df.columns]
     if _cols:

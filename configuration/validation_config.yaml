@@ -129,6 +129,17 @@ geopoll_options:
   # Controls whether the FS indicator ceiling check (capi_max in critical_sets.yaml) applies.
   modality: "cati"
 
+  # Additional-information placeholders that have a documented, sensible
+  # fallback value when the country team leaves them blank in the
+  # "Additional information" sheet. Keys match the sheet's "Original" column
+  # (bare label, no $...$ needed). A real value in the sheet always wins;
+  # the default only applies when the row is blank or absent entirely.
+  # Example: econshock_crp/ls/fish_sales_loss questions reference
+  # $CRISIS OR EVENT$ -- if no specific crisis/event is given, it defaults
+  # to "crisis or event" instead of being flagged as a missing replacement.
+  placeholder_optional_defaults:
+    "CRISIS OR EVENT": "crisis or event"
+
 # Report metadata
 validation_number: 1
 user_name: "Edoardo"
