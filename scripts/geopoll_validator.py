@@ -1833,6 +1833,20 @@ def apply_text_replacements(
                 else:  # "both"
                     replacement = f"{m.group(1).strip()} [{m.group(2).strip()}]"
 
+        # Auto-resolve $expected or nothing$ (and language variants like $expected or nothing FR$).
+        # The value may be "" (past tense = remove the token entirely), which the regular
+        # placeholder index skips.  Bypass the index and read the injected value directly.
+        if replacement is None and _tense_mode is not None:
+            if _normalize_placeholder_token(token).startswith("EXPECTED OR NOTHING"):
+                _eor_val = default_map.get("$expected or nothing$")
+                if _eor_val is None and replacements_by_language:
+                    for _lm2 in (replacements_by_language or {}).values():
+                        if _lm2 and "$expected or nothing$" in _lm2:
+                            _eor_val = _lm2["$expected or nothing$"]
+                            break
+                if _eor_val is not None:
+                    replacement = _eor_val  # "" removes token; non-empty inserts word
+
         if replacement is not None:
             text = text.replace(token, replacement)
 
@@ -2376,7 +2390,12 @@ def _parse_skip_option_codes(
 ) -> set[int]:
     """
     Extracts numeric option codes from the left side of skip rules.
-    Examples handled: "1=...", "1-4 = ...", "1,3,5=...", "2 to 4 = ...".
+    Examples handled: "1=...", "1-4 = ...", "1,3,5=...", "2 to 4 = ...",
+    and verbose "if Q = 1-4, go to X" clauses -- including multiple such
+    clauses stacked in one cell. Each clause (verbose or compact) is bounded
+    independently at the start of the next clause, so codes from later
+    clauses in the same multi-line cell aren't discarded -- a naive split on
+    the first "=" in the whole cell would only ever see the first clause.
 
     Safety guards:
       - do not fully expand very wide ranges,
@@ -2385,15 +2404,46 @@ def _parse_skip_option_codes(
     if not skip_text:
         return set()
 
+    text = str(skip_text)
     codes = set()
-    parts = [p.strip() for p in re.split(r"[\r\n;]+", str(skip_text)) if p.strip()]
-    for part in parts:
+
+    # Verbose clauses: "if Q = codes, go to X" (or "if Q codes, go to X" --
+    # the '=' is tolerated as optional since it's sometimes typo'd/omitted).
+    # Each clause is bounded at the next "if <qname>" occurrence.
+    clause_start_re = re.compile(r'\bif\s+[A-Za-z_]\w*\b', re.IGNORECASE)
+    clause_codespec_re = re.compile(
+        r'^\s*if\s+[A-Za-z_]\w*\s*=?\s*(.*?)(?:,)?\s*go\s+to\b',
+        re.IGNORECASE,
+    )
+    starts = [m.start() for m in clause_start_re.finditer(text)]
+
+    if starts:
+        bounds = starts + [len(text)]
+        specs = []
+        for i in range(len(starts)):
+            clause = text[bounds[i]:bounds[i + 1]]
+            m = clause_codespec_re.match(clause)
+            specs.append(m.group(1) if m else clause)
+    else:
+        # Compact form, no "if": "1-4 = target 5-7 = target2". Each clause
+        # is bounded at the start of the next "code(s) =" occurrence.
+        compact_re = re.compile(
+            r'(\d+(?:\s*(?:-|to)\s*\d+)?(?:\s*,\s*\d+(?:\s*(?:-|to)\s*\d+)?)*)\s*=\s*(?:.+?)'
+            r'(?=(?:\s+\d+(?:\s*(?:-|to)\s*\d+)?(?:\s*,\s*\d+(?:\s*(?:-|to)\s*\d+)?)*)\s*=|$)',
+            re.IGNORECASE,
+        )
+        compact_matches = list(compact_re.finditer(text))
+        if compact_matches:
+            specs = [m.group(1) for m in compact_matches]
+        else:
+            specs = [p.strip() for p in re.split(r"[\r\n;]+", text) if p.strip()]
+            specs = [s.split("=", 1)[0] if "=" in s else s for s in specs]
+
+    for spec in specs:
         if len(codes) >= max_total_codes:
             break
 
-        left = part.split("=", 1)[0] if "=" in part else part
-
-        for a, b in re.findall(r"\b(\d+)\s*(?:-|to)\s*(\d+)\b", left, flags=re.IGNORECASE):
+        for a, b in re.findall(r"\b(\d+)\s*(?:-|to)\s*(\d+)\b", spec, flags=re.IGNORECASE):
             start, end = int(a), int(b)
             lo, hi = sorted((start, end))
             span = hi - lo + 1
@@ -2410,8 +2460,8 @@ def _parse_skip_option_codes(
         if len(codes) >= max_total_codes:
             break
 
-        left_no_ranges = re.sub(r"\b\d+\s*(?:-|to)\s*\d+\b", " ", left, flags=re.IGNORECASE)
-        for n in re.findall(r"\b\d+\b", left_no_ranges):
+        spec_no_ranges = re.sub(r"\b\d+\s*(?:-|to)\s*\d+\b", " ", spec, flags=re.IGNORECASE)
+        for n in re.findall(r"\b\d+\b", spec_no_ranges):
             codes.add(int(n))
             if len(codes) >= max_total_codes:
                 break
@@ -2421,8 +2471,12 @@ def _parse_skip_option_codes(
 def _extract_referenced_qnames(skip_text: str, source_q: str, ref_qnames: set[str], curr_qnames: set[str]) -> set[str]:
     """
     Extract target question names from skip rules using a strict heuristic:
-      - parse only RHS of '=' (or line/segment after '='),
-      - take the first token as candidate target,
+      - primary: every "go to <phrase>" clause (the dominant idiom in this
+        template -- "for any response, go to X", "go to X OR Y", "if Q =
+        code, go to X" -- none of which necessarily contain '=' before the
+        target), taking all qname-like tokens found in that phrase,
+      - fallback: RHS of '=' for compact "code = target" segments with no
+        "go to" wording, taking the first token as candidate target,
       - ignore common routing labels (ineligible, end, quota, etc.),
       - keep candidates that are known qnames OR look like qnames (underscore).
     """
@@ -2437,9 +2491,23 @@ def _extract_referenced_qnames(skip_text: str, source_q: str, ref_qnames: set[st
         "yes", "no", "na", "n_a", "none",
     }
 
+    def _keep(cand: str) -> bool:
+        cand_l = cand.lower()
+        if cand == source_q or cand_l in stopwords:
+            return False
+        return cand in ref_qnames or cand in curr_qnames or ("_" in cand)
+
     out = set()
     segments = [s.strip() for s in re.split(r"[\r\n;]+", text) if s.strip()]
     for seg in segments:
+        go_to_matches = list(_GO_TO_RE.finditer(seg))
+        if go_to_matches:
+            for gm in go_to_matches:
+                for cand in _QNAME_TOKEN_RE.findall(gm.group(1)):
+                    if _keep(cand):
+                        out.add(cand)
+            continue
+
         if "=" not in seg:
             continue
         rhs = seg.split("=", 1)[1].strip()
@@ -2451,11 +2519,7 @@ def _extract_referenced_qnames(skip_text: str, source_q: str, ref_qnames: set[st
             continue
 
         cand = m.group(1)
-        cand_l = cand.lower()
-        if cand == source_q or cand_l in stopwords:
-            continue
-
-        if cand in ref_qnames or cand in curr_qnames or ("_" in cand):
+        if _keep(cand):
             out.add(cand)
 
     return out
@@ -2464,7 +2528,17 @@ def _extract_referenced_qnames(skip_text: str, source_q: str, ref_qnames: set[st
 # â”€â”€â”€ helpers for Default-column consistency check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _QNAME_TOKEN_RE = re.compile(r'\b([a-z][a-z0-9_]{2,})\b')
-_GO_TO_RE       = re.compile(r'\bgo\s+to\s+([^\n;]+)', re.IGNORECASE)
+# Bounded at the next "if <qname>" clause (or end of string) so multi-rule
+# cells -- several "if Q = codes, go to ..." lines stacked in one cell -- don't
+# have their first "go to" match greedily swallow every later clause too.
+# '=' is deliberately NOT required after <qname> here: the clause boundary
+# is "if <qname>" itself, and real cells sometimes omit/typo the '=' (e.g.
+# "if q 5-10, go to X") -- requiring it would let that next clause's "go to"
+# get swallowed into this match instead of being found as its own match.
+_GO_TO_RE       = re.compile(
+    r'\bgo\s+to\s*(.+?)(?=(?:\s+if\s+[A-Za-z_]\w*)|$)',
+    re.IGNORECASE,
+)
 _NEXT_Q_RE      = re.compile(r'\bnext\s+question\b', re.IGNORECASE)
 _OPTIONAL_RE    = re.compile(r'\boptional\s+question\b', re.IGNORECASE)
 
@@ -2550,8 +2624,10 @@ def _extract_skip_codes_for_target(skip_text: str, target: str) -> set[int]:
         r'(\d+(?:\s*(?:-|to)\s*\d+)?(?:\s*,\s*\d+(?:\s*(?:-|to)\s*\d+)?)*)\s*=\s*(\[[^\]]+\]|[A-Za-z_]\w*)',
         re.IGNORECASE,
     )
+    # '=' is optional after the qname (sometimes omitted/typo'd in real
+    # cells); the clause boundary is "if <qname>" itself, not the '='.
     verbose_re = re.compile(
-        r'if\s+[A-Za-z_]\w*\s*=\s*([^;]+?)\s*,?\s*go\s+to\s*(.+?)(?=(?:\s+if\s+[A-Za-z_]\w*\s*=)|$)',
+        r'if\s+[A-Za-z_]\w*\s*=?\s*([^;]+?)\s*,?\s*go\s+to\s*(.+?)(?=(?:\s+if\s+[A-Za-z_]\w*)|$)',
         re.IGNORECASE,
     )
 
@@ -2591,9 +2667,13 @@ def _parse_default_skip_rules(default_text: str, known_qnames: set[str]) -> list
 
     rules = []
 
-    # Verbose style, including chained clauses in one segment.
+    # Verbose style, including chained clauses in one segment. '=' is
+    # optional after the qname -- it's sometimes omitted/typo'd in real
+    # cells (e.g. "if q 5-10, go to X"); the clause boundary is "if
+    # <qname>" itself, not the '=', so this must still be tolerated to
+    # correctly bound the *next* clause too.
     verbose_re = re.compile(
-        r'if\s+[A-Za-z_]\w*\s*=\s*([^;]+?)\s*,?\s*go\s+to\s*(.+?)(?=(?:\s+if\s+[A-Za-z_]\w*\s*=)|$)',
+        r'if\s+[A-Za-z_]\w*\s*=?\s*([^;]+?)\s*,?\s*go\s+to\s*(.+?)(?=(?:\s+if\s+[A-Za-z_]\w*)|$)',
         re.IGNORECASE,
     )
     for vm in verbose_re.finditer(text):
@@ -2757,6 +2837,24 @@ def _check_skip_consistency(
             f"target question(s) not found in current questionnaire: {invalid_targets}"
         )
 
+    # Parse the current cell into its own structured rules (one per
+    # option-code range) so multi-rule cells can be checked line-by-line
+    # instead of as one flat bag of tokens. Without this, a target token
+    # belonging to a *different* code-range's line would be counted as
+    # satisfying every rule sharing the same cell.
+    current_rules = _parse_default_skip_rules(skip_text_s, known_qnames)
+
+    def _match_current_rule(ref_codes: set[int]) -> dict | None:
+        if not ref_codes:
+            return None
+        exact = [cr for cr in current_rules if set(cr.get("option_codes") or set()) == ref_codes]
+        if exact:
+            return exact[0]
+        overlap = [cr for cr in current_rules if set(cr.get("option_codes") or set()) & ref_codes]
+        if len(overlap) == 1:
+            return overlap[0]
+        return None
+
     expected_codes_by_target: dict[str, set[int]] = {}
     range_skip_targets: set[str] = set()
 
@@ -2774,25 +2872,34 @@ def _check_skip_consistency(
         if not targets:
             continue
 
-        found_targets = [t for t in targets if t in skip_present]
+        # Scope presence-check to the current-cell line matching this rule's
+        # option codes when we can pair them unambiguously; otherwise fall
+        # back to scanning the whole cell (today's behavior).
+        matched_current_rule = _match_current_rule(expected_codes)
+        if matched_current_rule is not None:
+            rule_present = set(_extract_qname_like(matched_current_rule.get("raw") or "", curr_qnames))
+        else:
+            rule_present = skip_present
+
+        found_targets = [t for t in targets if t in rule_present]
 
         # Equivalence: skip says [next question], rule says concrete next qname.
         if not found_targets and skip_mentions_next and next_qname and next_qname in targets:
             found_targets = [next_qname]
 
         # Equivalence: rule says [next question], skip says concrete next qname.
-        if not found_targets and is_next_question and next_qname and next_qname in skip_present:
+        if not found_targets and is_next_question and next_qname and next_qname in rule_present:
             found_targets = [next_qname]
 
         if not found_targets:
             if is_flexible:
                 non_mand = [
-                    q for q in skip_present
+                    q for q in rule_present
                     if q_mandatory_map.get(q) not in ("mandatory", "mandatory-panel")
                 ]
                 if not non_mand:
                     mandatory_targets = sorted(
-                        q for q in skip_present
+                        q for q in rule_present
                         if q_mandatory_map.get(q) in ("mandatory", "mandatory-panel")
                     )
                     if mandatory_targets:
@@ -8229,6 +8336,13 @@ def _build_replacement_issue_rows(
                         continue
                     if _lookup_placeholder_replacement(token, col_repl, col_idx) is not None:
                         continue
+                    # Tense tokens ($did [do]$, $was [is]$, etc.) and $expected or nothing$
+                    # are auto-resolved from crop production verb tense — no Additional
+                    # information entry is needed for them.
+                    if _TENSE_BRACKET_RE.match(token):
+                        continue
+                    if _normalize_placeholder_token(token).startswith("EXPECTED OR NOTHING"):
+                        continue
                     tok_norm = _normalize_placeholder_token(token)
                     key = ("replacement_missing_key", qname, col, token)
                     if key in seen:
@@ -8279,6 +8393,11 @@ def _build_replacement_issue_rows(
                     issue_type = "replacement_unresolved_placeholder"
                     severity = "high"
                     reference = "Crop placeholders must be fully expanded in validated output"
+                elif _TENSE_BRACKET_RE.match(token) or _normalize_placeholder_token(token).startswith("EXPECTED OR NOTHING"):
+                    # Tense/expected token still present in output — crop production verb tense not filled.
+                    issue_type = "replacement_unresolved_placeholder"
+                    severity = "medium"
+                    reference = "Tense token unresolved: fill 'crop production verb tense' in Additional information"
                 elif _lookup_placeholder_replacement(token, col_repl, col_idx) is None:
                     issue_type = "replacement_missing_key"
                     severity = "high"
@@ -8544,14 +8663,25 @@ def write_validated_questionnaire(
 
     wb = openpyxl.load_workbook(output_questionnaire_path)
     ws = _resolve_survey_sheet(wb)
-    header_map = _sheet_header_map(ws, header_row=2)
+
+    # Auto-detect header row: new template has headers on row 1; legacy format
+    # has a banner/title on row 1 and headers on row 2.
+    _row1_vals = {
+        str(ws.cell(row=1, column=c).value or "").replace("\n", " ").strip().lower()
+        for c in range(1, (ws.max_column or 1) + 1)
+        if ws.cell(row=1, column=c).value is not None
+    }
+    actual_header_row = 1 if _row1_vals & _SURVEY_HEADER_SIGNALS else 2
+    data_start_row = actual_header_row + 1
+
+    header_map = _sheet_header_map(ws, header_row=actual_header_row)
 
     q_col = header_map.get("Q Name")
     if not q_col:
         raise KeyError("Column 'Q Name' not found in survey header row.")
 
     qname_to_row = {}
-    for row_idx in range(3, ws.max_row + 1):
+    for row_idx in range(data_start_row, ws.max_row + 1):
         qname = ws.cell(row=row_idx, column=q_col).value
         key = str(qname).strip() if qname is not None else ""
         if key:
@@ -8593,18 +8723,18 @@ def write_validated_questionnaire(
         # module cell) belong visually to the module that follows them, so
         # backfill blanks from the next populated row (look-ahead).
         row_module: dict[int, str] = {}
-        for row_idx in range(3, ws.max_row + 1):
+        for row_idx in range(data_start_row, ws.max_row + 1):
             module_val = str(ws.cell(row=row_idx, column=module_col).value or "").strip() if module_col else ""
             row_module[row_idx] = module_val
 
         next_code = ""
-        for row_idx in range(ws.max_row, 2, -1):
+        for row_idx in range(ws.max_row, data_start_row - 1, -1):
             if row_module[row_idx]:
                 next_code = row_module[row_idx]
             else:
                 row_module[row_idx] = next_code
 
-        for row_idx in range(3, ws.max_row + 1):
+        for row_idx in range(data_start_row, ws.max_row + 1):
             q_name_val = ws.cell(row=row_idx, column=q_col).value
             q_name = str(q_name_val or "").strip()
             is_divider_row = module_col and not str(ws.cell(row=row_idx, column=module_col).value or "").strip() and q_name

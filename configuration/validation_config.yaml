@@ -22,7 +22,7 @@ tool: "geopoll"
 working_dir: "C:/Temp"
 
 # Current questionnaire filename (resolved under working_dir).
-questionnaire_file: "draft_household_questionnaire_fr_geopoll_DRC_20262906.xlsx"
+questionnaire_file: "draft_household_questionnaire_fr_geopoll_DRC_20262906v_modified.xlsx"
 
 # Language code: en | fr | ar | es
 language: "fr"
