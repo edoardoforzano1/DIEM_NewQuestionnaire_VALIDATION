@@ -69,6 +69,14 @@ def _summary(all_issues=None, report_path=None, extra_paths=None) -> None:
             print("  No issues found — questionnaire passed all checks.")
     except Exception as _e:
         print(f"  (summary unavailable: {_e})")
+    _added_df = globals().get("added")
+    _removed_df = globals().get("removed")
+    if _added_df is not None and _removed_df is not None:
+        _added_names = _added_df["Q Name"].to_list()
+        _removed_names = _removed_df["Q Name"].to_list()
+        print()
+        print(f"  Questions added ({len(_added_names)})  : {', '.join(_added_names) if _added_names else '(none)'}")
+        print(f"  Questions removed ({len(_removed_names)}): {', '.join(_removed_names) if _removed_names else '(none)'}")
     _mod_ignore = str(globals().get("_module_ignore_scope_summary") or "").strip()
     _mod_skip = str(globals().get("_module_skip_scope_summary") or "").strip()
     if _mod_ignore and _mod_ignore != "(none)":

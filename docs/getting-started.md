@@ -94,7 +94,11 @@ The validator reads the file from `working_dir/questionnaire_file`. If the file 
 
 Housekeeping runs before validation when `housekeeping.enabled: true`. It scans
 `kobo_output`, `geopoll_output`, and the output configuration snapshots, then
-keeps the newest files for each tool/type/country/language/round group.
+keeps the newest files for each tool/type/country/language/round group. A file
+is archived if it's **either** past its group's keep-count limit **or** older
+than `archive_older_than_days` (whichever comes first, same as standard log
+rotation) — the two protective settings (`keep_all_for_last_days`,
+`protect_today_files`) always take precedence over both triggers.
 
 ```yaml
 housekeeping:
@@ -105,12 +109,17 @@ housekeeping:
   keep_reports_per_group: 3
   keep_validated_per_group: 3
   keep_config_snapshots_per_group: 30
+  archive_older_than_days: 0
   archive_before_delete: true
   archive_dir: ""
   delete_archives_older_than_days: 180
 ```
 
 - Use `dry_run: true` to print planned actions without changing files.
+- `archive_older_than_days` (0 = disabled) archives a file once it's this many
+  days old, independent of its group's count limit — e.g. `10` archives
+  anything older than 10 days even if the group hasn't exceeded
+  `keep_reports_per_group` yet.
 - With `archive_before_delete: true`, excess files move to
   `<output_dir>/archive/<YYYY-MM>/...`.
 - A sidecar file named `<filename>.keep` protects that file from retention and

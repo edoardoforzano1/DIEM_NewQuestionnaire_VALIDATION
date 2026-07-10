@@ -22,3 +22,10 @@ source:
 sync:
   mode: subset_from_agol
   preserve_my_filter_sample: true
+
+  # full_from_agol only: similarity threshold (0-1) for tier-3 fuzzy name
+  # matching between the fresh AGOL list and the current questionnaire's
+  # admin list, used to highlight rows that likely correspond to an old
+  # entry (accent/spelling drift) even though the pcode changed. Matching
+  # is scoped to candidates sharing the same parent pcode.
+  fuzzy_match_threshold: 0.85

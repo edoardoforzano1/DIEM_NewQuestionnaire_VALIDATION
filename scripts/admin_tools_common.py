@@ -86,6 +86,7 @@ def merge_runtime_config(repo_root: Path, explicit_cfg: Path | None = None) -> d
         "output_base_dir": str(output_base),
         "config_path": str(explicit_cfg) if explicit_cfg else str(repo_root / "configuration" / "admin_tools_config.yaml"),
         "preserve_my_filter_sample": as_bool(sync_cfg.get("preserve_my_filter_sample"), True),
+        "fuzzy_match_threshold": float(sync_cfg.get("fuzzy_match_threshold", 0.85)),
         "dry_run": as_bool(tool_cfg.get("dry_run"), False),
     }
 

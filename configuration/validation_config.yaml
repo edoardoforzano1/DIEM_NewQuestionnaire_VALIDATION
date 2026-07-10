@@ -22,7 +22,7 @@ tool: "geopoll"
 working_dir: "C:/Temp"
 
 # Current questionnaire filename (resolved under working_dir).
-questionnaire_file: "draft_household_questionnaire_fr_geopoll_DRC_20262906v_modified.xlsx"
+questionnaire_file: "draft_household_questionnaire_fr_geopoll_DRC_20262906.xlsx"
 
 # Language code: en | fr | ar | es
 language: "fr"
@@ -59,6 +59,15 @@ housekeeping:
   keep_reports_per_group: 3
   keep_validated_per_group: 3
   keep_config_snapshots_per_group: 30
+
+  # Age-based trigger, applied IN ADDITION to (not instead of) the per-group
+  # count limits above -- a file is archived if it's EITHER past its group's
+  # keep-count OR older than this many days, whichever comes first (same
+  # "rotate on size OR time" pattern as standard log rotation). 0 = disabled
+  # (only the count limits above apply). The protective settings above
+  # (keep_all_for_last_days, protect_today_files) always take precedence
+  # over this trigger -- a file they protect is never archived by age.
+  archive_older_than_days: 0
 
   # Cleanup flow:
   # 1) Move excess files to archive
@@ -128,17 +137,6 @@ geopoll_options:
   # Survey modality: capi | cati
   # Controls whether the FS indicator ceiling check (capi_max in critical_sets.yaml) applies.
   modality: "cati"
-
-  # Additional-information placeholders that have a documented, sensible
-  # fallback value when the country team leaves them blank in the
-  # "Additional information" sheet. Keys match the sheet's "Original" column
-  # (bare label, no $...$ needed). A real value in the sheet always wins;
-  # the default only applies when the row is blank or absent entirely.
-  # Example: econshock_crp/ls/fish_sales_loss questions reference
-  # $CRISIS OR EVENT$ -- if no specific crisis/event is given, it defaults
-  # to "crisis or event" instead of being flagged as a missing replacement.
-  placeholder_optional_defaults:
-    "CRISIS OR EVENT": "crisis or event"
 
 # Report metadata
 validation_number: 1

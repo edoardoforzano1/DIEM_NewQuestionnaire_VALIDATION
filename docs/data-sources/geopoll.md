@@ -14,10 +14,11 @@ The current template column names differ from the raw header names used internal
 | `Q Name` | `varname_new` | Question identifier, used in skip patterns and data joins. |
 | `Codes` | `varname_new_multiple` | For Select All That Apply questions: numbered sub-codes (`1)token`, `2)token`, ...). Identical to `varname_new` for non-multi questions. |
 | `module` | `module` | Per-row module code (e.g. `resp_info`, `shock`). Blank on section-divider rows — this is how the validator tells a divider row apart from a real question. |
-| `Mandatory` | `Mandatory` | One of six categories: `yes - core`, `yes - panel`, `no - low priority`, `no - but recommended in applicable contexts`, `no - but recommended if of interest`, `spiel`. |
+| `Mandatory` | `Mandatory` | One of seven categories: `yes - core`, `yes - panel`, `no - low priority`, `no - but recommended in applicable contexts`, `no - but recommended if of interest`, `spiel`, `customized`. |
 | `Skip Pattern` | `Skip pattern` | Single routing column. (Older `Default skip patterns & conditional` / `Specify skip pattern variable` columns no longer exist in the current template — comparisons against those columns are dormant unless an old-format file is read.) |
+| `Conditional` | `Conditional` | Inbound relevance gate — `variable = code(s)` referencing an *earlier* question, as opposed to `Skip Pattern`'s outbound routing. Checked for text changes plus (current-file only) broken variable references and invalid option codes. |
 | `Universe` | `Universe` | Who the question is asked to — read and compared, but not used for skip-routing checks. |
-| — | `To be asked to recent panelists (<6 months)?` | Cross-checked against `Mandatory`'s panel category for consistency. |
+| — | `To be asked to recent panelists (<6 months)?` | Read and carried through as data, but no longer cross-checked against `Mandatory`'s panel category — that check was removed (empirically the two columns are independent axes, not a consistency pair). |
 | `English` / `French` / ... | same | Question text plus numbered answer options (`1)label`, `2)label`, ...). |
 
 Columns that existed in the older format but are absent from the current template (`Suggested Qname`, `Randomize`, `Programming Instructions`, `Core questions only`) are simply skipped — no error, but no comparison either.

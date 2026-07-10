@@ -155,6 +155,7 @@ def run_output_housekeeping(config: dict) -> dict:
     now = datetime.now()
     protect_today = _as_bool(hk_cfg.get("protect_today_files"), True)
     keep_days = _as_int(hk_cfg.get("keep_all_for_last_days", 14), 14, minimum=0)
+    archive_older_than_days = _as_int(hk_cfg.get("archive_older_than_days", 0), 0, minimum=0)
     archive_before_delete = _as_bool(hk_cfg.get("archive_before_delete"), True)
     archive_purge_days = _as_int(hk_cfg.get("delete_archives_older_than_days", 180), 180, minimum=0)
 
@@ -207,6 +208,13 @@ def run_output_housekeeping(config: dict) -> dict:
 
             groups.setdefault(parsed.group_key, []).append(parsed)
 
+    # A file becomes an archive/delete candidate if it's EITHER past its
+    # group's keep-count limit OR older than archive_older_than_days (when
+    # set) -- union of triggers, same pattern as log rotation ("rotate on
+    # size OR time, whichever comes first"). The protective exemptions above
+    # (protect_today_files, keep_all_for_last_days, .keep sidecar) are
+    # already applied before this point and always take precedence: a file
+    # they've protected never reaches this grouping step at all.
     candidates: list[_ParsedFile] = []
     for group_key, items in groups.items():
         limit = _limit_for_category(group_key[0], hk_cfg)
@@ -215,10 +223,12 @@ def run_output_housekeeping(config: dict) -> dict:
             candidates.extend(items_sorted)
             continue
         for idx, item in enumerate(items_sorted):
-            if idx < limit:
-                result["kept_files"] += 1
-            else:
+            is_over_count_limit = idx >= limit
+            is_over_age_limit = archive_older_than_days > 0 and (now - item.stamp).days >= archive_older_than_days
+            if is_over_count_limit or is_over_age_limit:
                 candidates.append(item)
+            else:
+                result["kept_files"] += 1
 
     result["candidate_files"] = len(candidates)
 

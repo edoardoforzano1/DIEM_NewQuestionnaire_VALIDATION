@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PY=python; \"$PY\" -c \"\" </dev/null >/dev/null 2>&1 || PY=\"C:/Users/edoar/anaconda3/python.exe\"; \"$PY\" -c \"import sys, json, subprocess; d = json.load(sys.stdin); f = (d.get('tool_input') or {}).get('file_path') or (d.get('tool_response') or {}).get('filePath') or ''; subprocess.run([sys.executable, 'scripts/regenerate_function_docs.py'], cwd=r'c:/git/DIEM_NewQuestionnaire_VALIDATION') if (f.endswith('geopoll_validator.py') or f.endswith('kobo_validator.py')) else None\" 2>/dev/null || true",
+            "statusMessage": "Regenerating function-reference docs..."
+          }
+        ]
+      }
+    ]
+  }
+}

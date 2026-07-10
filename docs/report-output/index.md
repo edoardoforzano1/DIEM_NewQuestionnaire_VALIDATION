@@ -13,7 +13,8 @@
 - `validated_questionnaire_geopoll_<lang>_<iso3>_...xlsx`
 
 When output housekeeping is enabled, older files beyond the configured
-per-group limits are archived or deleted before the next validation starts.
+per-group limits, or older than `archive_older_than_days` (if set), are
+archived or deleted before the next validation starts.
 
 ## Color Semantics
 

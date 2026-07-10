@@ -69,6 +69,14 @@ def _summary(all_issues=None, report_path=None, extra_paths=None) -> None:
             print("  No issues found — questionnaire passed all checks.")
     except Exception as _e:
         print(f"  (summary unavailable: {_e})")
+    _added_df = globals().get("added")
+    _removed_df = globals().get("removed")
+    if _added_df is not None and _removed_df is not None:
+        _added_names = _added_df["Q Name"].to_list()
+        _removed_names = _removed_df["Q Name"].to_list()
+        print()
+        print(f"  Questions added ({len(_added_names)})  : {', '.join(_added_names) if _added_names else '(none)'}")
+        print(f"  Questions removed ({len(_removed_names)}): {', '.join(_removed_names) if _removed_names else '(none)'}")
     _mod_ignore = str(globals().get("_module_ignore_scope_summary") or "").strip()
     _mod_skip = str(globals().get("_module_skip_scope_summary") or "").strip()
     if _mod_ignore and _mod_ignore != "(none)":
@@ -199,15 +207,6 @@ if _cfg_profile_path:
     _info("Base cfg", str(_cfg_base_path.resolve()))
 _info("File", cfg.questionnaire_file)
 _info("Output", str(cfg.output_dir / cfg.output_subfolder))
-
-# Read early (before build_additional_info_replacements_by_language() is first
-# called further down) -- placeholders with a documented, sensible fallback
-# (e.g. "$CRISIS OR EVENT$" defaulting to "crisis or event" when the country
-# team leaves it blank) auto-resolve to their configured default instead of
-# being flagged as a missing/broken Additional-information entry.
-_placeholder_optional_defaults: dict[str, str] = (
-    (_y.get("geopoll_options", {}) or {}).get("placeholder_optional_defaults", {}) or {}
-) if isinstance(_y, dict) else {}
 
 
 def _reference_scope_label() -> str:
@@ -1306,6 +1305,18 @@ _EXPECTED_WORD_BY_LANG: dict[str, str] = {
     "AR": "المتوقعة",
 }
 
+# Placeholders with a fixed, standing platform-level fallback -- present in
+# every round/country by template design, not a per-run tunable setting (see
+# _EXPECTED_WORD_BY_LANG above for the same pattern). Keys match the
+# Additional information sheet's "Original" column (bare label, no $...$
+# needed). A real value in the sheet always wins; the default only applies
+# when the row is blank or absent entirely. If a future placeholder needs a
+# genuinely country/round-tunable default instead of a fixed one, move it to
+# geopoll_options in validation_config.yaml rather than adding it here.
+_PLACEHOLDER_OPTIONAL_DEFAULTS: dict[str, str] = {
+    "CRISIS OR EVENT": "crisis or event",
+}
+
 # Matches tense-sensitive placeholders of the form $past form [present/future form]$.
 _TENSE_BRACKET_RE = re.compile(r"^\$(.+?)\s*\[(.+?)\]\$$")
 
@@ -1714,8 +1725,13 @@ def build_additional_info_replacements_by_language(
     leaves them blank or omits the row entirely -- these are NOT missing
     replacements, they're intentionally-optional placeholders with a known
     resolution, so they must not surface as replacement_missing_key issues.
-    A real, non-blank value from the sheet always takes precedence.
+    A real, non-blank value from the sheet always takes precedence. Defaults
+    to _PLACEHOLDER_OPTIONAL_DEFAULTS (the standing platform-level fallbacks)
+    when not given explicitly; pass {} to disable, e.g. for isolated tests.
     """
+    if optional_defaults is None:
+        optional_defaults = _PLACEHOLDER_OPTIONAL_DEFAULTS
+
     def _apply_optional_defaults(out: dict[str, dict[str, str]]) -> dict[str, dict[str, str]]:
         for default_key_raw, default_value in (optional_defaults or {}).items():
             default_key = _normalize_placeholder_key(str(default_key_raw or ""))
@@ -2136,7 +2152,7 @@ try:
 except Exception:
     reference_crop_list = pl.DataFrame()
 current_text_replacements_by_language = build_additional_info_replacements_by_language(
-    run["questionnaire_path"], _wb=current_wb, optional_defaults=_placeholder_optional_defaults,
+    run["questionnaire_path"], _wb=current_wb,
 )
 current_text_replacements = current_text_replacements_by_language.get(cfg.language, {}) or current_text_replacements_by_language.get("EN", {})
 _close_workbook(current_wb)
@@ -6290,6 +6306,7 @@ _KNOWN_MANDATORY_VALUES = {
     "no - but recommended in applicable contexts",
     "no - but recommended if of interest",
     "spiel",
+    "customized",
 }
 
 
@@ -6479,11 +6496,17 @@ def validate_authoring_consistency(
 ) -> pl.DataFrame:
     """
     Current-file-only authoring consistency checks (no reference comparison):
-      - panel_targeting_mismatch: 'Mandatory' says panel-specific but the
-        recent-panelist flag disagrees, or vice versa.
       - mandatory_category_unrecognized: 'Mandatory' value doesn't match any
         of the template's known categories (likely a typo).
       - qname_too_long: variable name exceeds max_qname_length characters.
+
+    (A prior 'panel_targeting_mismatch' check comparing Mandatory's panel
+    category against PANELIST_RECENCY_COL was removed: empirically the two
+    columns are independent axes -- Mandatory's panel category flags a small
+    set of panel-recruitment questions, while PANELIST_RECENCY_COL is a
+    broad re-interview/dedup flag correlated with slow-changing demographic
+    content, not with panel targeting. The check's reverse direction would
+    flag the majority of a real questionnaire as "mismatched".)
     """
     schema = {
         "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
@@ -6494,8 +6517,7 @@ def validate_authoring_consistency(
         return pl.DataFrame(schema=schema)
 
     rows: list[dict] = []
-    has_panelist_col = PANELIST_RECENCY_COL in current_questions.columns
-    select_cols = ["Q Name", "Mandatory", "excel_row"] + ([PANELIST_RECENCY_COL] if has_panelist_col else [])
+    select_cols = ["Q Name", "Mandatory", "excel_row"]
 
     for r in current_questions.select(select_cols).iter_rows(named=True):
         qname = r.get("Q Name")
@@ -6520,26 +6542,6 @@ def validate_authoring_consistency(
                 "reference": "known categories: " + " | ".join(sorted(_KNOWN_MANDATORY_VALUES)),
                 "severity": "medium", "excel_row": excel_row,
             })
-
-        if has_panelist_col:
-            mand_says_panel = "panel" in mand_norm
-            panel_flag = str(r.get(PANELIST_RECENCY_COL) or "").strip().lower()
-            if mand_says_panel and panel_flag in ("", "no"):
-                rows.append({
-                    "issue_type": "panel_targeting_mismatch",
-                    "set_name": "", "Q Name": qname, "field": PANELIST_RECENCY_COL,
-                    "current": f"Mandatory='{mand_raw}' but panelist flag='{panel_flag or '(blank)'}'",
-                    "reference": "panelist flag should be 'yes' when Mandatory marks the question panel-specific",
-                    "severity": "medium", "excel_row": excel_row,
-                })
-            elif not mand_says_panel and panel_flag == "yes":
-                rows.append({
-                    "issue_type": "panel_targeting_mismatch",
-                    "set_name": "", "Q Name": qname, "field": PANELIST_RECENCY_COL,
-                    "current": f"Mandatory='{mand_raw}' but panelist flag='yes'",
-                    "reference": "Mandatory should mention 'panel' when the panelist flag is 'yes'",
-                    "severity": "medium", "excel_row": excel_row,
-                })
 
     return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
 
@@ -7260,7 +7262,6 @@ CORE_QUESTION_CHANGE_ISSUE_TYPES = {
 UNIVERSE_ISSUE_TYPES = {"universe_changed"}
 
 AUTHORING_CONSISTENCY_ISSUE_TYPES = {
-    "panel_targeting_mismatch",
     "mandatory_category_unrecognized",
     "qname_too_long",
 }
@@ -7351,7 +7352,6 @@ ISSUE_ACTION_MAP = {
     "module_missing_for_question": "Fill in the 'module' cell for this question (it is being dropped from all checks)",
     "conditional_removed_mandatory": "Restore the removed constraint rule or confirm its removal is intentional",
     "universe_changed": "Review change to who this question is asked of (Universe)",
-    "panel_targeting_mismatch": "Align Mandatory panel category with the recent-panelist flag",
     "mandatory_category_unrecognized": "Fix typo'd Mandatory value to match a known category",
     "replacement_additional_info_missing": "Populate Additional information sheet with replacement keys/values",
     "replacement_crop_selection_mismatch": "Review top-10 crop list selection and replacement outputs",
@@ -8075,13 +8075,6 @@ def write_summary_sheet(wb, all_issues, rules, replacement_status=None):
     ws.cell(row=r, column=2, value="INFO")
     ws.cell(row=r, column=3, value=f"{_c_n} custom question(s) detected (option/code changes shown as info)")
     _data_row(ws, r, 7, fill=STATUS_FILL.get("PASS")); r += 1
-
-    _panel_n = all_issues.filter(pl.col("issue_type") == "panel_targeting_mismatch").height
-    _panel_st = "FAIL" if _panel_n > 0 else "PASS"
-    ws.cell(row=r, column=1, value="Panel targeting consistency")
-    ws.cell(row=r, column=2, value=_panel_st)
-    ws.cell(row=r, column=3, value=f"{_panel_n} mismatch(es) found" if _panel_n else "Panel targeting consistent")
-    _data_row(ws, r, 7, fill=STATUS_FILL.get(_panel_st)); r += 1
 
     _mcat_n = all_issues.filter(pl.col("issue_type") == "mandatory_category_unrecognized").height
     _mcat_st = "FAIL" if _mcat_n > 0 else "PASS"

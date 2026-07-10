@@ -146,7 +146,7 @@ Use `Q Name` + `Field` to locate the question and column. `Current value` shows 
 
 ### Authoring consistency checks
 
-`panel_targeting_mismatch` MEDIUM and `mandatory_category_unrecognized` MEDIUM compare metadata columns within the current questionnaire only — no reference file involved. `panel_targeting_mismatch` flags a disagreement between the `Mandatory` panel category and the `To be asked to recent panelists (<6 months)?` flag. `mandatory_category_unrecognized` flags a `Mandatory` value that doesn't match any of the six known categories — usually a typo.
+`mandatory_category_unrecognized` MEDIUM compares a metadata column within the current questionnaire only — no reference file involved. It flags a `Mandatory` value that doesn't match any of the seven known categories — usually a typo.
 
 **Key columns (all sub-blocks):** Issue type, Q Name, Field, Current value, Reference / rule, Severity, Excel row.
 

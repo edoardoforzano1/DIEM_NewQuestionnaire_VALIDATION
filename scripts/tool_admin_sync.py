@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import difflib
+import re
+import unicodedata
 from pathlib import Path
 from shutil import copy2
 
 import openpyxl
+from openpyxl.styles import PatternFill
 
 from admin_tools_common import (
     as_bool,
@@ -19,6 +23,30 @@ from admin_tools_common import (
 
 def _norm(v) -> str:
     return str(v or "").strip().lower()
+
+
+def _normalize_name_for_matching(v) -> str:
+    """Lowercase, accent-stripped, punctuation-collapsed name for near/fuzzy
+    matching (e.g. 'Ròme' / 'ROME' / 'Rome ' all normalize identically)."""
+    text = str(v or "").strip().lower()
+    text = unicodedata.normalize("NFKD", text)
+    text = "".join(c for c in text if not unicodedata.combining(c))
+    text = re.sub(r"[^a-z0-9]+", " ", text).strip()
+    return text
+
+
+# full_from_agol match-tier highlight colors, applied by _rewrite_admin_choices
+# to rows carrying a 'match_tier' (see _build_full_entries):
+#   1 = exact pcode match against the current list (pale yellow)
+#   2 = pcode differs but normalized name matches an old entry with the same
+#       parent pcode exactly -- likely a pcode reassignment/rename (gold)
+#   3 = pcode differs, no exact normalized-name match, but a fuzzy match
+#       above the configured threshold exists -- uncertain, review (orange)
+_MATCH_TIER_FILLS = {
+    1: PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid"),
+    2: PatternFill(start_color="FFE699", end_color="FFE699", fill_type="solid"),
+    3: PatternFill(start_color="F4B183", end_color="F4B183", fill_type="solid"),
+}
 
 
 def _style_copy(style_obj):
@@ -135,23 +163,72 @@ def _build_subset_entries(current_per_list, agol_rows, include_admin3: bool):
     return entries_out, stats
 
 
-def _build_full_entries(agol_rows, include_admin3: bool):
+def _build_full_entries(
+    agol_rows,
+    include_admin3: bool,
+    current_per_list: dict | None = None,
+    fuzzy_threshold: float = 0.85,
+):
+    """
+    Wholesale-replace admin choices from AGOL. When current_per_list is
+    given, each new row is tagged with 'match_tier' against the CURRENT
+    (pre-sync) list -- metadata only for _rewrite_admin_choices highlighting,
+    it does not affect which rows are kept or their written values:
+      1 = exact pcode match (same identifier as before)
+      2 = pcode differs but the normalized name matches an old entry with the
+          same parent pcode exactly (likely a pcode reassignment/rename)
+      3 = pcode differs, no exact normalized-name match, but a fuzzy name
+          match >= fuzzy_threshold exists among old entries sharing the same
+          parent pcode (uncertain -- needs human review)
+      absent = no correspondence found; genuinely new admin unit
+
+    Parent-pcode scoping assumes the parent level's pcode is stable between
+    AGOL pulls; a simultaneous parent+child pcode change would not be caught
+    by tiers 2/3 (falls through to "genuinely new").
+    """
     target_lists = ["admin1", "admin2"] + (["admin3"] if include_admin3 else [])
     entries_out = {}
     for list_name in target_lists:
+        old_rows = (current_per_list or {}).get(list_name, [])
+        old_by_code = {r.get("code"): r for r in old_rows}
+        old_by_norm_and_parent = {}
+        old_norms_by_parent: dict[str, list[str]] = {}
+        for r in old_rows:
+            norm = _normalize_name_for_matching(r.get("label"))
+            parent = r.get("parent", "")
+            old_by_norm_and_parent[(parent, norm)] = r
+            old_norms_by_parent.setdefault(parent, []).append(norm)
+
         built = []
         for code, label, parent in agol_rows.get(list_name, []):
             if not code:
                 continue
-            built.append(
-                {
-                    "list_name": list_name,
-                    "code": code,
-                    "label": label,
-                    "parent": parent,
-                    "base_vals": None,
-                }
-            )
+            entry = {
+                "list_name": list_name,
+                "code": code,
+                "label": label,
+                "parent": parent,
+                "base_vals": None,
+            }
+            if current_per_list is not None:
+                tier = 0
+                if code in old_by_code:
+                    tier = 1
+                else:
+                    norm = _normalize_name_for_matching(label)
+                    if (parent, norm) in old_by_norm_and_parent:
+                        tier = 2
+                    else:
+                        best = 0.0
+                        for old_norm in old_norms_by_parent.get(parent, []):
+                            ratio = difflib.SequenceMatcher(None, norm, old_norm).ratio()
+                            if ratio > best:
+                                best = ratio
+                        if best >= fuzzy_threshold:
+                            tier = 3
+                if tier:
+                    entry["match_tier"] = tier
+            built.append(entry)
         entries_out[list_name] = built
     return entries_out
 
@@ -192,13 +269,13 @@ def _rewrite_admin_choices(ws, entries_per_list, language: str, preserve_sample:
             continue
         if blank_style is None and _is_blank(vals):
             blank_style = styles
-        kept_rows.append((vals, styles))
+        kept_rows.append((vals, styles, None))
     if blank_style is None:
         blank_style = generic_style
 
     new_rows = []
     for list_name, entries in entries_per_list.items():
-        new_rows.append(([None] * n_cols, blank_style))
+        new_rows.append(([None] * n_cols, blank_style, None))
         row_style = style_by_list.get(list_name, generic_style)
         for e in entries:
             base_vals = e.get("base_vals")
@@ -217,15 +294,21 @@ def _rewrite_admin_choices(ws, entries_per_list, language: str, preserve_sample:
                 key = (list_name, str(e.get("code") or "").strip())
                 if key in preserve_sample:
                     row[sample_col] = preserve_sample[key]
-            new_rows.append((row, row_style))
+            new_rows.append((row, row_style, e.get("match_tier")))
 
-    payload = [all_rows[0]] + kept_rows + new_rows
+    header_row = (all_rows[0][0], all_rows[0][1], None)
+    payload = [header_row] + kept_rows + new_rows
     ws.delete_rows(1, ws.max_row)
-    for r_idx, (vals, styles) in enumerate(payload, start=1):
+    for r_idx, (vals, styles, tier) in enumerate(payload, start=1):
         for c_idx in range(1, n_cols + 1):
             cell = ws.cell(row=r_idx, column=c_idx, value=vals[c_idx - 1] if c_idx - 1 < len(vals) else None)
             if c_idx - 1 < len(styles) and styles[c_idx - 1] is not None:
                 cell._style = _style_copy(styles[c_idx - 1])
+        if tier:
+            fill = _MATCH_TIER_FILLS.get(tier)
+            if fill is not None:
+                for c_idx in range(1, n_cols + 1):
+                    ws.cell(row=r_idx, column=c_idx).fill = fill
 
 
 def run(cfg: dict) -> int:
@@ -278,7 +361,24 @@ def run(cfg: dict) -> int:
             + f"dropped_duplicates={stats['dropped_duplicates']}"
         )
     elif sync_mode == "full_from_agol":
-        entries_per_list = _build_full_entries(agol_rows, include_admin3=include_admin3)
+        entries_per_list = _build_full_entries(
+            agol_rows,
+            include_admin3=include_admin3,
+            current_per_list=current_per_list,
+            fuzzy_threshold=float(cfg.get("fuzzy_match_threshold", 0.85)),
+        )
+        _tier_counts = {1: 0, 2: 0, 3: 0}
+        for _entries in entries_per_list.values():
+            for _e in _entries:
+                _t = _e.get("match_tier")
+                if _t in _tier_counts:
+                    _tier_counts[_t] += 1
+        print(
+            "  full-sync match highlights: "
+            + f"exact_pcode={_tier_counts[1]} "
+            + f"renamed_pcode_same_name={_tier_counts[2]} "
+            + f"fuzzy_uncertain={_tier_counts[3]}"
+        )
     else:
         raise ValueError(
             "sync_mode must be one of: keep_previous, subset_from_agol, full_from_agol"

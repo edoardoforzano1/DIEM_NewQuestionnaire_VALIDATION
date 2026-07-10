@@ -374,16 +374,16 @@ flowchart LR
 
 ### Block 4 · Authoring consistency checks
 
-Two checks compare metadata columns against each other within the current questionnaire only — no reference file is involved. They catch authoring slips that a cross-file comparison can't see, because the same inconsistency could exist in both the current file and the reference.
+One check compares a metadata column against a known set of values within the current questionnaire only — no reference file is involved. It catches authoring slips that a cross-file comparison can't see, because the same inconsistency could exist in both the current file and the reference.
+
+(A prior `panel_targeting_mismatch` check — comparing the `Mandatory` panel category against the `To be asked to recent panelists (<6 months)?` flag — was removed. Empirically the two columns are independent: `Mandatory`'s panel category flags a small set of panel-recruitment questions, while the recent-panelist flag is a broad re-interview/dedup flag correlated with slow-changing demographic content, not with panel targeting. The check's reverse direction would have flagged the majority of a real questionnaire as "mismatched".)
 
 ```mermaid
 flowchart LR
     AC["Block 4 · Authoring consistency"]
-    AC --> N["panel_targeting_mismatch — MEDIUM"]
     AC --> O["mandatory_category_unrecognized — MEDIUM"]
 
     style AC fill:#f0f4f8,stroke:#8aaccc,color:#1f3558
-    style N  fill:#fff0de,stroke:#e08c00,color:#5a3200
     style O  fill:#fff0de,stroke:#e08c00,color:#5a3200
 ```
 
@@ -391,21 +391,9 @@ flowchart LR
 
 <div class="issue-block">
   <div class="issue-card issue-card-medium">
-    <span class="issue-card-name"><code>panel_targeting_mismatch</code></span>
-    <span class="sev sev-medium">MEDIUM</span>
-    <span class="issue-card-body">The <code>Mandatory</code> column marks the question as panel-specific (<code>yes - panel</code>) but the <code>To be asked to recent panelists (&lt;6 months)?</code> flag says no/blank, or vice versa.</span>
-  </div>
-  <div class="issue-action">
-    <span class="issue-action-label">What to do</span>
-    Align the two columns — a panel-specific question should have the recent-panelist flag set to <code>yes</code>, and vice versa. Check with the survey design team if you're unsure which one is wrong.
-  </div>
-</div>
-
-<div class="issue-block">
-  <div class="issue-card issue-card-medium">
     <span class="issue-card-name"><code>mandatory_category_unrecognized</code></span>
     <span class="sev sev-medium">MEDIUM</span>
-    <span class="issue-card-body">The <code>Mandatory</code> value doesn't match any of the six known categories (<code>yes - core</code>, <code>yes - panel</code>, <code>no - low priority</code>, <code>no - but recommended in applicable contexts</code>, <code>no - but recommended if of interest</code>, <code>spiel</code>) — usually a typo.</span>
+    <span class="issue-card-body">The <code>Mandatory</code> value doesn't match any of the seven known categories (<code>yes - core</code>, <code>yes - panel</code>, <code>no - low priority</code>, <code>no - but recommended in applicable contexts</code>, <code>no - but recommended if of interest</code>, <code>spiel</code>, <code>customized</code>) — usually a typo.</span>
   </div>
   <div class="issue-action">
     <span class="issue-action-label">What to do</span>
