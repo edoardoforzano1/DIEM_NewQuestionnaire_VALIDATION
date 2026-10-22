@@ -228,11 +228,29 @@ def _write_config_snapshot_kobo(
 
 
 def find_kobo_template(language: str, templates_dir: Path) -> Path:
+    """
+    Newest KoBo template for the language. Multilingual templates (from
+    20261007 on) have no language token in the filename and match any
+    language. Sorted by the 8-digit date in the filename, then mtime.
+    """
     lang_upper = language.upper()
-    candidates = sorted(
-        templates_dir.glob(f"*kobo*{lang_upper}*.xlsx"),
-        key=lambda p: p.stat().st_mtime, reverse=True,
-    )
+    lang_tokens = ("EN", "FR", "AR", "ES", "PT")
+
+    def _has_lang_token(name: str, code: str) -> bool:
+        return re.search(rf"(?i)(?:^|[_\-\s]){code}(?:$|[_\-\s.])", name) is not None
+
+    candidates = [
+        p for p in templates_dir.glob("*kobo*.xlsx")
+        if not p.name.startswith("~$")
+        and (_has_lang_token(p.stem, lang_upper)
+             or not any(_has_lang_token(p.stem, t) for t in lang_tokens))
+    ]
+
+    def _date_key(p: Path) -> tuple[int, float]:
+        m = re.search(r"(\d{8})", p.name)
+        return (int(m.group(1)) if m else 0, p.stat().st_mtime)
+
+    candidates.sort(key=_date_key, reverse=True)
     if not candidates:
         raise FileNotFoundError(f"No KoBO template for language {language!r} in {templates_dir}")
     return candidates[0]
@@ -5664,6 +5682,29 @@ if _passing_prefixes:
     _q_matches = pl.any_horizontal(_exprs) if len(_exprs) > 1 else _exprs[0]
     all_issues = all_issues.with_columns(
         pl.when((pl.col("issue_type") == "removed_question") & _q_matches)
+        .then(pl.lit("info"))
+        .otherwise(pl.col("severity"))
+        .alias("severity")
+    )
+
+# -- Relaxed min-count sets (e.g. WEALTH): while the set passes, mandatory
+#    status changes for its questions are downgraded to info too ------------
+_relaxed_prefixes = []
+for _set_name, _rule in rules.get("min_count_sets", {}).items():
+    if not _rule.get("relax_individual_mandatory", False):
+        continue
+    if count_issues.filter(pl.col("set_name") == _set_name).height > 0:
+        continue
+    _prefix = str(_rule.get("prefix", "")).strip()
+    if _prefix:
+        _relaxed_prefixes.append(_prefix)
+        if _prefix == "hh_wealth_" or _set_name.upper() == "WEALTH":
+            _relaxed_prefixes.append("o_hh_wealth_")
+
+if _relaxed_prefixes:
+    _q_matches = pl.any_horizontal([pl.col("Q Name").cast(pl.Utf8).str.starts_with(p) for p in _relaxed_prefixes])
+    all_issues = all_issues.with_columns(
+        pl.when(pl.col("issue_type").is_in(["mandatory_to_optional", "mandatory_column_mismatch"]) & _q_matches)
         .then(pl.lit("info"))
         .otherwise(pl.col("severity"))
         .alias("severity")

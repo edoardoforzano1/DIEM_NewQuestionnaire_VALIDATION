@@ -5,3 +5,7 @@ __pycache__/
 testcmd.cmd
 batch_output/
 tmp_*.py
+
+# Streamlit UI (app/) runtime artifacts
+.streamlit/
+configuration/.streamlit_backups/

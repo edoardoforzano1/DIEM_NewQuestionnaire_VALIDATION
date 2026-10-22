@@ -382,12 +382,24 @@ def find_latest_template(template_repo: Path, enumerator: str, language: str) ->
     """
     Scans the template repo folder and returns the most recent template
     matching the given enumerator (geopoll/kobo) and language (EN/FR/etc.).
-    Sorts by date in filename first, then by file modification time as fallback.
+    Multilingual templates (from 20261007 on) carry no language token in the
+    filename (e.g. diem_household_questionnaire_geopoll_20261007.xlsx); those
+    match any language. Sorts by date in filename first, then by file
+    modification time as fallback.
     """
+    lang_tokens = {f"_{code.lower()}_" for code in LANGUAGE_COLUMN}
+
+    def _matches_language(name: str) -> bool:
+        padded = f"_{name.lower().replace('-', '_')}_"
+        if f"_{language.lower()}_" in padded:
+            return True
+        return not any(tok in padded for tok in lang_tokens)
+
     matches = [
         p for p in template_repo.glob("*.xlsx")
         if enumerator.lower() in p.name.lower()
-        and f"_{language.lower()}_" in p.name.lower()
+        and not p.name.startswith("~$")
+        and _matches_language(p.stem)
     ]
     if not matches:
         raise FileNotFoundError(
@@ -418,8 +430,12 @@ def load_critical_sets(cfg: ValidationConfig) -> dict:
       4. critical_sets.yaml in the current working directory
       5. critical_sets.yaml in a scripts/ subfolder of the current directory
 
-    Returns a dict with keys: exact_sets, min_count_sets, crop_harvest.
+    Returns a dict with every rule block (see _CRITICAL_SET_RULE_DEFAULTS).
     If the file is not found, structural validation is disabled (empty rules returned).
+
+    Every block must be passed through here: the downstream validators read
+    rules.get("fs_indicators"), rules.get("agri_cs_check"), ... and silently
+    do nothing when a block is missing.
     """
     _cfg_dir = Path(__file__).parent.parent / "configuration"
     candidates = [
@@ -434,14 +450,28 @@ def load_critical_sets(cfg: ValidationConfig) -> dict:
             with open(path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
             print(f"Rules loaded  : {path}")
+            data = data or {}
             return {
-                "exact_sets"    : data.get("exact_sets", {}),
-                "min_count_sets": data.get("min_count_sets", {}),
-                "crop_harvest"  : data.get("crop_harvest", {}),
+                key: (data.get(key) or type(default)())
+                for key, default in _CRITICAL_SET_RULE_DEFAULTS.items()
             }
     print("  critical_sets.yaml not found  structural validation disabled.")
     print(f"   Searched: {[str(p) for p in candidates if p is not None]}")
-    return {"exact_sets": {}, "min_count_sets": {}, "crop_harvest": {}}
+    return {key: type(default)() for key, default in _CRITICAL_SET_RULE_DEFAULTS.items()}
+
+
+# Rule blocks read from critical_sets.yaml, with the empty value used when a
+# block is absent. Add new rule types here so load_critical_sets passes them on.
+_CRITICAL_SET_RULE_DEFAULTS: dict = {
+    "exact_sets"        : {},
+    "min_count_sets"    : {},
+    "crop_harvest"      : {},
+    "fs_indicators"     : {},
+    "agri_cs_check"     : {},
+    "variable_pairs"    : [],
+    "fixed_option_codes": [],
+    "tlu_weights"       : {},
+}
 
 
 def prepare_run(cfg: ValidationConfig) -> dict:
@@ -570,6 +600,7 @@ CORE_COLUMNS = [
     "Spanish",
     "Arabic",
     "Portuguese",
+    "Local Language",
     "Q Type",
     "Mandatory",
     "Conditional",
@@ -1111,7 +1142,23 @@ def is_option_bearing_qtype(value: str) -> bool:
         return True
     if "single choice" in t and "open ended" in t:
         return True
+    if "matrix" in t:
+        return True
     return False
+
+def is_matrix_qtype(value: str) -> bool:
+    """
+    True for GeoPoll 'Matrix Table' questions (new in the 20261007 template).
+    A matrix asks one answer scale (options in the text column) for several
+    rows (sub-variables listed in varname_new_multiple / Codes).
+    """
+    return "matrix" in _normalize_q_type(value)
+
+
+def is_matrix_qtype_expr(col_name: str) -> pl.Expr:
+    """Expression form of is_matrix_qtype for DataFrame filters."""
+    return pl.col(col_name).cast(pl.Utf8).fill_null("").str.to_lowercase().str.contains("matrix")
+
 
 # Matches blocks like:
 #   1) Label text
@@ -1280,6 +1327,7 @@ RESTORE_TEXT_COLUMNS = [
     "Spanish",
     "Arabic",
     "Portuguese",
+    "Local Language",
     "Skip Pattern",
     "Default skip patterns & conditional ",
     "Default skip patterns & conditional",
@@ -1318,7 +1366,9 @@ _PLACEHOLDER_OPTIONAL_DEFAULTS: dict[str, str] = {
 }
 
 # Matches tense-sensitive placeholders of the form $past form [present/future form]$.
-_TENSE_BRACKET_RE = re.compile(r"^\$(.+?)\s*\[(.+?)\]\$$")
+# Whitespace just inside the $...$ / [...] delimiters is tolerated: the
+# Arabic template writes these as "$ دفعت [ تدفع] $".
+_TENSE_BRACKET_RE = re.compile(r"^\$\s*(.+?)\s*\[\s*(.+?)\s*\]\s*\$$")
 
 
 def _detect_verb_tense_mode(raw_value: str) -> str:
@@ -1330,9 +1380,11 @@ def _detect_verb_tense_mode(raw_value: str) -> str:
     v = str(raw_value or "").lower().strip()
     if not v:
         return "past"
-    both_signals = ("both", "les deux", "deux tenses", "les 2")
-    present_signals = ("present", "présent", "ongoing", "cours", "upcoming", "coming", "futur", "future")
-    past_signals = ("past", "passé", "passe", "last", "recently", "finished", "harvesting", "harvest", "récolte")
+    both_signals = ("both", "les deux", "deux tenses", "les 2", "كلا", "كلاهما")
+    present_signals = ("present", "présent", "ongoing", "cours", "upcoming", "coming", "futur", "future",
+                       "الحاضر", "المضارع", "الحالي", "المستقبل")
+    past_signals = ("past", "passé", "passe", "last", "recently", "finished", "harvesting", "harvest", "récolte",
+                    "الماضي")
     if any(s in v for s in both_signals):
         return "both"
     has_present = any(s in v for s in present_signals)
@@ -1439,6 +1491,65 @@ def read_generic_sheet(path: Path, sheet_name: str, header_row: int, _wb=None) -
 
 def read_additional_information(path: Path, _wb=None) -> pl.DataFrame:
     return read_generic_sheet(path, sheet_name="Additional information", header_row=2, _wb=_wb)
+
+
+def build_additional_info_sections(df: pl.DataFrame, original_col: str) -> pl.DataFrame:
+    """
+    Adds a '_section' column to the Additional information sheet: the section
+    banner (e.g. "FOR CORE QUESTIONS", "FILL OUT FOR TROPICAL LIVESTOCK UNIT
+    CALCULATION") written in the column(s) left of 'Original', forward-filled
+    down to every row of that section.
+    """
+    if original_col not in df.columns:
+        return df.with_columns(pl.lit("").alias("_section"))
+    lead_cols = df.columns[: df.columns.index(original_col)]
+    if not lead_cols:
+        return df.with_columns(pl.lit("").alias("_section"))
+    banner = pl.concat_str(
+        [pl.col(c).cast(pl.Utf8).fill_null("") for c in lead_cols], separator=" "
+    ).str.strip_chars()
+    return df.with_columns(
+        pl.when(banner != "").then(banner).otherwise(None)
+        .forward_fill().fill_null("").alias("_section")
+    )
+
+
+def _exclude_additional_info_sections(
+    df: pl.DataFrame, original_col: str, section_markers: list[str] | None,
+) -> pl.DataFrame:
+    """Drops Additional information rows whose section banner contains any marker
+    (case-insensitive) -- used to keep data tables such as the TLU weights out of
+    the placeholder replacement maps."""
+    markers = [str(m).strip().upper() for m in (section_markers or []) if str(m or "").strip()]
+    if not markers or df.height == 0:
+        return df
+    tagged = build_additional_info_sections(df, original_col)
+    sec = pl.col("_section").str.to_uppercase()
+    hit = pl.lit(False)
+    for m in markers:
+        hit = hit | sec.str.contains(m, literal=True)
+    return tagged.filter(~hit).drop("_section")
+
+
+def read_tlu_weights(path: Path, section_marker: str, _wb=None) -> pl.DataFrame:
+    """
+    Reads the Tropical Livestock Unit weights table from the Additional
+    information sheet (new in the 20261007 template). Returns one row per
+    species row in the TLU section: species, plus one column per
+    'Replacement (xx)' language column holding the raw weight text.
+    """
+    df = read_additional_information(path, _wb=_wb)
+    original_col = _find_column(df.columns, "Original")
+    if df.height == 0 or not original_col or not section_marker:
+        return pl.DataFrame(schema={"species": pl.Utf8})
+    weight_cols = [c for c in df.columns if c.lower().startswith("replacement")]
+    return (
+        build_additional_info_sections(df, original_col)
+        .filter(pl.col("_section").str.to_uppercase().str.contains(section_marker.upper(), literal=True))
+        .with_columns(pl.col(original_col).cast(pl.Utf8).fill_null("").str.strip_chars().alias("species"))
+        .filter(pl.col("species") != "")
+        .select(["species"] + weight_cols)
+    )
 
 
 def read_crop_list(path: Path, _wb=None) -> pl.DataFrame:
@@ -1645,9 +1756,16 @@ def _placeholder_token_explicit_lang(token: str) -> str | None:
     return m.group(1).upper() if m else None
 
 
-def analyze_additional_info_substitutions(path: Path, language: str, _wb=None) -> dict:
-    """Return diagnostics about Additional information substitution readiness."""
+def analyze_additional_info_substitutions(
+    path: Path, language: str, _wb=None, exclude_section_markers: list[str] | None = None,
+) -> dict:
+    """Return diagnostics about Additional information substitution readiness.
+    exclude_section_markers: section banners whose rows are data tables, not
+    placeholders (e.g. the TLU weights) -- left out of the key counts."""
     df = read_additional_information(path, _wb=_wb)
+    _orig = _find_column(df.columns, "Original")
+    if _orig:
+        df = _exclude_additional_info_sections(df, _orig, exclude_section_markers)
     out = {
         "has_sheet": True,
         "has_required_columns": True,
@@ -1714,11 +1832,50 @@ def build_additional_info_replacements(path: Path, language: str, _wb=None) -> d
     return {}
 
 
+def _resolve_derived_placeholders(
+    mapping: dict[str, str], derived_placeholders: dict | None,
+) -> None:
+    """
+    Fills placeholders whose value is computed from another Additional
+    information value instead of being typed by the country team, e.g.
+    $MAX DIGIT DK$ = the digit 8 repeated as many times as MAX AMOUNT has
+    digits (+ extra_digits). Configured under
+    geopoll_options.derived_placeholders in validation_config.yaml:
+
+        MAX DIGIT DK: {source: "MAX AMOUNT", repeat_digit: "8", extra_digits: 0}
+
+    A real value in the sheet always wins. Mutates mapping in place.
+    """
+    if not derived_placeholders:
+        return
+    lower_map = {str(k).lower(): v for k, v in mapping.items()}
+    for target_raw, spec in derived_placeholders.items():
+        target_key = _normalize_placeholder_key(str(target_raw or ""))
+        if not target_key or not isinstance(spec, dict):
+            continue
+        if str(lower_map.get(target_key.lower()) or "").strip():
+            continue
+        source_key = _normalize_placeholder_key(str(spec.get("source") or ""))
+        source_val = re.sub(r"[\s,._']", "", str(lower_map.get(source_key.lower()) or ""))
+        digit = str(spec.get("repeat_digit") or "").strip()
+        if not re.fullmatch(r"\d+", source_val) or not re.fullmatch(r"\d", digit):
+            continue
+        n_digits = len(str(int(source_val))) + int(spec.get("extra_digits") or 0)
+        if n_digits > 0:
+            mapping[target_key] = digit * n_digits
+
+
 def build_additional_info_replacements_by_language(
     path: Path, _wb=None, optional_defaults: dict[str, str] | None = None,
+    exclude_section_markers: list[str] | None = None,
+    derived_placeholders: dict | None = None,
 ) -> dict[str, dict[str, str]]:
     """
     Build per-language substitution maps from Additional information.
+
+    exclude_section_markers: section banners whose rows are data tables rather
+    than placeholders (the TLU weights block) -- their rows are skipped.
+    derived_placeholders: see _resolve_derived_placeholders.
 
     optional_defaults: keys (bare "Original"-style labels, e.g. "CRISIS OR
     EVENT") that fall back to a documented default value when the sheet
@@ -1746,6 +1903,7 @@ def build_additional_info_replacements_by_language(
     original_col = _find_column(df.columns, "Original")
     if not original_col or df.height == 0:
         return _apply_optional_defaults({lang: {} for lang in ["EN", "FR", "ES", "AR", "PT"]})
+    df = _exclude_additional_info_sections(df, original_col, exclude_section_markers)
 
     generic_replacement_col = _find_column(df.columns, "Replacement")
     en_replacement_col = _find_column(df.columns, "Replacement (EN)", "Replacement EN")
@@ -1789,14 +1947,30 @@ def build_additional_info_replacements_by_language(
                 elif key.lower() in _season_phase_key_variants:
                     season_phase_raw_by_lang[lang] = replacement
 
+    # The verb tense is ONE country-level choice (past / present / both), not a
+    # per-language one: every language column must use the same mode. Read it
+    # from the English value first (the dropdown is authored in English), then
+    # from the first other language that has a value. Deriving it per language
+    # broke Arabic: "كلا الماضي و الحاضر" was not recognised -> "past", so the
+    # Arabic text lost the present forms and $expected or nothing AR$ fell
+    # through to the English word "expected".
+    _tense_raw_order = ["EN"] + [l for l in out.keys() if l != "EN"]
+    country_tense_raw = next(
+        (verb_tense_raw_by_lang.get(l) for l in _tense_raw_order if verb_tense_raw_by_lang.get(l)),
+        "",
+    ) or next(
+        (season_phase_raw_by_lang.get(l) for l in _tense_raw_order if season_phase_raw_by_lang.get(l)),
+        "",
+    )
+    country_tense_mode = _detect_verb_tense_mode(country_tense_raw)
+
     for lang, mapping in out.items():
-        # New row takes precedence; fall back to legacy season phase.
-        raw = verb_tense_raw_by_lang.get(lang) or season_phase_raw_by_lang.get(lang, "")
-        tense_mode = _detect_verb_tense_mode(raw)
+        tense_mode = country_tense_mode
 
         mapping[_TENSE_MODE_KEY] = tense_mode
         expected_word = _EXPECTED_WORD_BY_LANG.get(lang, "expected")
         mapping["$expected or nothing$"] = "" if tense_mode == "past" else expected_word
+        _resolve_derived_placeholders(mapping, derived_placeholders)
 
     return _apply_optional_defaults(out)
 
@@ -2035,18 +2209,28 @@ def _build_sorted_crop_entries(crop_df: pl.DataFrame, language: str) -> list[dic
     return entries
 
 
-def build_crop_option_block(crop_df: pl.DataFrame, language: str, include_no_crop: bool = True) -> str:
-    """Builds a numbered crop label block: selected crops first, then others."""
+_DEFAULT_CROP_CLOSING_OPTIONS = {"no_crop": "No crop production", "dont_know": "DON'T KNOW", "refused": "REFUSED"}
+
+
+def build_crop_option_block(
+    crop_df: pl.DataFrame, language: str, include_no_crop: bool = True,
+    closing_labels: dict | None = None,
+) -> str:
+    """Builds a numbered crop label block: selected crops first, then others,
+    closed by 91) no crop production / 92) don't know / 93) refused in the
+    block's language. closing_labels: {"no_crop", "dont_know", "refused"} for
+    this language (geopoll_options.crop_list_closing_options); missing keys
+    fall back to English."""
     entries = _build_sorted_crop_entries(crop_df, language)
     labels = [e["label"] for e in entries if e["label"]]
     if not labels:
         return ""
 
+    tail = {**_DEFAULT_CROP_CLOSING_OPTIONS, **{k: v for k, v in (closing_labels or {}).items() if v}}
     lines = [f"{idx}){label}" for idx, label in enumerate(labels, start=1)]
     if include_no_crop:
-        lines.extend(["91)No crop production", "92)DON'T KNOW", "93)REFUSED"])
-    else:
-        lines.extend(["92)DON'T KNOW", "93)REFUSED"])
+        lines.append(f"91){tail['no_crop']}")
+    lines.extend([f"92){tail['dont_know']}", f"93){tail['refused']}"])
     return "\n".join(lines)
 
 
@@ -2071,21 +2255,37 @@ def rebuild_crop_questions_for_deployed_form(
     crop_df: pl.DataFrame,
     language: str,
     candidate_columns: Optional[list[str]] = None,
+    closing_labels_by_lang: dict | None = None,
 ) -> pl.DataFrame:
     """
     Replaces crop placeholders using the current questionnaire Crop list.
     Handles label and code markers, singular/plural and language-suffixed forms.
+    closing_labels_by_lang: {"AR": {"no_crop": ..., "dont_know": ..., "refused": ...}, ...}
     """
+    _closing = {str(k).upper(): v for k, v in (closing_labels_by_lang or {}).items() if isinstance(v, dict)}
     crop_qnames = set(find_crop_placeholder_questions(template_questions))
     columns = [c for c in (candidate_columns or RESTORE_TEXT_COLUMNS) if c in questions_df.columns]
     if not crop_qnames or not columns:
         return questions_df.clone()
 
-    main_block = build_crop_option_block(crop_df, language, include_no_crop=True)
-    sold_block = build_crop_option_block(crop_df, language, include_no_crop=False)
-    main_code_block = build_crop_code_block(crop_df, language, include_no_crop=True)
-    sold_code_block = build_crop_code_block(crop_df, language, include_no_crop=False)
-    if not main_block:
+    # Crop labels are built per column language (English column gets the
+    # Label (EN) names, Arabic column Label (AR), ...); non-language columns
+    # (Skip pattern, Codes, Local Language, ...) use the run language.
+    # Building one block in the run language and writing it into every column
+    # put Arabic crop names into the English column on AR runs.
+    _blocks_cache: dict[str, tuple[str, str, str, str]] = {}
+
+    def _blocks_for(lang: str) -> tuple[str, str, str, str]:
+        if lang not in _blocks_cache:
+            _blocks_cache[lang] = (
+                build_crop_option_block(crop_df, lang, include_no_crop=True, closing_labels=_closing.get(lang.upper())),
+                build_crop_option_block(crop_df, lang, include_no_crop=False, closing_labels=_closing.get(lang.upper())),
+                build_crop_code_block(crop_df, lang, include_no_crop=True),
+                build_crop_code_block(crop_df, lang, include_no_crop=False),
+            )
+        return _blocks_cache[lang]
+
+    if not _blocks_for(language)[0]:
         return questions_df.clone()
 
     crop_qnames_list = sorted(crop_qnames)
@@ -2095,6 +2295,10 @@ def rebuild_crop_questions_for_deployed_form(
 
     exprs = []
     for col in columns:
+        col_lang = _language_code_for_text_column(col) or language
+        main_block, sold_block, main_code_block, sold_code_block = _blocks_for(col_lang)
+        if not main_block:  # no labels for this language in the Crop list
+            main_block, sold_block, main_code_block, sold_code_block = _blocks_for(language)
         base = pl.col(col).cast(pl.Utf8).fill_null("")
 
         has_marker = (
@@ -2151,8 +2355,24 @@ try:
     reference_crop_list = read_crop_list(run["reference_path"])
 except Exception:
     reference_crop_list = pl.DataFrame()
+_tlu_section_marker = str((rules.get("tlu_weights") or {}).get("section_marker") or "").strip()
+_additional_info_excluded_sections = [_tlu_section_marker] if _tlu_section_marker else []
+_derived_placeholders_cfg = (
+    ((_y.get("geopoll_options", {}) or {}).get("derived_placeholders") or {})
+    if isinstance(_y, dict) else {}
+)
+_crop_closing_options_cfg = (
+    ((_y.get("geopoll_options", {}) or {}).get("crop_list_closing_options") or {})
+    if isinstance(_y, dict) else {}
+)
 current_text_replacements_by_language = build_additional_info_replacements_by_language(
     run["questionnaire_path"], _wb=current_wb,
+    exclude_section_markers=_additional_info_excluded_sections,
+    derived_placeholders=_derived_placeholders_cfg,
+)
+current_tlu_weights = (
+    read_tlu_weights(run["questionnaire_path"], _tlu_section_marker, _wb=current_wb)
+    if _tlu_section_marker else pl.DataFrame(schema={"species": pl.Utf8})
 )
 current_text_replacements = current_text_replacements_by_language.get(cfg.language, {}) or current_text_replacements_by_language.get("EN", {})
 _close_workbook(current_wb)
@@ -2189,6 +2409,7 @@ if cfg.reference_mode == "previous_round":
         template_questions_for_restore,
         current_crop_list,
         cfg.language,
+        closing_labels_by_lang=_crop_closing_options_cfg,
     )
     comparison_reference_questions = reference_questions_raw
     validated_output_questions = comparison_current_questions
@@ -2209,6 +2430,7 @@ else:
         reference_questions_raw,
         current_crop_list,
         cfg.language,
+        closing_labels_by_lang=_crop_closing_options_cfg,
     )
 
 # Module controls:
@@ -2427,6 +2649,11 @@ def normalize_text_expr(col_name: str) -> pl.Expr:
     Polars expression that lowercases a string column, removes punctuation,
     and collapses whitespace. Apply as an alias so the original column is preserved.
 
+    Arabic text is orthographically folded first (hamza-carrying alef forms,
+    alef maqsura, ta marbuta, tatweel and diacritics), so spelling variants
+    such as الإجابة / الاجابة compare equal -- these differ between template
+    versions and country files without any change in meaning.
+
     Usage:
         df.with_columns(normalize_text_expr("option_label").alias("option_label_norm"))
     """
@@ -2435,6 +2662,12 @@ def normalize_text_expr(col_name: str) -> pl.Expr:
         .cast(pl.Utf8)
         .fill_null("")
         .str.to_lowercase()
+        .str.replace_all(r"[ً-ٰٟـ]", "")  # Arabic diacritics + tatweel
+        .str.replace_all(r"[آأإٱ]", "ا")  # آ أ إ ٱ -> ا
+        .str.replace_all(r"ى", "ي")                  # ى -> ي
+        .str.replace_all(r"ة", "ه")                  # ة -> ه
+        .str.replace_all(r"ؤ", "و")                  # ؤ -> و
+        .str.replace_all(r"ئ", "ي")                  # ئ -> ي
         .str.replace_all(r"[^\w\s]", "")   # remove punctuation
         .str.replace_all(r"\s+", " ")       # collapse multiple spaces
         .str.strip_chars()
@@ -2904,6 +3137,34 @@ def _skip_signatures_equivalent(sig_a: set[tuple], sig_b: set[tuple]) -> bool:
             return False
     return True
 
+def _missing_target_has_alternative(
+    skip_text: str, target: str, curr_qnames: set[str], source_q: str,
+) -> bool:
+    """
+    True when a missing skip target is only one of several "OR" alternatives
+    and another alternative of the same rule exists in the questionnaire,
+    e.g. "go to crp_harv_storage OR crp_harv_consume" when crp_harv_storage
+    was dropped: the rule already says "either", so routing still works.
+    Only the destination part of the statement (after "go to") is read, so
+    an "or" between answer codes ("if q = 1 or 2") is not mistaken for one.
+    """
+    for stmt in re.split(r"\n|(?=\bif\b)", str(skip_text or ""), flags=re.IGNORECASE):
+        if target not in stmt:
+            continue
+        dest = re.split(r"(?i)\bgo\s*to\b", stmt)[-1]
+        alternatives = re.split(r"(?i)\s+or\s+", dest)
+        if len(alternatives) < 2:
+            continue
+        others = [a for a in alternatives if target not in a]
+        if any(
+            tok in curr_qnames and tok != source_q
+            for alt in others
+            for tok in re.findall(r"[A-Za-z][A-Za-z0-9_]*", alt)
+        ):
+            return True
+    return False
+
+
 def _check_skip_consistency(
     skip_text      : str,
     rules          : list[dict],
@@ -2941,7 +3202,18 @@ def _check_skip_consistency(
         ref_qnames=known_qnames,
         curr_qnames=curr_qnames,
     )
-    invalid_targets = sorted(t for t in skip_targets if t not in curr_qnames)
+    # A missing target is not an error when it is an optional "OR"
+    # alternative the country dropped (it exists in the reference) and
+    # another alternative of the same rule is kept. Names that exist in
+    # neither file (outdated/typo names) are always reported.
+    invalid_targets = sorted(
+        t for t in skip_targets
+        if t not in curr_qnames
+        and not (
+            t in known_qnames
+            and _missing_target_has_alternative(skip_text_s, t, curr_qnames, source_q)
+        )
+    )
     if invalid_targets:
         issues.append(
             f"target question(s) not found in current questionnaire: {invalid_targets}"
@@ -3057,6 +3329,28 @@ def _check_skip_consistency(
             )
 
     return issues
+
+def _diagnose_missing_skip_target(target: str, curr_qnames: set[str], ref_qnames: set[str]) -> str:
+    """
+    Explains why a skip-pattern target is missing from the current
+    questionnaire, so the fix is obvious:
+      - renamed to custom   : c_<target> (or the o_ -> c_ form) exists
+      - removed by country  : target exists in the reference/template
+      - not in template     : neither file defines it (the skip text uses an
+                              outdated name); the closest existing name is given
+    """
+    import difflib
+
+    t = str(target or "").strip()
+    custom = [c for c in (f"c_{t}", f"c_{t[2:]}" if t.startswith("o_") else "") if c and c in curr_qnames]
+    if custom:
+        return f"{t}: renamed to custom question {custom[0]} -> use {custom[0]}"
+    if t in ref_qnames:
+        return f"{t}: removed by the country (exists in reference) -> restore it or route to the next kept question"
+    close = difflib.get_close_matches(t, sorted(curr_qnames), n=1, cutoff=0.7)
+    hint = f"; closest existing variable: {close[0]}" if close else ""
+    return f"{t}: not defined in the reference either (outdated/typo name){hint}"
+
 
 def validate_skip_patterns(
     current_questions    : pl.DataFrame,
@@ -3212,6 +3506,11 @@ def validate_skip_patterns(
                 severity = "high" if (is_broken_target or is_invalid_category or is_empty) else "info"
                 if is_broken_target:
                     issue_type = "skipPattern_invalid_qname"
+                    _missing = re.findall(r"'([^']+)'", desc)
+                    if _missing:
+                        desc = "missing target -- " + " | ".join(
+                            _diagnose_missing_skip_target(m, curr_qnames, ref_qnames) for m in _missing
+                        )
                 elif is_invalid_category:
                     issue_type = "skipPattern_invalid_qnameCategory"
                 elif is_range:
@@ -3223,7 +3522,7 @@ def validate_skip_patterns(
                 issues.append({
                     "issue_type": issue_type,
                     "set_name": "",
-                    "Q Name": qname, "field": desc[:200],
+                    "Q Name": qname, "field": desc[:400],
                     "current": current_effective[:220], "reference": reference_effective[:220],
                     "severity": severity,
                     "excel_row": excel_row,
@@ -4503,12 +4802,28 @@ def validate_module_presence(
     current_modules: pl.DataFrame,
     reference_modules: pl.DataFrame,
     template_modules: pl.DataFrame,
+    template_questions: pl.DataFrame | None = None,
 ) -> pl.DataFrame:
     """
     Module-level structure checks:
-      - module_removed (high): template module missing in current (always enforced)
+      - module_removed: template module missing in current. High when the
+        template module contains at least one mandatory (core/panel/spiel)
+        question; info when every question in it is optional, since dropping
+        an optional module is an allowed country choice. Without
+        template_questions every removal is high (previous behaviour).
       - module_added (info): current module absent from selected reference
     """
+    core_module_keys: set[str] | None = None
+    if template_questions is not None and {"module", "Mandatory", "Q Name"} <= set(template_questions.columns):
+        core_module_keys = set(
+            template_questions
+            .with_columns(
+                pl.col("module").map_elements(_normalize_module_token, return_dtype=pl.Utf8).alias("_mod"),
+                _mandatory_cat_expr("Q Name", "Mandatory").alias("_cat"),
+            )
+            .filter(pl.col("_cat").is_in(["mandatory", "mandatory-panel"]))
+            ["_mod"].to_list()
+        )
     schema = {
         "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
         "module": pl.Utf8, "field": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
@@ -4543,8 +4858,12 @@ def validate_module_presence(
             "module": mod_label,
             "field": "module",
             "current": "missing_in_current",
-            "reference": "present_in_template",
-            "severity": "high",
+            "reference": (
+                "present_in_template"
+                if core_module_keys is None or key in core_module_keys
+                else "present_in_template (optional questions only)"
+            ),
+            "severity": "high" if core_module_keys is None or key in core_module_keys else "info",
             "excel_row": src.get("excel_row"),
         })
 
@@ -4920,8 +5239,14 @@ def compare_legacy_text_field_changes(
     issue_type: str,
     default_severity: str = "medium",
     high_when_mandatory: bool = False,
+    info_when_reference_blank: bool = False,
 ) -> pl.DataFrame:
-    """Legacy column parity checks with normalization to avoid cosmetic false positives."""
+    """Legacy column parity checks with normalization to avoid cosmetic false positives.
+
+    info_when_reference_blank: a value filled in where the reference cell is
+    empty (e.g. Universe 'All' on a spiel row the template leaves blank) is
+    reported as info rather than at the column's normal severity.
+    """
     EMPTY = {
         "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
         "field": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
@@ -4961,6 +5286,12 @@ def compare_legacy_text_field_changes(
         )
     else:
         joined = joined.with_columns(pl.lit(default_severity).alias("severity"))
+
+    if info_when_reference_blank:
+        joined = joined.with_columns(
+            pl.when(pl.col("_ref_norm") == "").then(pl.lit("info"))
+            .otherwise(pl.col("severity")).alias("severity")
+        )
 
     return (
         joined
@@ -5981,13 +6312,19 @@ def build_codes_option_count_mismatch_rows(
     reference_options_en: pl.DataFrame,
     reference_codes: pl.DataFrame,
     target_lang: str,
+    skip_qnames: set[str] | None = None,
 ) -> pl.DataFrame:
     """
     Internal consistency check (CURRENT questionnaire only):
     flag questions where parsed option codes and parsed Codes entries are not aligned
     (count mismatch or code-number set mismatch).
     Reference columns are provided only as contextual baseline.
+
+    skip_qnames: Q Names excluded from this check -- Matrix Table questions,
+    whose options are the shared answer scale and whose Codes are the matrix
+    rows (sub-variables), so the two lists are not expected to align.
     """
+    _skip = {str(q).strip().lower() for q in (skip_qnames or set())}
     schema = {
         "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8, "field": pl.Utf8,
         "lang_scope": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
@@ -6050,6 +6387,8 @@ def build_codes_option_count_mismatch_rows(
 
     rows: list[dict] = []
     for qk, cur_opt_entries in opt_lookup_cur.items():
+        if qk in _skip:
+            continue
         cur_code_entries = code_lookup_cur.get(qk, [])
         ref_code_entries = code_lookup_ref.get(qk, [])
         # CURRENT-only consistency: evaluate when current has parsed codes.
@@ -6490,6 +6829,120 @@ def validate_variable_pairs(
     return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
 
 
+def validate_fixed_option_codes(
+    current_options: pl.DataFrame | None,
+    rules: dict,
+) -> pl.DataFrame:
+    """
+    Questions whose answer codes must be exactly a fixed set, configured under
+    fixed_option_codes in critical_sets.yaml. Used for questions whose options
+    are shown dynamically (e.g. ls_main_confirm shows only the tied livestock
+    types) -- GeoPoll must keep the fixed codes, so the code list in the
+    questionnaire must not be renumbered, extended (e.g. with DK/REF) or cut.
+    Questions absent from the questionnaire are skipped (presence is checked
+    elsewhere).
+    """
+    schema = {
+        "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
+        "field": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
+        "severity": pl.Utf8, "excel_row": pl.Int64,
+    }
+    rules_cfg: list[dict] = rules.get("fixed_option_codes") or []
+    if not rules_cfg or current_options is None or current_options.height == 0:
+        return pl.DataFrame(schema=schema)
+
+    codes_by_q = {
+        row["Q Name"]: (set(int(c) for c in row["codes"] if c is not None), row["excel_row"])
+        for row in (
+            current_options
+            .group_by("Q Name")
+            .agg(pl.col("option_code").alias("codes"), pl.col("excel_row").min().cast(pl.Int64))
+            .iter_rows(named=True)
+        )
+    }
+    rows: list[dict] = []
+    for rule in rules_cfg:
+        q = str(rule.get("q_name") or "").strip()
+        expected = {int(c) for c in (rule.get("codes") or [])}
+        if not q or not expected or q not in codes_by_q:
+            continue
+        found, excel_row = codes_by_q[q]
+        if found == expected:
+            continue
+        missing, extra = sorted(expected - found), sorted(found - expected)
+        rows.append({
+            "issue_type": "fixed_codes_mismatch",
+            "set_name": "FIXED_CODES", "Q Name": q,
+            "field": str(rule.get("description") or "fixed answer codes"),
+            "current": f"codes {sorted(found)}; missing {missing or '-'}; unexpected {extra or '-'}",
+            "reference": f"codes must be exactly {sorted(expected)}",
+            "severity": str(rule.get("severity") or "high"), "excel_row": excel_row,
+        })
+    return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
+
+
+def validate_tlu_weights(tlu_df: pl.DataFrame, rules: dict) -> pl.DataFrame:
+    """
+    Tropical Livestock Unit weights (Additional information sheet, TLU
+    section) feed the ls_main calculation, so every configured species must
+    have a weight that is a positive number, and the weight must be the same
+    in every language column that is filled. Configured under tlu_weights in
+    critical_sets.yaml.
+      - tlu_weight_missing (high): species row absent or weight blank
+      - tlu_weight_invalid (high): weight not a number > 0
+      - tlu_weight_inconsistent (medium): language columns disagree
+    """
+    schema = {
+        "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
+        "field": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
+        "severity": pl.Utf8, "excel_row": pl.Int64,
+    }
+    cfg = rules.get("tlu_weights") or {}
+    species_cfg = [str(s).strip() for s in (cfg.get("species") or []) if str(s or "").strip()]
+    if not species_cfg:
+        return pl.DataFrame(schema=schema)
+
+    weight_cols = [c for c in tlu_df.columns if c != "species"] if tlu_df is not None else []
+    by_species: dict[str, dict] = {}
+    if tlu_df is not None and tlu_df.height > 0:
+        for row in tlu_df.iter_rows(named=True):
+            by_species.setdefault(str(row["species"]).strip().lower(), row)
+
+    def _issue(issue_type, species, current, reference, severity):
+        return {
+            "issue_type": issue_type, "set_name": "TLU", "Q Name": "",
+            "field": f"TLU weight: {species}", "current": current,
+            "reference": reference, "severity": severity, "excel_row": None,
+        }
+
+    rows: list[dict] = []
+    for species in species_cfg:
+        row = by_species.get(species.lower())
+        values = {c: str(row.get(c) or "").strip() for c in weight_cols} if row else {}
+        filled = {c: v for c, v in values.items() if v}
+        if not filled:
+            rows.append(_issue("tlu_weight_missing", species, "blank / row missing",
+                               "weight required in Additional information (TLU section)", "high"))
+            continue
+        parsed: dict[str, float | None] = {}
+        for c, v in filled.items():
+            try:
+                parsed[c] = float(v.replace(",", "."))
+            except ValueError:
+                parsed[c] = None
+        bad = {c: filled[c] for c, p in parsed.items() if p is None or p <= 0}
+        if bad:
+            rows.append(_issue("tlu_weight_invalid", species,
+                               "; ".join(f"{c}={v}" for c, v in bad.items()),
+                               "weight must be a number > 0", "high"))
+            continue
+        if len({round(p, 6) for p in parsed.values()}) > 1:
+            rows.append(_issue("tlu_weight_inconsistent", species,
+                               "; ".join(f"{c}={v}" for c, v in filled.items()),
+                               "same weight expected in every language column", "medium"))
+    return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
+
+
 def validate_authoring_consistency(
     current_questions: pl.DataFrame,
     max_qname_length: int = 28,
@@ -6620,6 +7073,7 @@ universe_issues = compare_legacy_text_field_changes(
     current_questions, reference_questions,
     column_name="Universe", issue_type="universe_changed",
     default_severity="medium", high_when_mandatory=True,
+    info_when_reference_blank=True,
 )
 print(
     f"QType: {qtype_issues.height}  Conditional: {conditional_issues.height}  "
@@ -6758,6 +7212,8 @@ harvest_issues = validate_crop_harvest(current_questions, rules["crop_harvest"])
 fs_issues = validate_fs_indicators(current_questions, rules, modality=_modality)
 agri_cs_issues = validate_agri_cs_count(current_questions, rules)
 pair_issues = validate_variable_pairs(current_questions, rules)
+fixed_code_issues = validate_fixed_option_codes(current_options_en, rules)
+tlu_issues = validate_tlu_weights(current_tlu_weights, rules)
 
 _tick("critical/count/harvest checks")
 
@@ -6886,6 +7342,9 @@ codes_count_mismatch = build_codes_option_count_mismatch_rows(
     reference_options_en=reference_options_en,
     reference_codes=reference_codes,
     target_lang=target_lang,
+    skip_qnames=set(
+        current_questions.filter(is_matrix_qtype_expr("Q Type"))["Q Name"].to_list()
+    ) if "Q Type" in current_questions.columns else set(),
 )
 if codes_count_mismatch.height > 0:
     for _col in codes_changes_view.columns:
@@ -6946,6 +7405,7 @@ module_issues = validate_module_presence(
     current_modules=current_modules,
     reference_modules=reference_modules,
     template_modules=template_modules,
+    template_questions=template_questions_for_restore,
 )
 module_integrity_issues = validate_module_column_integrity(current_questions_raw_all)
 if module_integrity_issues.height > 0:
@@ -6959,6 +7419,7 @@ _tick("validate authoring consistency")
 all_issues = pl.concat(
     [question_issues, option_issues,
      critical_issues, count_issues, harvest_issues, fs_issues, agri_cs_issues, pair_issues,
+     fixed_code_issues, tlu_issues,
      skip_issues, conditional_routing_issues, module_issues,
      authoring_consistency_issues],
     how="diagonal",
@@ -7003,6 +7464,31 @@ if _passing_prefixes:
         .otherwise(pl.col("severity"))
         .alias("severity")
     )
+
+#  Relaxed min-count sets (e.g. WEALTH, relax_individual_mandatory: true):
+#  while the set passes, mandatory status changes for its questions -> info
+_relaxed_prefixes = []
+for _set_name, _rule in rules.get("min_count_sets", {}).items():
+    if not _rule.get("relax_individual_mandatory", False):
+        continue
+    if count_issues.filter(pl.col("set_name") == _set_name).height > 0:
+        continue
+    _prefix = str(_rule.get("prefix", "")).strip()
+    if _prefix:
+        _relaxed_prefixes.append(_prefix)
+        if _prefix == "hh_wealth_" or _set_name.upper() == "WEALTH":
+            _relaxed_prefixes.append("c_hh_wealth_")
+
+if _relaxed_prefixes:
+    _q_matches_relaxed = pl.any_horizontal([pl.col("Q Name").cast(pl.Utf8).str.starts_with(p) for p in _relaxed_prefixes])
+    _relaxed_expr = (
+        pl.when(pl.col("issue_type").is_in(["mandatory_to_optional", "mandatory_column_mismatch"]) & _q_matches_relaxed)
+        .then(pl.lit("info"))
+        .otherwise(pl.col("severity"))
+        .alias("severity")
+    )
+    all_issues = all_issues.with_columns(_relaxed_expr)
+    question_changes_view = question_changes_view.with_columns(_relaxed_expr)
 _tick("cs downgrade")
 
 #  Add mandatory_cat via Polars lookup (current values override reference values)
@@ -7170,7 +7656,8 @@ print(f"Critical set issues   : {critical_issues.height}")
 print(f"Count rule violations : {count_issues.height}")
 print(f"Crop harvest issues   : {harvest_issues.height}")
 print(f"Skip pattern issues   : {skip_issues.height}")
-print(f"Template modules missing: {module_issues.filter(pl.col('issue_type') == 'module_removed').height}")
+print(f"Template modules missing: {module_issues.filter((pl.col('issue_type') == 'module_removed') & (pl.col('severity') == 'high')).height} core, "
+      f"{module_issues.filter((pl.col('issue_type') == 'module_removed') & (pl.col('severity') != 'high')).height} optional-only")
 print(f"Modules added vs reference: {module_issues.filter(pl.col('issue_type') == 'module_added').height}")
 print(f"")
 print(f"Total issues          : {all_issues.height}")
@@ -7225,6 +7712,8 @@ CRITICAL_SET_ISSUE_TYPES = {
     "fs_indicator_missing", "fs_indicator_capi_excess",
     "agri_cs_count_insufficient",
     "variable_pair_incomplete",
+    "fixed_codes_mismatch",
+    "tlu_weight_missing", "tlu_weight_invalid", "tlu_weight_inconsistent",
 }
 
 SKIP_PATTERN_ISSUE_TYPES = {
@@ -7774,6 +8263,26 @@ def _set_status(all_issues, rules):
             status, details = "PASS", "All variable pairs complete"
         results.append({"set": "VAR_PAIRS", "status": status, "details": details})
 
+    if rules.get("fixed_option_codes"):
+        si = all_issues.filter(pl.col("set_name") == "FIXED_CODES")
+        if si.height > 0:
+            status  = "FAIL" if si.filter(pl.col("severity") == "high").height > 0 else "WARNING"
+            details = "; ".join(r["Q Name"] for r in si.to_dicts())
+        else:
+            status, details = "PASS", "Fixed answer codes respected"
+        results.append({"set": "FIXED_CODES", "status": status, "details": details})
+
+    if rules.get("tlu_weights"):
+        si = all_issues.filter(pl.col("set_name") == "TLU")
+        if si.filter(pl.col("severity") == "high").height > 0:
+            status = "FAIL"
+        elif si.height > 0:
+            status = "WARNING"
+        else:
+            status = "PASS"
+        details = "; ".join(r["field"] for r in si.to_dicts()) if si.height else "All TLU weights filled and valid"
+        results.append({"set": "TLU", "status": status, "details": details})
+
     return results
 
 
@@ -8038,18 +8547,21 @@ def write_summary_sheet(wb, all_issues, rules, replacement_status=None):
     ws.cell(row=r, column=3, value=f"High: {_qt_high}; Medium: {_qt_med}; Info: {_qt_info}")
     _data_row(ws, r, 7, fill=STATUS_FILL.get(_qt_status)); r += 1
 
-    _mod_removed = all_issues.filter(pl.col("issue_type") == "module_removed").height
+    _mod_removed_all = all_issues.filter(pl.col("issue_type") == "module_removed")
+    _mod_removed = _mod_removed_all.filter(pl.col("severity") == "high").height
+    _mod_removed_optional = _mod_removed_all.height - _mod_removed
     _mod_added = all_issues.filter(pl.col("issue_type") == "module_added").height
-    _mod_status = "FAIL" if _mod_removed > 0 else "PASS"
+    _mod_status = "FAIL" if _mod_removed > 0 else ("INFO" if _mod_removed_optional > 0 else "PASS")
     ws.cell(row=r, column=1, value="Module presence (template-required)")
     ws.cell(row=r, column=2, value=_mod_status)
     ws.cell(
         row=r,
         column=3,
         value=(
-            f"Template modules missing: {_mod_removed}; Modules added vs reference: {_mod_added}"
-            if _mod_removed > 0 else
-            f"No template module missing; Modules added vs reference: {_mod_added}"
+            (f"Template modules with core questions missing: {_mod_removed}"
+             if _mod_removed > 0 else "No template module with core questions missing")
+            + (f"; optional-only modules removed: {_mod_removed_optional}" if _mod_removed_optional else "")
+            + f"; Modules added vs reference: {_mod_added}"
         ),
     )
     _data_row(ws, r, 7, fill=STATUS_FILL.get(_mod_status)); r += 1
@@ -8680,6 +9192,11 @@ def _build_replacement_issue_rows(
     missing_key_locs = set()
 
     if reference_questions is not None and reference_questions.height > 0:
+        # Only template rows for questions the country kept: a placeholder in a
+        # question that was removed (e.g. id_panel) needs no replacement value.
+        reference_questions = reference_questions.filter(
+            pl.col("Q Name").is_in(validated_questions["Q Name"].to_list())
+        )
         ref_cols = _placeholder_scan_columns(reference_questions)
         for row in reference_questions.select(["Q Name", "excel_row"] + ref_cols).iter_rows(named=True):
             qname = str(row.get("Q Name") or "")
@@ -8703,6 +9220,25 @@ def _build_replacement_issue_rows(
                     if _normalize_placeholder_token(token).startswith("EXPECTED OR NOTHING"):
                         continue
                     tok_norm = _normalize_placeholder_token(token)
+                    # A '#' inside a $...$ token means $-placeholders and
+                    # #-runtime variables were mixed up (e.g. "$ADM1#" for
+                    # "#ADM1#"): the delimiters are wrong, not the key.
+                    if "#" in token:
+                        key = ("replacement_malformed_placeholder", qname, col, token)
+                        if key not in seen:
+                            seen.add(key)
+                            missing_key_locs.add((qname, col, tok_norm))
+                            rows.append({
+                                "issue_type": "replacement_malformed_placeholder",
+                                "set_name": "REPLACEMENT",
+                                "Q Name": qname,
+                                "field": col,
+                                "current": token,
+                                "reference": "Mixed $ / # delimiters: use $KEY$ for Additional information values and #VAR# for runtime variables",
+                                "severity": "high",
+                                "excel_row": excel_row,
+                            })
+                        continue
                     key = ("replacement_missing_key", qname, col, token)
                     if key in seen:
                         continue
@@ -9162,7 +9698,10 @@ except Exception as _e:
     _sub_status = {"status": "ERROR", "path": "", "error": str(_e)}
     print(f"Warning: validated questionnaire failed: {_e}")
 
-_additional_info_diag = analyze_additional_info_substitutions(run["questionnaire_path"], cfg.language)
+_additional_info_diag = analyze_additional_info_substitutions(
+    run["questionnaire_path"], cfg.language,
+    exclude_section_markers=_additional_info_excluded_sections,
+)
 
 _replacement_issues = _build_replacement_issue_rows(
     validated_questions = validated_output_questions,

@@ -3,7 +3,7 @@
 This page is organized by the validator pipeline stages used in the script.
 Use the stage map to navigate quickly, then open each function spec for parameters and full source.
 
-Total functions documented: **225**
+Total functions documented: **238**
 
 ## Pipeline Function Map
 
@@ -19,251 +19,264 @@ Total functions documented: **225**
 
 ### 2. Step 1 Configuration
 
-- [`_load_effective_config`](#fn--load-effective-config-139)
-- [`_reference_scope_label`](#fn--reference-scope-label-204)
-- [`_not_in_reference_text`](#fn--not-in-reference-text-211)
+- [`_load_effective_config`](#fn--load-effective-config-147)
+- [`_reference_scope_label`](#fn--reference-scope-label-212)
+- [`_not_in_reference_text`](#fn--not-in-reference-text-219)
 
 ### 3. Step 2 Reference file resolution
 
-- [`_normalize_header_name`](#fn--normalize-header-name-242)
-- [`_header_tokens`](#fn--header-tokens-247)
-- [`_is_language_candidate_header`](#fn--is-language-candidate-header-252)
-- [`resolve_language_column`](#fn-resolve-language-column-264)
-- [`detect_language_from_filename`](#fn-detect-language-from-filename-317)
-- [`choose_target_language`](#fn-choose-target-language-324)
-- [`extract_date_from_name`](#fn-extract-date-from-name-364)
-- [`find_latest_template`](#fn-find-latest-template-373)
-- [`resolve_reference_file`](#fn-resolve-reference-file-392)
-- [`load_critical_sets`](#fn-load-critical-sets-403)
-- [`prepare_run`](#fn-prepare-run-439)
-- [`_write_config_snapshot_geopoll`](#fn--write-config-snapshot-geopoll-487)
+- [`_normalize_header_name`](#fn--normalize-header-name-250)
+- [`_header_tokens`](#fn--header-tokens-255)
+- [`_is_language_candidate_header`](#fn--is-language-candidate-header-260)
+- [`resolve_language_column`](#fn-resolve-language-column-272)
+- [`detect_language_from_filename`](#fn-detect-language-from-filename-325)
+- [`choose_target_language`](#fn-choose-target-language-332)
+- [`extract_date_from_name`](#fn-extract-date-from-name-372)
+- [`find_latest_template`](#fn-find-latest-template-381)
+- [`find_latest_template._matches_language`](#fn--matches-language-392)
+- [`resolve_reference_file`](#fn-resolve-reference-file-412)
+- [`load_critical_sets`](#fn-load-critical-sets-423)
+- [`prepare_run`](#fn-prepare-run-477)
+- [`_write_config_snapshot_geopoll`](#fn--write-config-snapshot-geopoll-525)
 
 ### 4. Step 3 Reading and normalising the survey sheet
 
-- [`_resolve_column_by_aliases`](#fn--resolve-column-by-aliases-617)
-- [`_canonical_column_from_header`](#fn--canonical-column-from-header-625)
-- [`_as_text_cell`](#fn--as-text-cell-634)
-- [`_load_workbook_readonly`](#fn--load-workbook-readonly-647)
-- [`_close_workbook`](#fn--close-workbook-678)
-- [`read_survey_sheet`](#fn-read-survey-sheet-697)
-- [`build_questions_df`](#fn-build-questions-df-794)
-- [`_normalize_module_token`](#fn--normalize-module-token-847)
-- [`_is_geopoll_module_row`](#fn--is-geopoll-module-row-853)
-- [`split_geopoll_questions_and_modules`](#fn-split-geopoll-questions-and-modules-866)
-- [`validate_module_column_integrity`](#fn-validate-module-column-integrity-920)
-- [`_filter_questions_by_module_keys`](#fn--filter-questions-by-module-keys-956)
-- [`_filter_module_rows_by_keys`](#fn--filter-module-rows-by-keys-969)
-- [`_resolve_module_keys_from_tokens`](#fn--resolve-module-keys-from-tokens-975)
-- [`_module_display_map`](#fn--module-display-map-1009)
-- [`_dedupe_keep_order`](#fn--dedupe-keep-order-1027)
-- [`_format_module_scope_for_display`](#fn--format-module-scope-for-display-1042)
-- [`_qnames_for_module_keys`](#fn--qnames-for-module-keys-1054)
+- [`_resolve_column_by_aliases`](#fn--resolve-column-by-aliases-656)
+- [`_canonical_column_from_header`](#fn--canonical-column-from-header-664)
+- [`_as_text_cell`](#fn--as-text-cell-673)
+- [`_load_workbook_readonly`](#fn--load-workbook-readonly-686)
+- [`_close_workbook`](#fn--close-workbook-717)
+- [`read_survey_sheet`](#fn-read-survey-sheet-736)
+- [`build_questions_df`](#fn-build-questions-df-833)
+- [`_normalize_module_token`](#fn--normalize-module-token-886)
+- [`_is_geopoll_module_row`](#fn--is-geopoll-module-row-892)
+- [`split_geopoll_questions_and_modules`](#fn-split-geopoll-questions-and-modules-905)
+- [`validate_module_column_integrity`](#fn-validate-module-column-integrity-959)
+- [`_filter_questions_by_module_keys`](#fn--filter-questions-by-module-keys-995)
+- [`_filter_module_rows_by_keys`](#fn--filter-module-rows-by-keys-1008)
+- [`_resolve_module_keys_from_tokens`](#fn--resolve-module-keys-from-tokens-1014)
+- [`_module_display_map`](#fn--module-display-map-1048)
+- [`_dedupe_keep_order`](#fn--dedupe-keep-order-1066)
+- [`_format_module_scope_for_display`](#fn--format-module-scope-for-display-1081)
+- [`_qnames_for_module_keys`](#fn--qnames-for-module-keys-1093)
 
 ### 5. Step 4 Exploding answer options
 
-- [`_normalize_q_type`](#fn--normalize-q-type-1085)
-- [`is_option_bearing_qtype`](#fn-is-option-bearing-qtype-1092)
-- [`parse_options`](#fn-parse-options-1117)
-- [`extract_question_stem`](#fn-extract-question-stem-1140)
-- [`_split_stem_and_options`](#fn--split-stem-and-options-1152)
-- [`explode_options`](#fn-explode-options-1166)
-- [`parse_codes_cell`](#fn-parse-codes-cell-1214)
-- [`explode_codes`](#fn-explode-codes-1232)
+- [`_normalize_q_type`](#fn--normalize-q-type-1124)
+- [`is_option_bearing_qtype`](#fn-is-option-bearing-qtype-1131)
+- [`is_matrix_qtype`](#fn-is-matrix-qtype-1149)
+- [`is_matrix_qtype_expr`](#fn-is-matrix-qtype-expr-1158)
+- [`parse_options`](#fn-parse-options-1172)
+- [`extract_question_stem`](#fn-extract-question-stem-1195)
+- [`_split_stem_and_options`](#fn--split-stem-and-options-1207)
+- [`explode_options`](#fn-explode-options-1221)
+- [`parse_codes_cell`](#fn-parse-codes-cell-1269)
+- [`explode_codes`](#fn-explode-codes-1287)
 
 ### 6. Step 5 Normalising placeholders
 
-- [`_detect_verb_tense_mode`](#fn--detect-verb-tense-mode-1316)
-- [`_normalize_placeholder_token`](#fn--normalize-placeholder-token-1357)
-- [`_is_crop_placeholder_token`](#fn--is-crop-placeholder-token-1366)
-- [`_contains_crop_marker_text`](#fn--contains-crop-marker-text-1373)
-- [`_clean_header`](#fn--clean-header-1380)
-- [`_find_column`](#fn--find-column-1384)
-- [`read_generic_sheet`](#fn-read-generic-sheet-1393)
-- [`read_additional_information`](#fn-read-additional-information-1432)
-- [`read_crop_list`](#fn-read-crop-list-1436)
-- [`has_placeholder`](#fn-has-placeholder-1440)
-- [`build_placeholder_restore_map`](#fn-build-placeholder-restore-map-1447)
-- [`restore_placeholder_cells`](#fn-restore-placeholder-cells-1492)
-- [`_normalize_placeholder_key`](#fn--normalize-placeholder-key-1547)
-- [`_placeholder_lookup_aliases`](#fn--placeholder-lookup-aliases-1563)
-- [`_build_placeholder_index`](#fn--build-placeholder-index-1590)
-- [`_lookup_placeholder_replacement`](#fn--lookup-placeholder-replacement-1600)
-- [`_language_code_for_text_column`](#fn--language-code-for-text-column-1609)
-- [`_placeholder_token_explicit_lang`](#fn--placeholder-token-explicit-lang-1631)
-- [`analyze_additional_info_substitutions`](#fn-analyze-additional-info-substitutions-1640)
-- [`build_additional_info_replacements`](#fn-build-additional-info-replacements-1695)
-- [`build_additional_info_replacements_by_language`](#fn-build-additional-info-replacements-by-language-1709)
-- [`build_additional_info_replacements_by_language._apply_optional_defaults`](#fn--apply-optional-defaults-1727)
-- [`apply_text_replacements`](#fn-apply-text-replacements-1796)
-- [`apply_text_replacements._lang_map`](#fn--lang-map-1830)
-- [`apply_placeholder_conversions`](#fn-apply-placeholder-conversions-1918)
-- [`extract_crop_metadata`](#fn-extract-crop-metadata-1959)
-- [`find_crop_placeholder_questions`](#fn-find-crop-placeholder-questions-1984)
-- [`_is_selected_crop_value`](#fn--is-selected-crop-value-1999)
-- [`_build_sorted_crop_entries`](#fn--build-sorted-crop-entries-2003)
-- [`build_crop_option_block`](#fn-build-crop-option-block-2030)
-- [`build_crop_code_block`](#fn-build-crop-code-block-2045)
-- [`rebuild_crop_questions_for_deployed_form`](#fn-rebuild-crop-questions-for-deployed-form-2060)
-- [`build_duration_summary_line`](#fn-build-duration-summary-line-2274)
+- [`_detect_verb_tense_mode`](#fn--detect-verb-tense-mode-1374)
+- [`_normalize_placeholder_token`](#fn--normalize-placeholder-token-1417)
+- [`_is_crop_placeholder_token`](#fn--is-crop-placeholder-token-1426)
+- [`_contains_crop_marker_text`](#fn--contains-crop-marker-text-1433)
+- [`_clean_header`](#fn--clean-header-1440)
+- [`_find_column`](#fn--find-column-1444)
+- [`read_generic_sheet`](#fn-read-generic-sheet-1453)
+- [`read_additional_information`](#fn-read-additional-information-1492)
+- [`build_additional_info_sections`](#fn-build-additional-info-sections-1496)
+- [`_exclude_additional_info_sections`](#fn--exclude-additional-info-sections-1517)
+- [`read_tlu_weights`](#fn-read-tlu-weights-1534)
+- [`read_crop_list`](#fn-read-crop-list-1555)
+- [`has_placeholder`](#fn-has-placeholder-1559)
+- [`build_placeholder_restore_map`](#fn-build-placeholder-restore-map-1566)
+- [`restore_placeholder_cells`](#fn-restore-placeholder-cells-1611)
+- [`_normalize_placeholder_key`](#fn--normalize-placeholder-key-1666)
+- [`_placeholder_lookup_aliases`](#fn--placeholder-lookup-aliases-1682)
+- [`_build_placeholder_index`](#fn--build-placeholder-index-1709)
+- [`_lookup_placeholder_replacement`](#fn--lookup-placeholder-replacement-1719)
+- [`_language_code_for_text_column`](#fn--language-code-for-text-column-1728)
+- [`_placeholder_token_explicit_lang`](#fn--placeholder-token-explicit-lang-1750)
+- [`analyze_additional_info_substitutions`](#fn-analyze-additional-info-substitutions-1759)
+- [`build_additional_info_replacements`](#fn-build-additional-info-replacements-1821)
+- [`_resolve_derived_placeholders`](#fn--resolve-derived-placeholders-1835)
+- [`build_additional_info_replacements_by_language`](#fn-build-additional-info-replacements-by-language-1868)
+- [`build_additional_info_replacements_by_language._apply_optional_defaults`](#fn--apply-optional-defaults-1892)
+- [`apply_text_replacements`](#fn-apply-text-replacements-1978)
+- [`apply_text_replacements._lang_map`](#fn--lang-map-2012)
+- [`apply_placeholder_conversions`](#fn-apply-placeholder-conversions-2100)
+- [`extract_crop_metadata`](#fn-extract-crop-metadata-2141)
+- [`find_crop_placeholder_questions`](#fn-find-crop-placeholder-questions-2166)
+- [`_is_selected_crop_value`](#fn--is-selected-crop-value-2181)
+- [`_build_sorted_crop_entries`](#fn--build-sorted-crop-entries-2185)
+- [`build_crop_option_block`](#fn-build-crop-option-block-2215)
+- [`build_crop_code_block`](#fn-build-crop-code-block-2237)
+- [`rebuild_crop_questions_for_deployed_form`](#fn-rebuild-crop-questions-for-deployed-form-2252)
+- [`rebuild_crop_questions_for_deployed_form._blocks_for`](#fn--blocks-for-2278)
+- [`build_duration_summary_line`](#fn-build-duration-summary-line-2504)
 
 ### 7. Step 6 Normalisation helpers
 
-- [`normalize_text_expr`](#fn-normalize-text-expr-2417)
-- [`normalize_code_token_expr`](#fn-normalize-code-token-expr-2436)
-- [`normalize_mandatory_expr`](#fn-normalize-mandatory-expr-2448)
+- [`normalize_text_expr`](#fn-normalize-text-expr-2647)
+- [`normalize_code_token_expr`](#fn-normalize-code-token-expr-2677)
+- [`normalize_mandatory_expr`](#fn-normalize-mandatory-expr-2689)
 
 ### 8. Step 7 Comparison and validation functions
 
-- [`_normalize_skip_text`](#fn--normalize-skip-text-2483)
-- [`_parse_skip_option_codes`](#fn--parse-skip-option-codes-2488)
-- [`_extract_referenced_qnames`](#fn--extract-referenced-qnames-2573)
-- [`_extract_referenced_qnames._keep`](#fn--keep-2596)
-- [`_extract_qname_tokens`](#fn--extract-qname-tokens-2648)
-- [`_extract_qname_like`](#fn--extract-qname-like-2653)
-- [`_extract_codes_from_numeric_spec`](#fn--extract-codes-from-numeric-spec-2663)
-- [`_extract_condition_codes`](#fn--extract-condition-codes-2696)
-- [`_extract_skip_codes_for_target`](#fn--extract-skip-codes-for-target-2713)
-- [`_extract_skip_codes_for_target._codes_from_spec`](#fn--codes-from-spec-2722)
-- [`_parse_default_skip_rules`](#fn--parse-default-skip-rules-2759)
-- [`_semantic_skip_signature`](#fn--semantic-skip-signature-2836)
-- [`_skip_signatures_equivalent`](#fn--skip-signatures-equivalent-2869)
-- [`_skip_signatures_equivalent._group`](#fn--group-2875)
-- [`_check_skip_consistency`](#fn--check-skip-consistency-2899)
-- [`_check_skip_consistency._match_current_rule`](#fn--match-current-rule-2949)
-- [`validate_skip_patterns`](#fn-validate-skip-patterns-3053)
-- [`collapse_skip_pattern_issue_rows_by_qname`](#fn-collapse-skip-pattern-issue-rows-by-qname-3271)
+- [`_normalize_skip_text`](#fn--normalize-skip-text-2724)
+- [`_parse_skip_option_codes`](#fn--parse-skip-option-codes-2729)
+- [`_extract_referenced_qnames`](#fn--extract-referenced-qnames-2814)
+- [`_extract_referenced_qnames._keep`](#fn--keep-2837)
+- [`_extract_qname_tokens`](#fn--extract-qname-tokens-2889)
+- [`_extract_qname_like`](#fn--extract-qname-like-2894)
+- [`_extract_codes_from_numeric_spec`](#fn--extract-codes-from-numeric-spec-2904)
+- [`_extract_condition_codes`](#fn--extract-condition-codes-2937)
+- [`_extract_skip_codes_for_target`](#fn--extract-skip-codes-for-target-2954)
+- [`_extract_skip_codes_for_target._codes_from_spec`](#fn--codes-from-spec-2963)
+- [`_parse_default_skip_rules`](#fn--parse-default-skip-rules-3000)
+- [`_semantic_skip_signature`](#fn--semantic-skip-signature-3077)
+- [`_skip_signatures_equivalent`](#fn--skip-signatures-equivalent-3110)
+- [`_skip_signatures_equivalent._group`](#fn--group-3116)
+- [`_missing_target_has_alternative`](#fn--missing-target-has-alternative-3140)
+- [`_check_skip_consistency`](#fn--check-skip-consistency-3168)
+- [`_check_skip_consistency._match_current_rule`](#fn--match-current-rule-3229)
+- [`_diagnose_missing_skip_target`](#fn--diagnose-missing-skip-target-3333)
+- [`validate_skip_patterns`](#fn-validate-skip-patterns-3355)
+- [`collapse_skip_pattern_issue_rows_by_qname`](#fn-collapse-skip-pattern-issue-rows-by-qname-3578)
 
 ### 9. Step 8 Issue unifiers
 
-- [`make_presence_issues`](#fn-make-presence-issues-3341)
-- [`make_mandatory_issues`](#fn-make-mandatory-issues-3465)
-- [`make_option_issues`](#fn-make-option-issues-3479)
-- [`make_option_presence_issues`](#fn-make-option-presence-issues-3497)
-- [`build_option_changes_view`](#fn-build-option-changes-view-3518)
-- [`build_option_changes_view._scope_view`](#fn--scope-view-3538)
-- [`collapse_removed_option_with_cascading_drift`](#fn-collapse-removed-option-with-cascading-drift-3640)
-- [`collapse_removed_option_with_cascading_drift._norm_label`](#fn--norm-label-3663)
-- [`collapse_removed_option_with_cascading_drift._infer_drift_from_lookups`](#fn--infer-drift-from-lookups-3668)
-- [`_join_limited_tokens`](#fn--join-limited-tokens-3758)
-- [`_option_code_sort_key`](#fn--option-code-sort-key-3774)
-- [`_format_option_entries`](#fn--format-option-entries-3781)
-- [`_build_option_lookup_by_qname`](#fn--build-option-lookup-by-qname-3813)
-- [`_format_code_entries`](#fn--format-code-entries-3838)
-- [`_build_codes_lookup_by_qname`](#fn--build-codes-lookup-by-qname-3862)
-- [`enrich_codes_issue_lists`](#fn-enrich-codes-issue-lists-3896)
-- [`enrich_codes_issue_lists._norm_pair`](#fn--norm-pair-3923)
-- [`enrich_codes_issue_lists._format_code_entries_marked`](#fn--format-code-entries-marked-3926)
-- [`_extract_option_codes_from_field`](#fn--extract-option-codes-from-field-4014)
-- [`_combine_lang_scope`](#fn--combine-lang-scope-4031)
-- [`_option_scope_flags`](#fn--option-scope-flags-4056)
-- [`_option_label_delta_tokens`](#fn--option-label-delta-tokens-4066)
-- [`merge_added_removed_option_rows`](#fn-merge-added-removed-option-rows-4082)
-- [`collapse_option_issue_rows_by_qname`](#fn-collapse-option-issue-rows-by-qname-4196)
-- [`collapse_option_issue_rows_by_qname._norm_label`](#fn--norm-label-4224)
-- [`collapse_option_issue_rows_by_qname._delta_by_label`](#fn--delta-by-label-4229)
-- [`collapse_option_issue_rows_by_qname._common_label_code_shift`](#fn--common-label-code-shift-4246)
-- [`collapse_option_issue_rows_by_qname._token_set`](#fn--token-set-4260)
-- [`collapse_option_issue_rows_by_qname._is_hard_replacement`](#fn--is-hard-replacement-4263)
+- [`make_presence_issues`](#fn-make-presence-issues-3648)
+- [`make_mandatory_issues`](#fn-make-mandatory-issues-3772)
+- [`make_option_issues`](#fn-make-option-issues-3786)
+- [`make_option_presence_issues`](#fn-make-option-presence-issues-3804)
+- [`build_option_changes_view`](#fn-build-option-changes-view-3825)
+- [`build_option_changes_view._scope_view`](#fn--scope-view-3845)
+- [`collapse_removed_option_with_cascading_drift`](#fn-collapse-removed-option-with-cascading-drift-3947)
+- [`collapse_removed_option_with_cascading_drift._norm_label`](#fn--norm-label-3970)
+- [`collapse_removed_option_with_cascading_drift._infer_drift_from_lookups`](#fn--infer-drift-from-lookups-3975)
+- [`_join_limited_tokens`](#fn--join-limited-tokens-4065)
+- [`_option_code_sort_key`](#fn--option-code-sort-key-4081)
+- [`_format_option_entries`](#fn--format-option-entries-4088)
+- [`_build_option_lookup_by_qname`](#fn--build-option-lookup-by-qname-4120)
+- [`_format_code_entries`](#fn--format-code-entries-4145)
+- [`_build_codes_lookup_by_qname`](#fn--build-codes-lookup-by-qname-4169)
+- [`enrich_codes_issue_lists`](#fn-enrich-codes-issue-lists-4203)
+- [`enrich_codes_issue_lists._norm_pair`](#fn--norm-pair-4230)
+- [`enrich_codes_issue_lists._format_code_entries_marked`](#fn--format-code-entries-marked-4233)
+- [`_extract_option_codes_from_field`](#fn--extract-option-codes-from-field-4321)
+- [`_combine_lang_scope`](#fn--combine-lang-scope-4338)
+- [`_option_scope_flags`](#fn--option-scope-flags-4363)
+- [`_option_label_delta_tokens`](#fn--option-label-delta-tokens-4373)
+- [`merge_added_removed_option_rows`](#fn-merge-added-removed-option-rows-4389)
+- [`collapse_option_issue_rows_by_qname`](#fn-collapse-option-issue-rows-by-qname-4503)
+- [`collapse_option_issue_rows_by_qname._norm_label`](#fn--norm-label-4531)
+- [`collapse_option_issue_rows_by_qname._delta_by_label`](#fn--delta-by-label-4536)
+- [`collapse_option_issue_rows_by_qname._common_label_code_shift`](#fn--common-label-code-shift-4553)
+- [`collapse_option_issue_rows_by_qname._token_set`](#fn--token-set-4567)
+- [`collapse_option_issue_rows_by_qname._is_hard_replacement`](#fn--is-hard-replacement-4570)
 
 ### 10. Step 9 Run the full pipeline
 
-- [`compare_question_presence`](#fn-compare-question-presence-4468)
-- [`validate_module_presence`](#fn-validate-module-presence-4494)
-- [`validate_module_presence._to_map`](#fn--to-map-4510)
-- [`_attach_module_column_to_issues`](#fn--attach-module-column-to-issues-4561)
-- [`_attach_module_column_to_issues._part`](#fn--part-4572)
-- [`compare_mandatory`](#fn-compare-mandatory-4610)
-- [`_mandatory_cat_expr`](#fn--mandatory-cat-expr-4685)
-- [`_normalize_qtype_value`](#fn--normalize-qtype-value-4697)
-- [`_qtype_mode`](#fn--qtype-mode-4711)
-- [`_is_known_qtype_value`](#fn--is-known-qtype-value-4735)
-- [`_qtype_change_severity`](#fn--qtype-change-severity-4750)
-- [`compare_qtype_changes`](#fn-compare-qtype-changes-4806)
-- [`compare_legacy_text_field_changes`](#fn-compare-legacy-text-field-changes-4908)
-- [`validate_conditional_removed_for_mandatory`](#fn-validate-conditional-removed-for-mandatory-4970)
-- [`validate_conditional_routing`](#fn-validate-conditional-routing-5038)
-- [`validate_conditional_routing._looks_like_qname`](#fn--looks-like-qname-5077)
-- [`compare_question_labels_single`](#fn-compare-question-labels-single-5142)
-- [`build_question_changes_view`](#fn-build-question-changes-view-5208)
-- [`build_question_changes_view._scope_view`](#fn--scope-view-5252)
-- [`compare_option_labels_single`](#fn-compare-option-labels-single-5337)
-- [`compare_option_presence_single`](#fn-compare-option-presence-single-5363)
-- [`compare_option_code_renumber_single`](#fn-compare-option-code-renumber-single-5400)
-- [`compare_codes_presence_single`](#fn-compare-codes-presence-single-5464)
-- [`compare_codes_token_mismatch_single`](#fn-compare-codes-token-mismatch-single-5496)
-- [`compare_codes_renumber_single`](#fn-compare-codes-renumber-single-5548)
-- [`build_codes_changes_view`](#fn-build-codes-changes-view-5607)
-- [`apply_codes_severity_by_mandatory`](#fn-apply-codes-severity-by-mandatory-5682)
-- [`apply_option_severity_by_mandatory`](#fn-apply-option-severity-by-mandatory-5720)
-- [`collapse_codes_issue_rows_by_qname`](#fn-collapse-codes-issue-rows-by-qname-5759)
-- [`collapse_codes_issue_rows_by_qname._uniq`](#fn--uniq-5787)
-- [`build_codes_not_comparable_rows`](#fn-build-codes-not-comparable-rows-5911)
-- [`build_codes_option_count_mismatch_rows`](#fn-build-codes-option-count-mismatch-rows-5970)
-- [`build_codes_option_count_mismatch_rows._parse_int_codes`](#fn--parse-int-codes-5992)
-- [`build_codes_option_count_mismatch_rows._formatted_codes_with_option_alignment`](#fn--formatted-codes-with-option-alignment-6000)
-- [`validate_critical_sets`](#fn-validate-critical-sets-6129)
-- [`validate_critical_sets._wealth_optional_variant`](#fn--wealth-optional-variant-6156)
-- [`validate_prefix_counts`](#fn-validate-prefix-counts-6216)
-- [`validate_crop_harvest`](#fn-validate-crop-harvest-6257)
-- [`_indicator_present`](#fn--indicator-present-6305)
-- [`validate_fs_indicators`](#fn-validate-fs-indicators-6316)
-- [`validate_agri_cs_count`](#fn-validate-agri-cs-count-6381)
-- [`validate_variable_pairs`](#fn-validate-variable-pairs-6443)
-- [`validate_authoring_consistency`](#fn-validate-authoring-consistency-6485)
-- [`_tick`](#fn--tick-6547)
+- [`compare_question_presence`](#fn-compare-question-presence-4775)
+- [`validate_module_presence`](#fn-validate-module-presence-4801)
+- [`validate_module_presence._to_map`](#fn--to-map-4833)
+- [`_attach_module_column_to_issues`](#fn--attach-module-column-to-issues-4888)
+- [`_attach_module_column_to_issues._part`](#fn--part-4899)
+- [`compare_mandatory`](#fn-compare-mandatory-4937)
+- [`_mandatory_cat_expr`](#fn--mandatory-cat-expr-5012)
+- [`_normalize_qtype_value`](#fn--normalize-qtype-value-5024)
+- [`_qtype_mode`](#fn--qtype-mode-5038)
+- [`_is_known_qtype_value`](#fn--is-known-qtype-value-5062)
+- [`_qtype_change_severity`](#fn--qtype-change-severity-5077)
+- [`compare_qtype_changes`](#fn-compare-qtype-changes-5133)
+- [`compare_legacy_text_field_changes`](#fn-compare-legacy-text-field-changes-5235)
+- [`validate_conditional_removed_for_mandatory`](#fn-validate-conditional-removed-for-mandatory-5309)
+- [`validate_conditional_routing`](#fn-validate-conditional-routing-5377)
+- [`validate_conditional_routing._looks_like_qname`](#fn--looks-like-qname-5416)
+- [`compare_question_labels_single`](#fn-compare-question-labels-single-5481)
+- [`build_question_changes_view`](#fn-build-question-changes-view-5547)
+- [`build_question_changes_view._scope_view`](#fn--scope-view-5591)
+- [`compare_option_labels_single`](#fn-compare-option-labels-single-5676)
+- [`compare_option_presence_single`](#fn-compare-option-presence-single-5702)
+- [`compare_option_code_renumber_single`](#fn-compare-option-code-renumber-single-5739)
+- [`compare_codes_presence_single`](#fn-compare-codes-presence-single-5803)
+- [`compare_codes_token_mismatch_single`](#fn-compare-codes-token-mismatch-single-5835)
+- [`compare_codes_renumber_single`](#fn-compare-codes-renumber-single-5887)
+- [`build_codes_changes_view`](#fn-build-codes-changes-view-5946)
+- [`apply_codes_severity_by_mandatory`](#fn-apply-codes-severity-by-mandatory-6021)
+- [`apply_option_severity_by_mandatory`](#fn-apply-option-severity-by-mandatory-6059)
+- [`collapse_codes_issue_rows_by_qname`](#fn-collapse-codes-issue-rows-by-qname-6098)
+- [`collapse_codes_issue_rows_by_qname._uniq`](#fn--uniq-6126)
+- [`build_codes_not_comparable_rows`](#fn-build-codes-not-comparable-rows-6250)
+- [`build_codes_option_count_mismatch_rows`](#fn-build-codes-option-count-mismatch-rows-6309)
+- [`build_codes_option_count_mismatch_rows._parse_int_codes`](#fn--parse-int-codes-6337)
+- [`build_codes_option_count_mismatch_rows._formatted_codes_with_option_alignment`](#fn--formatted-codes-with-option-alignment-6345)
+- [`validate_critical_sets`](#fn-validate-critical-sets-6476)
+- [`validate_critical_sets._wealth_optional_variant`](#fn--wealth-optional-variant-6503)
+- [`validate_prefix_counts`](#fn-validate-prefix-counts-6563)
+- [`validate_crop_harvest`](#fn-validate-crop-harvest-6604)
+- [`_indicator_present`](#fn--indicator-present-6652)
+- [`validate_fs_indicators`](#fn-validate-fs-indicators-6663)
+- [`validate_agri_cs_count`](#fn-validate-agri-cs-count-6728)
+- [`validate_variable_pairs`](#fn-validate-variable-pairs-6790)
+- [`validate_fixed_option_codes`](#fn-validate-fixed-option-codes-6832)
+- [`validate_tlu_weights`](#fn-validate-tlu-weights-6884)
+- [`validate_tlu_weights._issue`](#fn--issue-6911)
+- [`validate_authoring_consistency`](#fn-validate-authoring-consistency-6946)
+- [`_tick`](#fn--tick-7008)
 
 ### 11. Step 10 Export to Excel
 
-- [`_header_row`](#fn--header-row-7271)
-- [`_section_header`](#fn--section-header-7278)
-- [`_data_row`](#fn--data-row-7285)
-- [`_autofit`](#fn--autofit-7294)
-- [`_action_for_issue_type`](#fn--action-for-issue-type-7357)
-- [`_optional_counterparts_for_missing_skip_targets`](#fn--optional-counterparts-for-missing-skip-targets-7362)
-- [`_action_for_issue_row`](#fn--action-for-issue-row-7396)
-- [`_issues_col_map`](#fn--issues-col-map-7408)
-- [`_issues_table`](#fn--issues-table-7431)
-- [`_tokenize_for_word_diff`](#fn--tokenize-for-word-diff-7486)
-- [`_coalesce_segments`](#fn--coalesce-segments-7497)
-- [`_build_diff_segments`](#fn--build-diff-segments-7509)
-- [`_set_rich_text`](#fn--set-rich-text-7528)
-- [`_set_rich_text_with_bold_tokens`](#fn--set-rich-text-with-bold-tokens-7544)
-- [`_apply_inline_diff_for_issue`](#fn--apply-inline-diff-for-issue-7588)
-- [`_apply_inline_diff_for_issue._match_issue`](#fn--match-issue-7597)
-- [`_apply_option_detail_highlights`](#fn--apply-option-detail-highlights-7627)
-- [`_apply_codes_alignment_marker_highlights`](#fn--apply-codes-alignment-marker-highlights-7665)
-- [`_set_status`](#fn--set-status-7708)
-- [`_cat_counts`](#fn--cat-counts-7772)
-- [`_extract_round_token`](#fn--extract-round-token-7780)
-- [`_extract_iso3_token`](#fn--extract-iso3-token-7795)
-- [`_reference_descriptor`](#fn--reference-descriptor-7823)
-- [`_write_category_breakdown_block`](#fn--write-category-breakdown-block-7843)
-- [`write_summary_sheet`](#fn-write-summary-sheet-7917)
-- [`write_structure_skip_sheet`](#fn-write-structure-skip-sheet-8165)
-- [`write_structure_skip_sheet._sorted`](#fn--sorted-8169)
-- [`write_replacement_issues_sheet`](#fn-write-replacement-issues-sheet-8217)
-- [`write_critical_sets_sheet`](#fn-write-critical-sets-sheet-8243)
-- [`write_question_changes_sheet`](#fn-write-question-changes-sheet-8271)
-- [`write_option_changes_sheet`](#fn-write-option-changes-sheet-8326)
-- [`export_validation_report`](#fn-export-validation-report-8404)
-- [`_resolve_survey_sheet`](#fn--resolve-survey-sheet-8427)
-- [`_sheet_header_map`](#fn--sheet-header-map-8434)
-- [`_count_selected_crops`](#fn--count-selected-crops-8448)
-- [`_placeholder_scan_columns`](#fn--placeholder-scan-columns-8462)
-- [`_extract_placeholder_tokens`](#fn--extract-placeholder-tokens-8469)
-- [`_has_broken_placeholder_token`](#fn--has-broken-placeholder-token-8473)
-- [`_count_unresolved_placeholders`](#fn--count-unresolved-placeholders-8481)
-- [`_selected_crop_labels`](#fn--selected-crop-labels-8494)
-- [`_selected_crop_entries`](#fn--selected-crop-entries-8512)
-- [`_join_short`](#fn--join-short-8540)
-- [`_build_crop_round_delta_issue_rows`](#fn--build-crop-round-delta-issue-rows-8548)
-- [`_build_replacement_issue_rows`](#fn--build-replacement-issue-rows-8600)
-- [`_build_replacement_issue_rows._effective_replacements_for_col`](#fn--effective-replacements-for-col-8665)
-- [`_fetch_admin_reference`](#fn--fetch-admin-reference-8784)
-- [`_write_table_sheet`](#fn--write-table-sheet-8834)
-- [`_apply_admin_sheets`](#fn--apply-admin-sheets-8849)
-- [`_build_replacement_status_rows`](#fn--build-replacement-status-rows-8892)
-- [`write_validated_questionnaire`](#fn-write-validated-questionnaire-9001)
+- [`_header_row`](#fn--header-row-7768)
+- [`_section_header`](#fn--section-header-7775)
+- [`_data_row`](#fn--data-row-7782)
+- [`_autofit`](#fn--autofit-7791)
+- [`_action_for_issue_type`](#fn--action-for-issue-type-7854)
+- [`_optional_counterparts_for_missing_skip_targets`](#fn--optional-counterparts-for-missing-skip-targets-7859)
+- [`_action_for_issue_row`](#fn--action-for-issue-row-7893)
+- [`_issues_col_map`](#fn--issues-col-map-7905)
+- [`_issues_table`](#fn--issues-table-7928)
+- [`_tokenize_for_word_diff`](#fn--tokenize-for-word-diff-7983)
+- [`_coalesce_segments`](#fn--coalesce-segments-7994)
+- [`_build_diff_segments`](#fn--build-diff-segments-8006)
+- [`_set_rich_text`](#fn--set-rich-text-8025)
+- [`_set_rich_text_with_bold_tokens`](#fn--set-rich-text-with-bold-tokens-8041)
+- [`_apply_inline_diff_for_issue`](#fn--apply-inline-diff-for-issue-8085)
+- [`_apply_inline_diff_for_issue._match_issue`](#fn--match-issue-8094)
+- [`_apply_option_detail_highlights`](#fn--apply-option-detail-highlights-8124)
+- [`_apply_codes_alignment_marker_highlights`](#fn--apply-codes-alignment-marker-highlights-8162)
+- [`_set_status`](#fn--set-status-8205)
+- [`_cat_counts`](#fn--cat-counts-8289)
+- [`_extract_round_token`](#fn--extract-round-token-8297)
+- [`_extract_iso3_token`](#fn--extract-iso3-token-8312)
+- [`_reference_descriptor`](#fn--reference-descriptor-8340)
+- [`_write_category_breakdown_block`](#fn--write-category-breakdown-block-8360)
+- [`write_summary_sheet`](#fn-write-summary-sheet-8434)
+- [`write_structure_skip_sheet`](#fn-write-structure-skip-sheet-8685)
+- [`write_structure_skip_sheet._sorted`](#fn--sorted-8689)
+- [`write_replacement_issues_sheet`](#fn-write-replacement-issues-sheet-8737)
+- [`write_critical_sets_sheet`](#fn-write-critical-sets-sheet-8763)
+- [`write_question_changes_sheet`](#fn-write-question-changes-sheet-8791)
+- [`write_option_changes_sheet`](#fn-write-option-changes-sheet-8846)
+- [`export_validation_report`](#fn-export-validation-report-8924)
+- [`_resolve_survey_sheet`](#fn--resolve-survey-sheet-8947)
+- [`_sheet_header_map`](#fn--sheet-header-map-8954)
+- [`_count_selected_crops`](#fn--count-selected-crops-8968)
+- [`_placeholder_scan_columns`](#fn--placeholder-scan-columns-8982)
+- [`_extract_placeholder_tokens`](#fn--extract-placeholder-tokens-8989)
+- [`_has_broken_placeholder_token`](#fn--has-broken-placeholder-token-8993)
+- [`_count_unresolved_placeholders`](#fn--count-unresolved-placeholders-9001)
+- [`_selected_crop_labels`](#fn--selected-crop-labels-9014)
+- [`_selected_crop_entries`](#fn--selected-crop-entries-9032)
+- [`_join_short`](#fn--join-short-9060)
+- [`_build_crop_round_delta_issue_rows`](#fn--build-crop-round-delta-issue-rows-9068)
+- [`_build_replacement_issue_rows`](#fn--build-replacement-issue-rows-9120)
+- [`_build_replacement_issue_rows._effective_replacements_for_col`](#fn--effective-replacements-for-col-9185)
+- [`_fetch_admin_reference`](#fn--fetch-admin-reference-9328)
+- [`_write_table_sheet`](#fn--write-table-sheet-9378)
+- [`_apply_admin_sheets`](#fn--apply-admin-sheets-9393)
+- [`_build_replacement_status_rows`](#fn--build-replacement-status-rows-9436)
+- [`write_validated_questionnaire`](#fn-write-validated-questionnaire-9545)
 
 ## Full Specifications
 
@@ -509,6 +522,14 @@ def _summary(all_issues=None, report_path=None, extra_paths=None) -> None:
                 print("  No issues found — questionnaire passed all checks.")
         except Exception as _e:
             print(f"  (summary unavailable: {_e})")
+        _added_df = globals().get("added")
+        _removed_df = globals().get("removed")
+        if _added_df is not None and _removed_df is not None:
+            _added_names = _added_df["Q Name"].to_list()
+            _removed_names = _removed_df["Q Name"].to_list()
+            print()
+            print(f"  Questions added ({len(_added_names)})  : {', '.join(_added_names) if _added_names else '(none)'}")
+            print(f"  Questions removed ({len(_removed_names)}): {', '.join(_removed_names) if _removed_names else '(none)'}")
         _mod_ignore = str(globals().get("_module_ignore_scope_summary") or "").strip()
         _mod_skip = str(globals().get("_module_skip_scope_summary") or "").strip()
         if _mod_ignore and _mod_ignore != "(none)":
@@ -526,11 +547,11 @@ def _summary(all_issues=None, report_path=None, extra_paths=None) -> None:
         print()
     ```
 
-### `_load_effective_config` {#fn--load-effective-config-139}
+### `_load_effective_config` {#fn--load-effective-config-147}
 
 **Pipeline stage:** `Step 1 Configuration`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:139`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:147`
 
 **Signature**
 
@@ -589,11 +610,11 @@ def _load_effective_config(cfg_path: Path) -> tuple[dict, Path | None, Path]:
         return effective_cfg, profile_path, active_cfg_path
     ```
 
-### `_reference_scope_label` {#fn--reference-scope-label-204}
+### `_reference_scope_label` {#fn--reference-scope-label-212}
 
 **Pipeline stage:** `Step 1 Configuration`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:204`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:212`
 
 **Signature**
 
@@ -619,11 +640,11 @@ No parameters.
         return "latest template"
     ```
 
-### `_not_in_reference_text` {#fn--not-in-reference-text-211}
+### `_not_in_reference_text` {#fn--not-in-reference-text-219}
 
 **Pipeline stage:** `Step 1 Configuration`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:211`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:219`
 
 **Signature**
 
@@ -651,11 +672,11 @@ def _not_in_reference_text(suffix: str='') -> str:
         return f"(not in {base})"
     ```
 
-### `_normalize_header_name` {#fn--normalize-header-name-242}
+### `_normalize_header_name` {#fn--normalize-header-name-250}
 
 **Pipeline stage:** `Step 2 Reference file resolution`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:242`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:250`
 
 **Signature**
 
@@ -681,11 +702,11 @@ def _normalize_header_name(name: str) -> str:
         return re.sub(r"[^a-z0-9]+", "", s)
     ```
 
-### `_header_tokens` {#fn--header-tokens-247}
+### `_header_tokens` {#fn--header-tokens-255}
 
 **Pipeline stage:** `Step 2 Reference file resolution`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:247`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:255`
 
 **Signature**
 
@@ -711,11 +732,11 @@ def _header_tokens(name: str) -> list[str]:
         return [t for t in re.split(r"[^a-z0-9]+", s) if t]
     ```
 
-### `_is_language_candidate_header` {#fn--is-language-candidate-header-252}
+### `_is_language_candidate_header` {#fn--is-language-candidate-header-260}
 
 **Pipeline stage:** `Step 2 Reference file resolution`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:252`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:260`
 
 **Signature**
 
@@ -748,11 +769,11 @@ def _is_language_candidate_header(name: str) -> bool:
         return n not in blocked
     ```
 
-### `resolve_language_column` {#fn-resolve-language-column-264}
+### `resolve_language_column` {#fn-resolve-language-column-272}
 
 **Pipeline stage:** `Step 2 Reference file resolution`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:264`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:272`
 
 **Signature**
 
@@ -827,11 +848,11 @@ def resolve_language_column(columns: list[str], language: str) -> str | None:
         return ranked[0][2]
     ```
 
-### `detect_language_from_filename` {#fn-detect-language-from-filename-317}
+### `detect_language_from_filename` {#fn-detect-language-from-filename-325}
 
 **Pipeline stage:** `Step 2 Reference file resolution`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:317`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:325`
 
 **Signature**
 
@@ -859,11 +880,11 @@ def detect_language_from_filename(path: Path | str) -> str | None:
         return m.group(1).upper() if m else None
     ```
 
-### `choose_target_language` {#fn-choose-target-language-324}
+### `choose_target_language` {#fn-choose-target-language-332}
 
 **Pipeline stage:** `Step 2 Reference file resolution`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:324`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:332`
 
 **Signature**
 
@@ -926,11 +947,11 @@ def choose_target_language(questionnaire_path: Path, questions_df: pl.DataFrame,
         return "EN", "fallback_en"
     ```
 
-### `extract_date_from_name` {#fn-extract-date-from-name-364}
+### `extract_date_from_name` {#fn-extract-date-from-name-372}
 
 **Pipeline stage:** `Step 2 Reference file resolution`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:364`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:372`
 
 **Signature**
 
@@ -960,11 +981,11 @@ def extract_date_from_name(path: Path) -> int:
         return int(m.group(1)) if m else 0
     ```
 
-### `find_latest_template` {#fn-find-latest-template-373}
+### `find_latest_template` {#fn-find-latest-template-381}
 
 **Pipeline stage:** `Step 2 Reference file resolution`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:373`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:381`
 
 **Signature**
 
@@ -991,12 +1012,24 @@ def find_latest_template(template_repo: Path, enumerator: str, language: str) ->
         """
         Scans the template repo folder and returns the most recent template
         matching the given enumerator (geopoll/kobo) and language (EN/FR/etc.).
-        Sorts by date in filename first, then by file modification time as fallback.
+        Multilingual templates (from 20261007 on) carry no language token in the
+        filename (e.g. diem_household_questionnaire_geopoll_20261007.xlsx); those
+        match any language. Sorts by date in filename first, then by file
+        modification time as fallback.
         """
+        lang_tokens = {f"_{code.lower()}_" for code in LANGUAGE_COLUMN}
+
+        def _matches_language(name: str) -> bool:
+            padded = f"_{name.lower().replace('-', '_')}_"
+            if f"_{language.lower()}_" in padded:
+                return True
+            return not any(tok in padded for tok in lang_tokens)
+
         matches = [
             p for p in template_repo.glob("*.xlsx")
             if enumerator.lower() in p.name.lower()
-            and f"_{language.lower()}_" in p.name.lower()
+            and not p.name.startswith("~$")
+            and _matches_language(p.stem)
         ]
         if not matches:
             raise FileNotFoundError(
@@ -1006,11 +1039,43 @@ def find_latest_template(template_repo: Path, enumerator: str, language: str) ->
         return matches[0]
     ```
 
-### `resolve_reference_file` {#fn-resolve-reference-file-392}
+### `find_latest_template._matches_language` {#fn--matches-language-392}
 
 **Pipeline stage:** `Step 2 Reference file resolution`
 
 **Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:392`
+
+**Signature**
+
+```python
+def _matches_language(name: str) -> bool:
+```
+
+**Returns:** `bool`
+
+**What it does:** Implements logic in the `Step 2 Reference file resolution` phase.
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `name` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 2 Reference file resolution` stage. |
+
+??? note "Function source"
+
+    ```python
+    def _matches_language(name: str) -> bool:
+            padded = f"_{name.lower().replace('-', '_')}_"
+            if f"_{language.lower()}_" in padded:
+                return True
+            return not any(tok in padded for tok in lang_tokens)
+    ```
+
+### `resolve_reference_file` {#fn-resolve-reference-file-412}
+
+**Pipeline stage:** `Step 2 Reference file resolution`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:412`
 
 **Signature**
 
@@ -1042,11 +1107,11 @@ def resolve_reference_file(cfg: ValidationConfig) -> Path:
         raise ValueError(f"Unknown reference_mode: '{cfg.reference_mode}'")
     ```
 
-### `load_critical_sets` {#fn-load-critical-sets-403}
+### `load_critical_sets` {#fn-load-critical-sets-423}
 
 **Pipeline stage:** `Step 2 Reference file resolution`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:403`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:423`
 
 **Signature**
 
@@ -1077,8 +1142,12 @@ def load_critical_sets(cfg: ValidationConfig) -> dict:
           4. critical_sets.yaml in the current working directory
           5. critical_sets.yaml in a scripts/ subfolder of the current directory
 
-        Returns a dict with keys: exact_sets, min_count_sets, crop_harvest.
+        Returns a dict with every rule block (see _CRITICAL_SET_RULE_DEFAULTS).
         If the file is not found, structural validation is disabled (empty rules returned).
+
+        Every block must be passed through here: the downstream validators read
+        rules.get("fs_indicators"), rules.get("agri_cs_check"), ... and silently
+        do nothing when a block is missing.
         """
         _cfg_dir = Path(__file__).parent.parent / "configuration"
         candidates = [
@@ -1093,21 +1162,21 @@ def load_critical_sets(cfg: ValidationConfig) -> dict:
                 with open(path, "r", encoding="utf-8") as f:
                     data = yaml.safe_load(f)
                 print(f"Rules loaded  : {path}")
+                data = data or {}
                 return {
-                    "exact_sets"    : data.get("exact_sets", {}),
-                    "min_count_sets": data.get("min_count_sets", {}),
-                    "crop_harvest"  : data.get("crop_harvest", {}),
+                    key: (data.get(key) or type(default)())
+                    for key, default in _CRITICAL_SET_RULE_DEFAULTS.items()
                 }
         print("  critical_sets.yaml not found  structural validation disabled.")
         print(f"   Searched: {[str(p) for p in candidates if p is not None]}")
-        return {"exact_sets": {}, "min_count_sets": {}, "crop_harvest": {}}
+        return {key: type(default)() for key, default in _CRITICAL_SET_RULE_DEFAULTS.items()}
     ```
 
-### `prepare_run` {#fn-prepare-run-439}
+### `prepare_run` {#fn-prepare-run-477}
 
 **Pipeline stage:** `Step 2 Reference file resolution`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:439`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:477`
 
 **Signature**
 
@@ -1176,11 +1245,11 @@ def prepare_run(cfg: ValidationConfig) -> dict:
         return run
     ```
 
-### `_write_config_snapshot_geopoll` {#fn--write-config-snapshot-geopoll-487}
+### `_write_config_snapshot_geopoll` {#fn--write-config-snapshot-geopoll-525}
 
 **Pipeline stage:** `Step 2 Reference file resolution`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:487`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:525`
 
 **Signature**
 
@@ -1245,11 +1314,11 @@ def _write_config_snapshot_geopoll(cfg: ValidationConfig, run: dict, cfg_base_pa
         return out_file
     ```
 
-### `_resolve_column_by_aliases` {#fn--resolve-column-by-aliases-617}
+### `_resolve_column_by_aliases` {#fn--resolve-column-by-aliases-656}
 
 **Pipeline stage:** `Step 3 Reading and normalising the survey sheet`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:617`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:656`
 
 **Signature**
 
@@ -1279,11 +1348,11 @@ def _resolve_column_by_aliases(columns: list[str], aliases: list[str]) -> str | 
         return None
     ```
 
-### `_canonical_column_from_header` {#fn--canonical-column-from-header-625}
+### `_canonical_column_from_header` {#fn--canonical-column-from-header-664}
 
 **Pipeline stage:** `Step 3 Reading and normalising the survey sheet`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:625`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:664`
 
 **Signature**
 
@@ -1313,11 +1382,11 @@ def _canonical_column_from_header(name: str) -> str | None:
         return None
     ```
 
-### `_as_text_cell` {#fn--as-text-cell-634}
+### `_as_text_cell` {#fn--as-text-cell-673}
 
 **Pipeline stage:** `Step 3 Reading and normalising the survey sheet`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:634`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:673`
 
 **Signature**
 
@@ -1351,11 +1420,11 @@ def _as_text_cell(value):
         return str(value).strip()
     ```
 
-### `_load_workbook_readonly` {#fn--load-workbook-readonly-647}
+### `_load_workbook_readonly` {#fn--load-workbook-readonly-686}
 
 **Pipeline stage:** `Step 3 Reading and normalising the survey sheet`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:647`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:686`
 
 **Signature**
 
@@ -1409,11 +1478,11 @@ def _load_workbook_readonly(path: Path, data_only: bool=True, read_only: bool=Tr
                 ) from copy_err
     ```
 
-### `_close_workbook` {#fn--close-workbook-678}
+### `_close_workbook` {#fn--close-workbook-717}
 
 **Pipeline stage:** `Step 3 Reading and normalising the survey sheet`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:678`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:717`
 
 **Signature**
 
@@ -1450,11 +1519,11 @@ def _close_workbook(wb) -> None:
                     pass
     ```
 
-### `read_survey_sheet` {#fn-read-survey-sheet-697}
+### `read_survey_sheet` {#fn-read-survey-sheet-736}
 
 **Pipeline stage:** `Step 3 Reading and normalising the survey sheet`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:697`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:736`
 
 **Signature**
 
@@ -1576,11 +1645,11 @@ def read_survey_sheet(path: Path, sheet_name: str='survey', header_row: int=2, _
                 _close_workbook(wb)
     ```
 
-### `build_questions_df` {#fn-build-questions-df-794}
+### `build_questions_df` {#fn-build-questions-df-833}
 
 **Pipeline stage:** `Step 3 Reading and normalising the survey sheet`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:794`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:833`
 
 **Signature**
 
@@ -1654,11 +1723,11 @@ def build_questions_df(df: pl.DataFrame) -> pl.DataFrame:
         return out
     ```
 
-### `_normalize_module_token` {#fn--normalize-module-token-847}
+### `_normalize_module_token` {#fn--normalize-module-token-886}
 
 **Pipeline stage:** `Step 3 Reading and normalising the survey sheet`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:847`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:886`
 
 **Signature**
 
@@ -1685,11 +1754,11 @@ def _normalize_module_token(value) -> str:
         return txt
     ```
 
-### `_is_geopoll_module_row` {#fn--is-geopoll-module-row-853}
+### `_is_geopoll_module_row` {#fn--is-geopoll-module-row-892}
 
 **Pipeline stage:** `Step 3 Reading and normalising the survey sheet`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:853`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:892`
 
 **Signature**
 
@@ -1723,11 +1792,11 @@ def _is_geopoll_module_row(row: dict) -> bool:
         return module_val == ""
     ```
 
-### `split_geopoll_questions_and_modules` {#fn-split-geopoll-questions-and-modules-866}
+### `split_geopoll_questions_and_modules` {#fn-split-geopoll-questions-and-modules-905}
 
 **Pipeline stage:** `Step 3 Reading and normalising the survey sheet`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:866`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:905`
 
 **Signature**
 
@@ -1802,11 +1871,11 @@ def split_geopoll_questions_and_modules(df: pl.DataFrame) -> tuple[pl.DataFrame,
         return q_df, m_df
     ```
 
-### `validate_module_column_integrity` {#fn-validate-module-column-integrity-920}
+### `validate_module_column_integrity` {#fn-validate-module-column-integrity-959}
 
 **Pipeline stage:** `Step 3 Reading and normalising the survey sheet`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:920`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:959`
 
 **Signature**
 
@@ -1863,11 +1932,11 @@ def validate_module_column_integrity(questions_df: pl.DataFrame) -> pl.DataFrame
         ])
     ```
 
-### `_filter_questions_by_module_keys` {#fn--filter-questions-by-module-keys-956}
+### `_filter_questions_by_module_keys` {#fn--filter-questions-by-module-keys-995}
 
 **Pipeline stage:** `Step 3 Reading and normalising the survey sheet`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:956`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:995`
 
 **Signature**
 
@@ -1902,11 +1971,11 @@ def _filter_questions_by_module_keys(df: pl.DataFrame, excluded_module_keys: set
         )
     ```
 
-### `_filter_module_rows_by_keys` {#fn--filter-module-rows-by-keys-969}
+### `_filter_module_rows_by_keys` {#fn--filter-module-rows-by-keys-1008}
 
 **Pipeline stage:** `Step 3 Reading and normalising the survey sheet`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:969`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1008`
 
 **Signature**
 
@@ -1934,11 +2003,11 @@ def _filter_module_rows_by_keys(df: pl.DataFrame, excluded_module_keys: set[str]
         return df.filter(~pl.col("module_key_norm").is_in(list(excluded_module_keys)))
     ```
 
-### `_resolve_module_keys_from_tokens` {#fn--resolve-module-keys-from-tokens-975}
+### `_resolve_module_keys_from_tokens` {#fn--resolve-module-keys-from-tokens-1014}
 
 **Pipeline stage:** `Step 3 Reading and normalising the survey sheet`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:975`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1014`
 
 **Signature**
 
@@ -1994,11 +2063,11 @@ def _resolve_module_keys_from_tokens(tokens: list[str], module_dfs: list[pl.Data
         return resolved, unresolved
     ```
 
-### `_module_display_map` {#fn--module-display-map-1009}
+### `_module_display_map` {#fn--module-display-map-1048}
 
 **Pipeline stage:** `Step 3 Reading and normalising the survey sheet`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1009`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1048`
 
 **Signature**
 
@@ -2037,11 +2106,11 @@ def _module_display_map(*module_dfs: pl.DataFrame) -> dict[str, str]:
         return out
     ```
 
-### `_dedupe_keep_order` {#fn--dedupe-keep-order-1027}
+### `_dedupe_keep_order` {#fn--dedupe-keep-order-1066}
 
 **Pipeline stage:** `Step 3 Reading and normalising the survey sheet`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1027`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1066`
 
 **Signature**
 
@@ -2077,11 +2146,11 @@ def _dedupe_keep_order(items: list[str]) -> list[str]:
         return out
     ```
 
-### `_format_module_scope_for_display` {#fn--format-module-scope-for-display-1042}
+### `_format_module_scope_for_display` {#fn--format-module-scope-for-display-1081}
 
 **Pipeline stage:** `Step 3 Reading and normalising the survey sheet`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1042`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1081`
 
 **Signature**
 
@@ -2116,11 +2185,11 @@ def _format_module_scope_for_display(configured_tokens: list[str], resolved_keys
         return cfg_txt
     ```
 
-### `_qnames_for_module_keys` {#fn--qnames-for-module-keys-1054}
+### `_qnames_for_module_keys` {#fn--qnames-for-module-keys-1093}
 
 **Pipeline stage:** `Step 3 Reading and normalising the survey sheet`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1054`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1093`
 
 **Signature**
 
@@ -2165,11 +2234,11 @@ def _qnames_for_module_keys(questions_df: pl.DataFrame, module_keys: set[str]) -
         return {str(v).strip() for v in out if str(v or "").strip()}
     ```
 
-### `_normalize_q_type` {#fn--normalize-q-type-1085}
+### `_normalize_q_type` {#fn--normalize-q-type-1124}
 
 **Pipeline stage:** `Step 4 Exploding answer options`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1085`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1124`
 
 **Signature**
 
@@ -2197,11 +2266,11 @@ def _normalize_q_type(value: str) -> str:
         return txt
     ```
 
-### `is_option_bearing_qtype` {#fn-is-option-bearing-qtype-1092}
+### `is_option_bearing_qtype` {#fn-is-option-bearing-qtype-1131}
 
 **Pipeline stage:** `Step 4 Exploding answer options`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1092`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1131`
 
 **Signature**
 
@@ -2236,14 +2305,80 @@ def is_option_bearing_qtype(value: str) -> bool:
             return True
         if "single choice" in t and "open ended" in t:
             return True
+        if "matrix" in t:
+            return True
         return False
     ```
 
-### `parse_options` {#fn-parse-options-1117}
+### `is_matrix_qtype` {#fn-is-matrix-qtype-1149}
 
 **Pipeline stage:** `Step 4 Exploding answer options`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1117`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1149`
+
+**Signature**
+
+```python
+def is_matrix_qtype(value: str) -> bool:
+```
+
+**Returns:** `bool`
+
+**What it does:** True for GeoPoll 'Matrix Table' questions (new in the 20261007 template).
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `value` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 4 Exploding answer options` stage. |
+
+??? note "Function source"
+
+    ```python
+    def is_matrix_qtype(value: str) -> bool:
+        """
+        True for GeoPoll 'Matrix Table' questions (new in the 20261007 template).
+        A matrix asks one answer scale (options in the text column) for several
+        rows (sub-variables listed in varname_new_multiple / Codes).
+        """
+        return "matrix" in _normalize_q_type(value)
+    ```
+
+### `is_matrix_qtype_expr` {#fn-is-matrix-qtype-expr-1158}
+
+**Pipeline stage:** `Step 4 Exploding answer options`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1158`
+
+**Signature**
+
+```python
+def is_matrix_qtype_expr(col_name: str) -> pl.Expr:
+```
+
+**Returns:** `pl.Expr`
+
+**What it does:** Expression form of is_matrix_qtype for DataFrame filters.
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `col_name` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 4 Exploding answer options` stage. |
+
+??? note "Function source"
+
+    ```python
+    def is_matrix_qtype_expr(col_name: str) -> pl.Expr:
+        """Expression form of is_matrix_qtype for DataFrame filters."""
+        return pl.col(col_name).cast(pl.Utf8).fill_null("").str.to_lowercase().str.contains("matrix")
+    ```
+
+### `parse_options` {#fn-parse-options-1172}
+
+**Pipeline stage:** `Step 4 Exploding answer options`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1172`
 
 **Signature**
 
@@ -2287,11 +2422,11 @@ def parse_options(text: str) -> list[tuple[int, str]]:
         return results
     ```
 
-### `extract_question_stem` {#fn-extract-question-stem-1140}
+### `extract_question_stem` {#fn-extract-question-stem-1195}
 
 **Pipeline stage:** `Step 4 Exploding answer options`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1140`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1195`
 
 **Signature**
 
@@ -2324,11 +2459,11 @@ def extract_question_stem(text: str) -> str:
         return stem.strip()
     ```
 
-### `_split_stem_and_options` {#fn--split-stem-and-options-1152}
+### `_split_stem_and_options` {#fn--split-stem-and-options-1207}
 
 **Pipeline stage:** `Step 4 Exploding answer options`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1152`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1207`
 
 **Signature**
 
@@ -2363,11 +2498,11 @@ def _split_stem_and_options(text: str) -> tuple[str, str]:
         return (text[:m.start()], text[m.start():])
     ```
 
-### `explode_options` {#fn-explode-options-1166}
+### `explode_options` {#fn-explode-options-1221}
 
 **Pipeline stage:** `Step 4 Exploding answer options`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1166`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1221`
 
 **Signature**
 
@@ -2437,11 +2572,11 @@ def explode_options(questions_df: pl.DataFrame, text_col: str='English') -> pl.D
         )
     ```
 
-### `parse_codes_cell` {#fn-parse-codes-cell-1214}
+### `parse_codes_cell` {#fn-parse-codes-cell-1269}
 
 **Pipeline stage:** `Step 4 Exploding answer options`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1214`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1269`
 
 **Signature**
 
@@ -2480,11 +2615,11 @@ def parse_codes_cell(text: str) -> list[tuple[int, str]]:
         return out
     ```
 
-### `explode_codes` {#fn-explode-codes-1232}
+### `explode_codes` {#fn-explode-codes-1287}
 
 **Pipeline stage:** `Step 4 Exploding answer options`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1232`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1287`
 
 **Signature**
 
@@ -2537,11 +2672,11 @@ def explode_codes(questions_df: pl.DataFrame, codes_col: str='Codes') -> pl.Data
         ])
     ```
 
-### `_detect_verb_tense_mode` {#fn--detect-verb-tense-mode-1316}
+### `_detect_verb_tense_mode` {#fn--detect-verb-tense-mode-1374}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1316`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1374`
 
 **Signature**
 
@@ -2571,9 +2706,11 @@ def _detect_verb_tense_mode(raw_value: str) -> str:
         v = str(raw_value or "").lower().strip()
         if not v:
             return "past"
-        both_signals = ("both", "les deux", "deux tenses", "les 2")
-        present_signals = ("present", "présent", "ongoing", "cours", "upcoming", "coming", "futur", "future")
-        past_signals = ("past", "passé", "passe", "last", "recently", "finished", "harvesting", "harvest", "récolte")
+        both_signals = ("both", "les deux", "deux tenses", "les 2", "كلا", "كلاهما")
+        present_signals = ("present", "présent", "ongoing", "cours", "upcoming", "coming", "futur", "future",
+                           "الحاضر", "المضارع", "الحالي", "المستقبل")
+        past_signals = ("past", "passé", "passe", "last", "recently", "finished", "harvesting", "harvest", "récolte",
+                        "الماضي")
         if any(s in v for s in both_signals):
             return "both"
         has_present = any(s in v for s in present_signals)
@@ -2585,11 +2722,11 @@ def _detect_verb_tense_mode(raw_value: str) -> str:
         return "past"
     ```
 
-### `_normalize_placeholder_token` {#fn--normalize-placeholder-token-1357}
+### `_normalize_placeholder_token` {#fn--normalize-placeholder-token-1417}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1357`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1417`
 
 **Signature**
 
@@ -2619,11 +2756,11 @@ def _normalize_placeholder_token(token: str) -> str:
         return s
     ```
 
-### `_is_crop_placeholder_token` {#fn--is-crop-placeholder-token-1366}
+### `_is_crop_placeholder_token` {#fn--is-crop-placeholder-token-1426}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1366`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1426`
 
 **Signature**
 
@@ -2651,11 +2788,11 @@ def _is_crop_placeholder_token(token: str) -> bool:
         return norm in {"CROPS SOLD", "CROP CODES", "CROP SOLD CODES"}
     ```
 
-### `_contains_crop_marker_text` {#fn--contains-crop-marker-text-1373}
+### `_contains_crop_marker_text` {#fn--contains-crop-marker-text-1433}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1373`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1433`
 
 **Signature**
 
@@ -2683,11 +2820,11 @@ def _contains_crop_marker_text(text: str) -> bool:
         return False
     ```
 
-### `_clean_header` {#fn--clean-header-1380}
+### `_clean_header` {#fn--clean-header-1440}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1380`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1440`
 
 **Signature**
 
@@ -2712,11 +2849,11 @@ def _clean_header(value) -> str:
         return str(value or "").replace("\n", " ").strip()
     ```
 
-### `_find_column` {#fn--find-column-1384}
+### `_find_column` {#fn--find-column-1444}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1384`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1444`
 
 **Signature**
 
@@ -2747,11 +2884,11 @@ def _find_column(columns: list[str], *candidates: str) -> Optional[str]:
         return None
     ```
 
-### `read_generic_sheet` {#fn-read-generic-sheet-1393}
+### `read_generic_sheet` {#fn-read-generic-sheet-1453}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1393`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1453`
 
 **Signature**
 
@@ -2815,11 +2952,11 @@ def read_generic_sheet(path: Path, sheet_name: str, header_row: int, _wb=None) -
                 _close_workbook(wb)
     ```
 
-### `read_additional_information` {#fn-read-additional-information-1432}
+### `read_additional_information` {#fn-read-additional-information-1492}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1432`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1492`
 
 **Signature**
 
@@ -2845,11 +2982,150 @@ def read_additional_information(path: Path, _wb=None) -> pl.DataFrame:
         return read_generic_sheet(path, sheet_name="Additional information", header_row=2, _wb=_wb)
     ```
 
-### `read_crop_list` {#fn-read-crop-list-1436}
+### `build_additional_info_sections` {#fn-build-additional-info-sections-1496}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1436`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1496`
+
+**Signature**
+
+```python
+def build_additional_info_sections(df: pl.DataFrame, original_col: str) -> pl.DataFrame:
+```
+
+**Returns:** `pl.DataFrame`
+
+**What it does:** Adds a '_section' column to the Additional information sheet: the section
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `df` | positional_or_keyword | Yes | `-` | `pl.DataFrame` | Polars DataFrame carrying records for this processing stage. |
+| `original_col` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 5 Normalising placeholders` stage. |
+
+??? note "Function source"
+
+    ```python
+    def build_additional_info_sections(df: pl.DataFrame, original_col: str) -> pl.DataFrame:
+        """
+        Adds a '_section' column to the Additional information sheet: the section
+        banner (e.g. "FOR CORE QUESTIONS", "FILL OUT FOR TROPICAL LIVESTOCK UNIT
+        CALCULATION") written in the column(s) left of 'Original', forward-filled
+        down to every row of that section.
+        """
+        if original_col not in df.columns:
+            return df.with_columns(pl.lit("").alias("_section"))
+        lead_cols = df.columns[: df.columns.index(original_col)]
+        if not lead_cols:
+            return df.with_columns(pl.lit("").alias("_section"))
+        banner = pl.concat_str(
+            [pl.col(c).cast(pl.Utf8).fill_null("") for c in lead_cols], separator=" "
+        ).str.strip_chars()
+        return df.with_columns(
+            pl.when(banner != "").then(banner).otherwise(None)
+            .forward_fill().fill_null("").alias("_section")
+        )
+    ```
+
+### `_exclude_additional_info_sections` {#fn--exclude-additional-info-sections-1517}
+
+**Pipeline stage:** `Step 5 Normalising placeholders`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1517`
+
+**Signature**
+
+```python
+def _exclude_additional_info_sections(df: pl.DataFrame, original_col: str, section_markers: list[str] | None) -> pl.DataFrame:
+```
+
+**Returns:** `pl.DataFrame`
+
+**What it does:** Drops Additional information rows whose section banner contains any marker
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `df` | positional_or_keyword | Yes | `-` | `pl.DataFrame` | Polars DataFrame carrying records for this processing stage. |
+| `original_col` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 5 Normalising placeholders` stage. |
+| `section_markers` | positional_or_keyword | Yes | `-` | `list[str] | None` | Input used by the `Step 5 Normalising placeholders` stage. |
+
+??? note "Function source"
+
+    ```python
+    def _exclude_additional_info_sections(
+        df: pl.DataFrame, original_col: str, section_markers: list[str] | None,
+    ) -> pl.DataFrame:
+        """Drops Additional information rows whose section banner contains any marker
+        (case-insensitive) -- used to keep data tables such as the TLU weights out of
+        the placeholder replacement maps."""
+        markers = [str(m).strip().upper() for m in (section_markers or []) if str(m or "").strip()]
+        if not markers or df.height == 0:
+            return df
+        tagged = build_additional_info_sections(df, original_col)
+        sec = pl.col("_section").str.to_uppercase()
+        hit = pl.lit(False)
+        for m in markers:
+            hit = hit | sec.str.contains(m, literal=True)
+        return tagged.filter(~hit).drop("_section")
+    ```
+
+### `read_tlu_weights` {#fn-read-tlu-weights-1534}
+
+**Pipeline stage:** `Step 5 Normalising placeholders`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1534`
+
+**Signature**
+
+```python
+def read_tlu_weights(path: Path, section_marker: str, _wb=None) -> pl.DataFrame:
+```
+
+**Returns:** `pl.DataFrame`
+
+**What it does:** Reads the Tropical Livestock Unit weights table from the Additional
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `path` | positional_or_keyword | Yes | `-` | `Path` | Filesystem path used for reading inputs or writing outputs. |
+| `section_marker` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 5 Normalising placeholders` stage. |
+| `_wb` | positional_or_keyword | No | `None` | `-` | Input used by the `Step 5 Normalising placeholders` stage. |
+
+??? note "Function source"
+
+    ```python
+    def read_tlu_weights(path: Path, section_marker: str, _wb=None) -> pl.DataFrame:
+        """
+        Reads the Tropical Livestock Unit weights table from the Additional
+        information sheet (new in the 20261007 template). Returns one row per
+        species row in the TLU section: species, plus one column per
+        'Replacement (xx)' language column holding the raw weight text.
+        """
+        df = read_additional_information(path, _wb=_wb)
+        original_col = _find_column(df.columns, "Original")
+        if df.height == 0 or not original_col or not section_marker:
+            return pl.DataFrame(schema={"species": pl.Utf8})
+        weight_cols = [c for c in df.columns if c.lower().startswith("replacement")]
+        return (
+            build_additional_info_sections(df, original_col)
+            .filter(pl.col("_section").str.to_uppercase().str.contains(section_marker.upper(), literal=True))
+            .with_columns(pl.col(original_col).cast(pl.Utf8).fill_null("").str.strip_chars().alias("species"))
+            .filter(pl.col("species") != "")
+            .select(["species"] + weight_cols)
+        )
+    ```
+
+### `read_crop_list` {#fn-read-crop-list-1555}
+
+**Pipeline stage:** `Step 5 Normalising placeholders`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1555`
 
 **Signature**
 
@@ -2875,11 +3151,11 @@ def read_crop_list(path: Path, _wb=None) -> pl.DataFrame:
         return read_generic_sheet(path, sheet_name="Crop list", header_row=3, _wb=_wb)
     ```
 
-### `has_placeholder` {#fn-has-placeholder-1440}
+### `has_placeholder` {#fn-has-placeholder-1559}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1440`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1559`
 
 **Signature**
 
@@ -2904,11 +3180,11 @@ def has_placeholder(value) -> bool:
         return bool(PLACEHOLDER_PATTERN.search(str(value or "")))
     ```
 
-### `build_placeholder_restore_map` {#fn-build-placeholder-restore-map-1447}
+### `build_placeholder_restore_map` {#fn-build-placeholder-restore-map-1566}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1447`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1566`
 
 **Signature**
 
@@ -2976,11 +3252,11 @@ def build_placeholder_restore_map(current_questions: pl.DataFrame, reference_que
         return restore_map
     ```
 
-### `restore_placeholder_cells` {#fn-restore-placeholder-cells-1492}
+### `restore_placeholder_cells` {#fn-restore-placeholder-cells-1611}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1492`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1611`
 
 **Signature**
 
@@ -3059,11 +3335,11 @@ def restore_placeholder_cells(current_questions: pl.DataFrame, reference_questio
         return restored, restore_log
     ```
 
-### `_normalize_placeholder_key` {#fn--normalize-placeholder-key-1547}
+### `_normalize_placeholder_key` {#fn--normalize-placeholder-key-1666}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1547`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1666`
 
 **Signature**
 
@@ -3100,11 +3376,11 @@ def _normalize_placeholder_key(original_value: str) -> str:
         return f"${original}$"
     ```
 
-### `_placeholder_lookup_aliases` {#fn--placeholder-lookup-aliases-1563}
+### `_placeholder_lookup_aliases` {#fn--placeholder-lookup-aliases-1682}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1563`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1682`
 
 **Signature**
 
@@ -3152,11 +3428,11 @@ def _placeholder_lookup_aliases(token: str) -> list[str]:
         return out
     ```
 
-### `_build_placeholder_index` {#fn--build-placeholder-index-1590}
+### `_build_placeholder_index` {#fn--build-placeholder-index-1709}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1590`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1709`
 
 **Signature**
 
@@ -3187,11 +3463,11 @@ def _build_placeholder_index(replacements: dict[str, str]) -> dict[str, str]:
         return idx
     ```
 
-### `_lookup_placeholder_replacement` {#fn--lookup-placeholder-replacement-1600}
+### `_lookup_placeholder_replacement` {#fn--lookup-placeholder-replacement-1719}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1600`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1719`
 
 **Signature**
 
@@ -3223,11 +3499,11 @@ def _lookup_placeholder_replacement(token: str, replacements: dict[str, str], id
         return None
     ```
 
-### `_language_code_for_text_column` {#fn--language-code-for-text-column-1609}
+### `_language_code_for_text_column` {#fn--language-code-for-text-column-1728}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1609`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1728`
 
 **Signature**
 
@@ -3270,11 +3546,11 @@ def _language_code_for_text_column(column_name: str) -> str | None:
         return None
     ```
 
-### `_placeholder_token_explicit_lang` {#fn--placeholder-token-explicit-lang-1631}
+### `_placeholder_token_explicit_lang` {#fn--placeholder-token-explicit-lang-1750}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1631`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1750`
 
 **Signature**
 
@@ -3304,16 +3580,16 @@ def _placeholder_token_explicit_lang(token: str) -> str | None:
         return m.group(1).upper() if m else None
     ```
 
-### `analyze_additional_info_substitutions` {#fn-analyze-additional-info-substitutions-1640}
+### `analyze_additional_info_substitutions` {#fn-analyze-additional-info-substitutions-1759}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1640`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1759`
 
 **Signature**
 
 ```python
-def analyze_additional_info_substitutions(path: Path, language: str, _wb=None) -> dict:
+def analyze_additional_info_substitutions(path: Path, language: str, _wb=None, exclude_section_markers: list[str] | None=None) -> dict:
 ```
 
 **Returns:** `dict`
@@ -3327,13 +3603,21 @@ def analyze_additional_info_substitutions(path: Path, language: str, _wb=None) -
 | `path` | positional_or_keyword | Yes | `-` | `Path` | Filesystem path used for reading inputs or writing outputs. |
 | `language` | positional_or_keyword | Yes | `-` | `str` | Language selector used for language-specific text columns. |
 | `_wb` | positional_or_keyword | No | `None` | `-` | Input used by the `Step 5 Normalising placeholders` stage. |
+| `exclude_section_markers` | positional_or_keyword | No | `None` | `list[str] | None` | Input used by the `Step 5 Normalising placeholders` stage. |
 
 ??? note "Function source"
 
     ```python
-    def analyze_additional_info_substitutions(path: Path, language: str, _wb=None) -> dict:
-        """Return diagnostics about Additional information substitution readiness."""
+    def analyze_additional_info_substitutions(
+        path: Path, language: str, _wb=None, exclude_section_markers: list[str] | None = None,
+    ) -> dict:
+        """Return diagnostics about Additional information substitution readiness.
+        exclude_section_markers: section banners whose rows are data tables, not
+        placeholders (e.g. the TLU weights) -- left out of the key counts."""
         df = read_additional_information(path, _wb=_wb)
+        _orig = _find_column(df.columns, "Original")
+        if _orig:
+            df = _exclude_additional_info_sections(df, _orig, exclude_section_markers)
         out = {
             "has_sheet": True,
             "has_required_columns": True,
@@ -3386,11 +3670,11 @@ def analyze_additional_info_substitutions(path: Path, language: str, _wb=None) -
         return out
     ```
 
-### `build_additional_info_replacements` {#fn-build-additional-info-replacements-1695}
+### `build_additional_info_replacements` {#fn-build-additional-info-replacements-1821}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1695`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1821`
 
 **Signature**
 
@@ -3427,16 +3711,75 @@ def build_additional_info_replacements(path: Path, language: str, _wb=None) -> d
         return {}
     ```
 
-### `build_additional_info_replacements_by_language` {#fn-build-additional-info-replacements-by-language-1709}
+### `_resolve_derived_placeholders` {#fn--resolve-derived-placeholders-1835}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1709`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1835`
 
 **Signature**
 
 ```python
-def build_additional_info_replacements_by_language(path: Path, _wb=None, optional_defaults: dict[str, str] | None=None) -> dict[str, dict[str, str]]:
+def _resolve_derived_placeholders(mapping: dict[str, str], derived_placeholders: dict | None) -> None:
+```
+
+**Returns:** `None`
+
+**What it does:** Fills placeholders whose value is computed from another Additional
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `mapping` | positional_or_keyword | Yes | `-` | `dict[str, str]` | Input used by the `Step 5 Normalising placeholders` stage. |
+| `derived_placeholders` | positional_or_keyword | Yes | `-` | `dict | None` | Input used by the `Step 5 Normalising placeholders` stage. |
+
+??? note "Function source"
+
+    ```python
+    def _resolve_derived_placeholders(
+        mapping: dict[str, str], derived_placeholders: dict | None,
+    ) -> None:
+        """
+        Fills placeholders whose value is computed from another Additional
+        information value instead of being typed by the country team, e.g.
+        $MAX DIGIT DK$ = the digit 8 repeated as many times as MAX AMOUNT has
+        digits (+ extra_digits). Configured under
+        geopoll_options.derived_placeholders in validation_config.yaml:
+
+            MAX DIGIT DK: {source: "MAX AMOUNT", repeat_digit: "8", extra_digits: 0}
+
+        A real value in the sheet always wins. Mutates mapping in place.
+        """
+        if not derived_placeholders:
+            return
+        lower_map = {str(k).lower(): v for k, v in mapping.items()}
+        for target_raw, spec in derived_placeholders.items():
+            target_key = _normalize_placeholder_key(str(target_raw or ""))
+            if not target_key or not isinstance(spec, dict):
+                continue
+            if str(lower_map.get(target_key.lower()) or "").strip():
+                continue
+            source_key = _normalize_placeholder_key(str(spec.get("source") or ""))
+            source_val = re.sub(r"[\s,._']", "", str(lower_map.get(source_key.lower()) or ""))
+            digit = str(spec.get("repeat_digit") or "").strip()
+            if not re.fullmatch(r"\d+", source_val) or not re.fullmatch(r"\d", digit):
+                continue
+            n_digits = len(str(int(source_val))) + int(spec.get("extra_digits") or 0)
+            if n_digits > 0:
+                mapping[target_key] = digit * n_digits
+    ```
+
+### `build_additional_info_replacements_by_language` {#fn-build-additional-info-replacements-by-language-1868}
+
+**Pipeline stage:** `Step 5 Normalising placeholders`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1868`
+
+**Signature**
+
+```python
+def build_additional_info_replacements_by_language(path: Path, _wb=None, optional_defaults: dict[str, str] | None=None, exclude_section_markers: list[str] | None=None, derived_placeholders: dict | None=None) -> dict[str, dict[str, str]]:
 ```
 
 **Returns:** `dict[str, dict[str, str]]`
@@ -3450,15 +3793,23 @@ def build_additional_info_replacements_by_language(path: Path, _wb=None, optiona
 | `path` | positional_or_keyword | Yes | `-` | `Path` | Filesystem path used for reading inputs or writing outputs. |
 | `_wb` | positional_or_keyword | No | `None` | `-` | Input used by the `Step 5 Normalising placeholders` stage. |
 | `optional_defaults` | positional_or_keyword | No | `None` | `dict[str, str] | None` | Input used by the `Step 5 Normalising placeholders` stage. |
+| `exclude_section_markers` | positional_or_keyword | No | `None` | `list[str] | None` | Input used by the `Step 5 Normalising placeholders` stage. |
+| `derived_placeholders` | positional_or_keyword | No | `None` | `dict | None` | Input used by the `Step 5 Normalising placeholders` stage. |
 
 ??? note "Function source"
 
     ```python
     def build_additional_info_replacements_by_language(
         path: Path, _wb=None, optional_defaults: dict[str, str] | None = None,
+        exclude_section_markers: list[str] | None = None,
+        derived_placeholders: dict | None = None,
     ) -> dict[str, dict[str, str]]:
         """
         Build per-language substitution maps from Additional information.
+
+        exclude_section_markers: section banners whose rows are data tables rather
+        than placeholders (the TLU weights block) -- their rows are skipped.
+        derived_placeholders: see _resolve_derived_placeholders.
 
         optional_defaults: keys (bare "Original"-style labels, e.g. "CRISIS OR
         EVENT") that fall back to a documented default value when the sheet
@@ -3486,6 +3837,7 @@ def build_additional_info_replacements_by_language(path: Path, _wb=None, optiona
         original_col = _find_column(df.columns, "Original")
         if not original_col or df.height == 0:
             return _apply_optional_defaults({lang: {} for lang in ["EN", "FR", "ES", "AR", "PT"]})
+        df = _exclude_additional_info_sections(df, original_col, exclude_section_markers)
 
         generic_replacement_col = _find_column(df.columns, "Replacement")
         en_replacement_col = _find_column(df.columns, "Replacement (EN)", "Replacement EN")
@@ -3529,23 +3881,39 @@ def build_additional_info_replacements_by_language(path: Path, _wb=None, optiona
                     elif key.lower() in _season_phase_key_variants:
                         season_phase_raw_by_lang[lang] = replacement
 
+        # The verb tense is ONE country-level choice (past / present / both), not a
+        # per-language one: every language column must use the same mode. Read it
+        # from the English value first (the dropdown is authored in English), then
+        # from the first other language that has a value. Deriving it per language
+        # broke Arabic: "كلا الماضي و الحاضر" was not recognised -> "past", so the
+        # Arabic text lost the present forms and $expected or nothing AR$ fell
+        # through to the English word "expected".
+        _tense_raw_order = ["EN"] + [l for l in out.keys() if l != "EN"]
+        country_tense_raw = next(
+            (verb_tense_raw_by_lang.get(l) for l in _tense_raw_order if verb_tense_raw_by_lang.get(l)),
+            "",
+        ) or next(
+            (season_phase_raw_by_lang.get(l) for l in _tense_raw_order if season_phase_raw_by_lang.get(l)),
+            "",
+        )
+        country_tense_mode = _detect_verb_tense_mode(country_tense_raw)
+
         for lang, mapping in out.items():
-            # New row takes precedence; fall back to legacy season phase.
-            raw = verb_tense_raw_by_lang.get(lang) or season_phase_raw_by_lang.get(lang, "")
-            tense_mode = _detect_verb_tense_mode(raw)
+            tense_mode = country_tense_mode
 
             mapping[_TENSE_MODE_KEY] = tense_mode
             expected_word = _EXPECTED_WORD_BY_LANG.get(lang, "expected")
             mapping["$expected or nothing$"] = "" if tense_mode == "past" else expected_word
+            _resolve_derived_placeholders(mapping, derived_placeholders)
 
         return _apply_optional_defaults(out)
     ```
 
-### `build_additional_info_replacements_by_language._apply_optional_defaults` {#fn--apply-optional-defaults-1727}
+### `build_additional_info_replacements_by_language._apply_optional_defaults` {#fn--apply-optional-defaults-1892}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1727`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1892`
 
 **Signature**
 
@@ -3577,11 +3945,11 @@ def _apply_optional_defaults(out: dict[str, dict[str, str]]) -> dict[str, dict[s
             return out
     ```
 
-### `apply_text_replacements` {#fn-apply-text-replacements-1796}
+### `apply_text_replacements` {#fn-apply-text-replacements-1978}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1796`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1978`
 
 **Signature**
 
@@ -3726,11 +4094,11 @@ def apply_text_replacements(value, replacements: dict[str, str], replacements_by
         return text
     ```
 
-### `apply_text_replacements._lang_map` {#fn--lang-map-1830}
+### `apply_text_replacements._lang_map` {#fn--lang-map-2012}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1830`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2012`
 
 **Signature**
 
@@ -3757,11 +4125,11 @@ def _lang_map(lang: str) -> dict[str, str]:
             return replacements_by_language.get(lang, {}) or {}
     ```
 
-### `apply_placeholder_conversions` {#fn-apply-placeholder-conversions-1918}
+### `apply_placeholder_conversions` {#fn-apply-placeholder-conversions-2100}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1918`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2100`
 
 **Signature**
 
@@ -3826,11 +4194,11 @@ def apply_placeholder_conversions(questions_df: pl.DataFrame, replacements: dict
         return out
     ```
 
-### `extract_crop_metadata` {#fn-extract-crop-metadata-1959}
+### `extract_crop_metadata` {#fn-extract-crop-metadata-2141}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1959`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2141`
 
 **Signature**
 
@@ -3877,11 +4245,11 @@ def extract_crop_metadata(crop_df: pl.DataFrame, language: str) -> dict:
         }
     ```
 
-### `find_crop_placeholder_questions` {#fn-find-crop-placeholder-questions-1984}
+### `find_crop_placeholder_questions` {#fn-find-crop-placeholder-questions-2166}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1984`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2166`
 
 **Signature**
 
@@ -3917,11 +4285,11 @@ def find_crop_placeholder_questions(reference_questions: pl.DataFrame) -> list[s
         return sorted(set(hits))
     ```
 
-### `_is_selected_crop_value` {#fn--is-selected-crop-value-1999}
+### `_is_selected_crop_value` {#fn--is-selected-crop-value-2181}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:1999`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2181`
 
 **Signature**
 
@@ -3946,11 +4314,11 @@ def _is_selected_crop_value(value) -> bool:
         return str(value or "").strip().lower() not in {"", "0", "0.0", "none", "nan"}
     ```
 
-### `_build_sorted_crop_entries` {#fn--build-sorted-crop-entries-2003}
+### `_build_sorted_crop_entries` {#fn--build-sorted-crop-entries-2185}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2003`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2185`
 
 **Signature**
 
@@ -3999,21 +4367,21 @@ def _build_sorted_crop_entries(crop_df: pl.DataFrame, language: str) -> list[dic
         return entries
     ```
 
-### `build_crop_option_block` {#fn-build-crop-option-block-2030}
+### `build_crop_option_block` {#fn-build-crop-option-block-2215}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2030`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2215`
 
 **Signature**
 
 ```python
-def build_crop_option_block(crop_df: pl.DataFrame, language: str, include_no_crop: bool=True) -> str:
+def build_crop_option_block(crop_df: pl.DataFrame, language: str, include_no_crop: bool=True, closing_labels: dict | None=None) -> str:
 ```
 
 **Returns:** `str`
 
-**What it does:** Builds a numbered crop label block: selected crops first, then others.
+**What it does:** Builds a numbered crop label block: selected crops first, then others,
 
 **Parameters**
 
@@ -4022,30 +4390,38 @@ def build_crop_option_block(crop_df: pl.DataFrame, language: str, include_no_cro
 | `crop_df` | positional_or_keyword | Yes | `-` | `pl.DataFrame` | Input used by the `Step 5 Normalising placeholders` stage. |
 | `language` | positional_or_keyword | Yes | `-` | `str` | Language selector used for language-specific text columns. |
 | `include_no_crop` | positional_or_keyword | No | `True` | `bool` | Input used by the `Step 5 Normalising placeholders` stage. |
+| `closing_labels` | positional_or_keyword | No | `None` | `dict | None` | Input used by the `Step 5 Normalising placeholders` stage. |
 
 ??? note "Function source"
 
     ```python
-    def build_crop_option_block(crop_df: pl.DataFrame, language: str, include_no_crop: bool = True) -> str:
-        """Builds a numbered crop label block: selected crops first, then others."""
+    def build_crop_option_block(
+        crop_df: pl.DataFrame, language: str, include_no_crop: bool = True,
+        closing_labels: dict | None = None,
+    ) -> str:
+        """Builds a numbered crop label block: selected crops first, then others,
+        closed by 91) no crop production / 92) don't know / 93) refused in the
+        block's language. closing_labels: {"no_crop", "dont_know", "refused"} for
+        this language (geopoll_options.crop_list_closing_options); missing keys
+        fall back to English."""
         entries = _build_sorted_crop_entries(crop_df, language)
         labels = [e["label"] for e in entries if e["label"]]
         if not labels:
             return ""
 
+        tail = {**_DEFAULT_CROP_CLOSING_OPTIONS, **{k: v for k, v in (closing_labels or {}).items() if v}}
         lines = [f"{idx}){label}" for idx, label in enumerate(labels, start=1)]
         if include_no_crop:
-            lines.extend(["91)No crop production", "92)DON'T KNOW", "93)REFUSED"])
-        else:
-            lines.extend(["92)DON'T KNOW", "93)REFUSED"])
+            lines.append(f"91){tail['no_crop']}")
+        lines.extend([f"92){tail['dont_know']}", f"93){tail['refused']}"])
         return "\n".join(lines)
     ```
 
-### `build_crop_code_block` {#fn-build-crop-code-block-2045}
+### `build_crop_code_block` {#fn-build-crop-code-block-2237}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2045`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2237`
 
 **Signature**
 
@@ -4083,16 +4459,16 @@ def build_crop_code_block(crop_df: pl.DataFrame, language: str, include_no_crop:
         return "\n".join(lines)
     ```
 
-### `rebuild_crop_questions_for_deployed_form` {#fn-rebuild-crop-questions-for-deployed-form-2060}
+### `rebuild_crop_questions_for_deployed_form` {#fn-rebuild-crop-questions-for-deployed-form-2252}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2060`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2252`
 
 **Signature**
 
 ```python
-def rebuild_crop_questions_for_deployed_form(questions_df: pl.DataFrame, template_questions: pl.DataFrame, crop_df: pl.DataFrame, language: str, candidate_columns: Optional[list[str]]=None) -> pl.DataFrame:
+def rebuild_crop_questions_for_deployed_form(questions_df: pl.DataFrame, template_questions: pl.DataFrame, crop_df: pl.DataFrame, language: str, candidate_columns: Optional[list[str]]=None, closing_labels_by_lang: dict | None=None) -> pl.DataFrame:
 ```
 
 **Returns:** `pl.DataFrame`
@@ -4108,6 +4484,7 @@ def rebuild_crop_questions_for_deployed_form(questions_df: pl.DataFrame, templat
 | `crop_df` | positional_or_keyword | Yes | `-` | `pl.DataFrame` | Input used by the `Step 5 Normalising placeholders` stage. |
 | `language` | positional_or_keyword | Yes | `-` | `str` | Language selector used for language-specific text columns. |
 | `candidate_columns` | positional_or_keyword | No | `None` | `Optional[list[str]]` | Input used by the `Step 5 Normalising placeholders` stage. |
+| `closing_labels_by_lang` | positional_or_keyword | No | `None` | `dict | None` | Input used by the `Step 5 Normalising placeholders` stage. |
 
 ??? note "Function source"
 
@@ -4118,21 +4495,37 @@ def rebuild_crop_questions_for_deployed_form(questions_df: pl.DataFrame, templat
         crop_df: pl.DataFrame,
         language: str,
         candidate_columns: Optional[list[str]] = None,
+        closing_labels_by_lang: dict | None = None,
     ) -> pl.DataFrame:
         """
         Replaces crop placeholders using the current questionnaire Crop list.
         Handles label and code markers, singular/plural and language-suffixed forms.
+        closing_labels_by_lang: {"AR": {"no_crop": ..., "dont_know": ..., "refused": ...}, ...}
         """
+        _closing = {str(k).upper(): v for k, v in (closing_labels_by_lang or {}).items() if isinstance(v, dict)}
         crop_qnames = set(find_crop_placeholder_questions(template_questions))
         columns = [c for c in (candidate_columns or RESTORE_TEXT_COLUMNS) if c in questions_df.columns]
         if not crop_qnames or not columns:
             return questions_df.clone()
 
-        main_block = build_crop_option_block(crop_df, language, include_no_crop=True)
-        sold_block = build_crop_option_block(crop_df, language, include_no_crop=False)
-        main_code_block = build_crop_code_block(crop_df, language, include_no_crop=True)
-        sold_code_block = build_crop_code_block(crop_df, language, include_no_crop=False)
-        if not main_block:
+        # Crop labels are built per column language (English column gets the
+        # Label (EN) names, Arabic column Label (AR), ...); non-language columns
+        # (Skip pattern, Codes, Local Language, ...) use the run language.
+        # Building one block in the run language and writing it into every column
+        # put Arabic crop names into the English column on AR runs.
+        _blocks_cache: dict[str, tuple[str, str, str, str]] = {}
+
+        def _blocks_for(lang: str) -> tuple[str, str, str, str]:
+            if lang not in _blocks_cache:
+                _blocks_cache[lang] = (
+                    build_crop_option_block(crop_df, lang, include_no_crop=True, closing_labels=_closing.get(lang.upper())),
+                    build_crop_option_block(crop_df, lang, include_no_crop=False, closing_labels=_closing.get(lang.upper())),
+                    build_crop_code_block(crop_df, lang, include_no_crop=True),
+                    build_crop_code_block(crop_df, lang, include_no_crop=False),
+                )
+            return _blocks_cache[lang]
+
+        if not _blocks_for(language)[0]:
             return questions_df.clone()
 
         crop_qnames_list = sorted(crop_qnames)
@@ -4142,6 +4535,10 @@ def rebuild_crop_questions_for_deployed_form(questions_df: pl.DataFrame, templat
 
         exprs = []
         for col in columns:
+            col_lang = _language_code_for_text_column(col) or language
+            main_block, sold_block, main_code_block, sold_code_block = _blocks_for(col_lang)
+            if not main_block:  # no labels for this language in the Crop list
+                main_block, sold_block, main_code_block, sold_code_block = _blocks_for(language)
             base = pl.col(col).cast(pl.Utf8).fill_null("")
 
             has_marker = (
@@ -4179,11 +4576,47 @@ def rebuild_crop_questions_for_deployed_form(questions_df: pl.DataFrame, templat
         return questions_df.with_columns(exprs)
     ```
 
-### `build_duration_summary_line` {#fn-build-duration-summary-line-2274}
+### `rebuild_crop_questions_for_deployed_form._blocks_for` {#fn--blocks-for-2278}
 
 **Pipeline stage:** `Step 5 Normalising placeholders`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2274`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2278`
+
+**Signature**
+
+```python
+def _blocks_for(lang: str) -> tuple[str, str, str, str]:
+```
+
+**Returns:** `tuple[str, str, str, str]`
+
+**What it does:** Implements logic in the `Step 5 Normalising placeholders` phase.
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `lang` | positional_or_keyword | Yes | `-` | `str` | Language selector used for language-specific text columns. |
+
+??? note "Function source"
+
+    ```python
+    def _blocks_for(lang: str) -> tuple[str, str, str, str]:
+            if lang not in _blocks_cache:
+                _blocks_cache[lang] = (
+                    build_crop_option_block(crop_df, lang, include_no_crop=True, closing_labels=_closing.get(lang.upper())),
+                    build_crop_option_block(crop_df, lang, include_no_crop=False, closing_labels=_closing.get(lang.upper())),
+                    build_crop_code_block(crop_df, lang, include_no_crop=True),
+                    build_crop_code_block(crop_df, lang, include_no_crop=False),
+                )
+            return _blocks_cache[lang]
+    ```
+
+### `build_duration_summary_line` {#fn-build-duration-summary-line-2504}
+
+**Pipeline stage:** `Step 5 Normalising placeholders`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2504`
 
 **Signature**
 
@@ -4262,11 +4695,11 @@ def build_duration_summary_line(questions: pl.DataFrame) -> str | None:
         )
     ```
 
-### `normalize_text_expr` {#fn-normalize-text-expr-2417}
+### `normalize_text_expr` {#fn-normalize-text-expr-2647}
 
 **Pipeline stage:** `Step 6 Normalisation helpers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2417`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2647`
 
 **Signature**
 
@@ -4292,6 +4725,11 @@ def normalize_text_expr(col_name: str) -> pl.Expr:
         Polars expression that lowercases a string column, removes punctuation,
         and collapses whitespace. Apply as an alias so the original column is preserved.
 
+        Arabic text is orthographically folded first (hamza-carrying alef forms,
+        alef maqsura, ta marbuta, tatweel and diacritics), so spelling variants
+        such as الإجابة / الاجابة compare equal -- these differ between template
+        versions and country files without any change in meaning.
+
         Usage:
             df.with_columns(normalize_text_expr("option_label").alias("option_label_norm"))
         """
@@ -4300,17 +4738,23 @@ def normalize_text_expr(col_name: str) -> pl.Expr:
             .cast(pl.Utf8)
             .fill_null("")
             .str.to_lowercase()
+            .str.replace_all(r"[ً-ٰٟـ]", "")  # Arabic diacritics + tatweel
+            .str.replace_all(r"[آأإٱ]", "ا")  # آ أ إ ٱ -> ا
+            .str.replace_all(r"ى", "ي")                  # ى -> ي
+            .str.replace_all(r"ة", "ه")                  # ة -> ه
+            .str.replace_all(r"ؤ", "و")                  # ؤ -> و
+            .str.replace_all(r"ئ", "ي")                  # ئ -> ي
             .str.replace_all(r"[^\w\s]", "")   # remove punctuation
             .str.replace_all(r"\s+", " ")       # collapse multiple spaces
             .str.strip_chars()
         )
     ```
 
-### `normalize_code_token_expr` {#fn-normalize-code-token-expr-2436}
+### `normalize_code_token_expr` {#fn-normalize-code-token-expr-2677}
 
 **Pipeline stage:** `Step 6 Normalisation helpers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2436`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2677`
 
 **Signature**
 
@@ -4343,11 +4787,11 @@ def normalize_code_token_expr(col_name: str) -> pl.Expr:
         )
     ```
 
-### `normalize_mandatory_expr` {#fn-normalize-mandatory-expr-2448}
+### `normalize_mandatory_expr` {#fn-normalize-mandatory-expr-2689}
 
 **Pipeline stage:** `Step 6 Normalisation helpers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2448`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2689`
 
 **Signature**
 
@@ -4392,11 +4836,11 @@ def normalize_mandatory_expr(col_name: str) -> pl.Expr:
         )
     ```
 
-### `_normalize_skip_text` {#fn--normalize-skip-text-2483}
+### `_normalize_skip_text` {#fn--normalize-skip-text-2724}
 
 **Pipeline stage:** `Step 7 Comparison and validation functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2483`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2724`
 
 **Signature**
 
@@ -4422,11 +4866,11 @@ def _normalize_skip_text(value) -> str:
         return re.sub(r"\s+", " ", text).strip()
     ```
 
-### `_parse_skip_option_codes` {#fn--parse-skip-option-codes-2488}
+### `_parse_skip_option_codes` {#fn--parse-skip-option-codes-2729}
 
 **Pipeline stage:** `Step 7 Comparison and validation functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2488`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2729`
 
 **Signature**
 
@@ -4535,11 +4979,11 @@ def _parse_skip_option_codes(skip_text: str, max_range_span: int=200, max_total_
         return codes
     ```
 
-### `_extract_referenced_qnames` {#fn--extract-referenced-qnames-2573}
+### `_extract_referenced_qnames` {#fn--extract-referenced-qnames-2814}
 
 **Pipeline stage:** `Step 7 Comparison and validation functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2573`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2814`
 
 **Signature**
 
@@ -4620,11 +5064,11 @@ def _extract_referenced_qnames(skip_text: str, source_q: str, ref_qnames: set[st
         return out
     ```
 
-### `_extract_referenced_qnames._keep` {#fn--keep-2596}
+### `_extract_referenced_qnames._keep` {#fn--keep-2837}
 
 **Pipeline stage:** `Step 7 Comparison and validation functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2596`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2837`
 
 **Signature**
 
@@ -4652,11 +5096,11 @@ def _keep(cand: str) -> bool:
             return cand in ref_qnames or cand in curr_qnames or ("_" in cand)
     ```
 
-### `_extract_qname_tokens` {#fn--extract-qname-tokens-2648}
+### `_extract_qname_tokens` {#fn--extract-qname-tokens-2889}
 
 **Pipeline stage:** `Step 7 Comparison and validation functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2648`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2889`
 
 **Signature**
 
@@ -4683,11 +5127,11 @@ def _extract_qname_tokens(text: str, known_qnames: set[str]) -> list[str]:
         return [t for t in _QNAME_TOKEN_RE.findall(str(text or "")) if t in known_qnames]
     ```
 
-### `_extract_qname_like` {#fn--extract-qname-like-2653}
+### `_extract_qname_like` {#fn--extract-qname-like-2894}
 
 **Pipeline stage:** `Step 7 Comparison and validation functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2653`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2894`
 
 **Signature**
 
@@ -4719,11 +5163,11 @@ def _extract_qname_like(text: str, known_qnames: set[str]) -> list[str]:
                 if t in known_qnames or "_" in t]
     ```
 
-### `_extract_codes_from_numeric_spec` {#fn--extract-codes-from-numeric-spec-2663}
+### `_extract_codes_from_numeric_spec` {#fn--extract-codes-from-numeric-spec-2904}
 
 **Pipeline stage:** `Step 7 Comparison and validation functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2663`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2904`
 
 **Signature**
 
@@ -4779,11 +5223,11 @@ def _extract_codes_from_numeric_spec(spec: str, max_range_span: int=200, max_tot
         return out
     ```
 
-### `_extract_condition_codes` {#fn--extract-condition-codes-2696}
+### `_extract_condition_codes` {#fn--extract-condition-codes-2937}
 
 **Pipeline stage:** `Step 7 Comparison and validation functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2696`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2937`
 
 **Signature**
 
@@ -4822,11 +5266,11 @@ def _extract_condition_codes(stmt: str) -> set[int]:
         return _extract_codes_from_numeric_spec(rng)
     ```
 
-### `_extract_skip_codes_for_target` {#fn--extract-skip-codes-for-target-2713}
+### `_extract_skip_codes_for_target` {#fn--extract-skip-codes-for-target-2954}
 
 **Pipeline stage:** `Step 7 Comparison and validation functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2713`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2954`
 
 **Signature**
 
@@ -4895,11 +5339,11 @@ def _extract_skip_codes_for_target(skip_text: str, target: str) -> set[int]:
         return codes
     ```
 
-### `_extract_skip_codes_for_target._codes_from_spec` {#fn--codes-from-spec-2722}
+### `_extract_skip_codes_for_target._codes_from_spec` {#fn--codes-from-spec-2963}
 
 **Pipeline stage:** `Step 7 Comparison and validation functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2722`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2963`
 
 **Signature**
 
@@ -4924,11 +5368,11 @@ def _codes_from_spec(spec: str) -> set[int]:
             return _extract_codes_from_numeric_spec(spec)
     ```
 
-### `_parse_default_skip_rules` {#fn--parse-default-skip-rules-2759}
+### `_parse_default_skip_rules` {#fn--parse-default-skip-rules-3000}
 
 **Pipeline stage:** `Step 7 Comparison and validation functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2759`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3000`
 
 **Signature**
 
@@ -5028,11 +5472,11 @@ def _parse_default_skip_rules(default_text: str, known_qnames: set[str]) -> list
         return rules
     ```
 
-### `_semantic_skip_signature` {#fn--semantic-skip-signature-2836}
+### `_semantic_skip_signature` {#fn--semantic-skip-signature-3077}
 
 **Pipeline stage:** `Step 7 Comparison and validation functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2836`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3077`
 
 **Signature**
 
@@ -5087,11 +5531,11 @@ def _semantic_skip_signature(skip_text: str, known_qnames: set[str]) -> tuple[se
         return sig, True
     ```
 
-### `_skip_signatures_equivalent` {#fn--skip-signatures-equivalent-2869}
+### `_skip_signatures_equivalent` {#fn--skip-signatures-equivalent-3110}
 
 **Pipeline stage:** `Step 7 Comparison and validation functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2869`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3110`
 
 **Signature**
 
@@ -5144,11 +5588,11 @@ def _skip_signatures_equivalent(sig_a: set[tuple], sig_b: set[tuple]) -> bool:
         return True
     ```
 
-### `_skip_signatures_equivalent._group` {#fn--group-2875}
+### `_skip_signatures_equivalent._group` {#fn--group-3116}
 
 **Pipeline stage:** `Step 7 Comparison and validation functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2875`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3116`
 
 **Signature**
 
@@ -5179,11 +5623,67 @@ def _group(sig: set[tuple]) -> dict[tuple, set[tuple]]:
             return out
     ```
 
-### `_check_skip_consistency` {#fn--check-skip-consistency-2899}
+### `_missing_target_has_alternative` {#fn--missing-target-has-alternative-3140}
 
 **Pipeline stage:** `Step 7 Comparison and validation functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2899`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3140`
+
+**Signature**
+
+```python
+def _missing_target_has_alternative(skip_text: str, target: str, curr_qnames: set[str], source_q: str) -> bool:
+```
+
+**Returns:** `bool`
+
+**What it does:** True when a missing skip target is only one of several "OR" alternatives
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `skip_text` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 7 Comparison and validation functions` stage. |
+| `target` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 7 Comparison and validation functions` stage. |
+| `curr_qnames` | positional_or_keyword | Yes | `-` | `set[str]` | Input used by the `Step 7 Comparison and validation functions` stage. |
+| `source_q` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 7 Comparison and validation functions` stage. |
+
+??? note "Function source"
+
+    ```python
+    def _missing_target_has_alternative(
+        skip_text: str, target: str, curr_qnames: set[str], source_q: str,
+    ) -> bool:
+        """
+        True when a missing skip target is only one of several "OR" alternatives
+        and another alternative of the same rule exists in the questionnaire,
+        e.g. "go to crp_harv_storage OR crp_harv_consume" when crp_harv_storage
+        was dropped: the rule already says "either", so routing still works.
+        Only the destination part of the statement (after "go to") is read, so
+        an "or" between answer codes ("if q = 1 or 2") is not mistaken for one.
+        """
+        for stmt in re.split(r"\n|(?=\bif\b)", str(skip_text or ""), flags=re.IGNORECASE):
+            if target not in stmt:
+                continue
+            dest = re.split(r"(?i)\bgo\s*to\b", stmt)[-1]
+            alternatives = re.split(r"(?i)\s+or\s+", dest)
+            if len(alternatives) < 2:
+                continue
+            others = [a for a in alternatives if target not in a]
+            if any(
+                tok in curr_qnames and tok != source_q
+                for alt in others
+                for tok in re.findall(r"[A-Za-z][A-Za-z0-9_]*", alt)
+            ):
+                return True
+        return False
+    ```
+
+### `_check_skip_consistency` {#fn--check-skip-consistency-3168}
+
+**Pipeline stage:** `Step 7 Comparison and validation functions`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3168`
 
 **Signature**
 
@@ -5247,7 +5747,18 @@ def _check_skip_consistency(skip_text: str, rules: list[dict], q_mandatory_map: 
             ref_qnames=known_qnames,
             curr_qnames=curr_qnames,
         )
-        invalid_targets = sorted(t for t in skip_targets if t not in curr_qnames)
+        # A missing target is not an error when it is an optional "OR"
+        # alternative the country dropped (it exists in the reference) and
+        # another alternative of the same rule is kept. Names that exist in
+        # neither file (outdated/typo names) are always reported.
+        invalid_targets = sorted(
+            t for t in skip_targets
+            if t not in curr_qnames
+            and not (
+                t in known_qnames
+                and _missing_target_has_alternative(skip_text_s, t, curr_qnames, source_q)
+            )
+        )
         if invalid_targets:
             issues.append(
                 f"target question(s) not found in current questionnaire: {invalid_targets}"
@@ -5365,11 +5876,11 @@ def _check_skip_consistency(skip_text: str, rules: list[dict], q_mandatory_map: 
         return issues
     ```
 
-### `_check_skip_consistency._match_current_rule` {#fn--match-current-rule-2949}
+### `_check_skip_consistency._match_current_rule` {#fn--match-current-rule-3229}
 
 **Pipeline stage:** `Step 7 Comparison and validation functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:2949`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3229`
 
 **Signature**
 
@@ -5402,11 +5913,60 @@ def _match_current_rule(ref_codes: set[int]) -> dict | None:
             return None
     ```
 
-### `validate_skip_patterns` {#fn-validate-skip-patterns-3053}
+### `_diagnose_missing_skip_target` {#fn--diagnose-missing-skip-target-3333}
 
 **Pipeline stage:** `Step 7 Comparison and validation functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3053`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3333`
+
+**Signature**
+
+```python
+def _diagnose_missing_skip_target(target: str, curr_qnames: set[str], ref_qnames: set[str]) -> str:
+```
+
+**Returns:** `str`
+
+**What it does:** Explains why a skip-pattern target is missing from the current
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `target` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 7 Comparison and validation functions` stage. |
+| `curr_qnames` | positional_or_keyword | Yes | `-` | `set[str]` | Input used by the `Step 7 Comparison and validation functions` stage. |
+| `ref_qnames` | positional_or_keyword | Yes | `-` | `set[str]` | Input used by the `Step 7 Comparison and validation functions` stage. |
+
+??? note "Function source"
+
+    ```python
+    def _diagnose_missing_skip_target(target: str, curr_qnames: set[str], ref_qnames: set[str]) -> str:
+        """
+        Explains why a skip-pattern target is missing from the current
+        questionnaire, so the fix is obvious:
+          - renamed to custom   : c_<target> (or the o_ -> c_ form) exists
+          - removed by country  : target exists in the reference/template
+          - not in template     : neither file defines it (the skip text uses an
+                                  outdated name); the closest existing name is given
+        """
+        import difflib
+
+        t = str(target or "").strip()
+        custom = [c for c in (f"c_{t}", f"c_{t[2:]}" if t.startswith("o_") else "") if c and c in curr_qnames]
+        if custom:
+            return f"{t}: renamed to custom question {custom[0]} -> use {custom[0]}"
+        if t in ref_qnames:
+            return f"{t}: removed by the country (exists in reference) -> restore it or route to the next kept question"
+        close = difflib.get_close_matches(t, sorted(curr_qnames), n=1, cutoff=0.7)
+        hint = f"; closest existing variable: {close[0]}" if close else ""
+        return f"{t}: not defined in the reference either (outdated/typo name){hint}"
+    ```
+
+### `validate_skip_patterns` {#fn-validate-skip-patterns-3355}
+
+**Pipeline stage:** `Step 7 Comparison and validation functions`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3355`
 
 **Signature**
 
@@ -5585,6 +6145,11 @@ def validate_skip_patterns(current_questions: pl.DataFrame, reference_questions:
                     severity = "high" if (is_broken_target or is_invalid_category or is_empty) else "info"
                     if is_broken_target:
                         issue_type = "skipPattern_invalid_qname"
+                        _missing = re.findall(r"'([^']+)'", desc)
+                        if _missing:
+                            desc = "missing target -- " + " | ".join(
+                                _diagnose_missing_skip_target(m, curr_qnames, ref_qnames) for m in _missing
+                            )
                     elif is_invalid_category:
                         issue_type = "skipPattern_invalid_qnameCategory"
                     elif is_range:
@@ -5596,7 +6161,7 @@ def validate_skip_patterns(current_questions: pl.DataFrame, reference_questions:
                     issues.append({
                         "issue_type": issue_type,
                         "set_name": "",
-                        "Q Name": qname, "field": desc[:200],
+                        "Q Name": qname, "field": desc[:400],
                         "current": current_effective[:220], "reference": reference_effective[:220],
                         "severity": severity,
                         "excel_row": excel_row,
@@ -5632,11 +6197,11 @@ def validate_skip_patterns(current_questions: pl.DataFrame, reference_questions:
         )
     ```
 
-### `collapse_skip_pattern_issue_rows_by_qname` {#fn-collapse-skip-pattern-issue-rows-by-qname-3271}
+### `collapse_skip_pattern_issue_rows_by_qname` {#fn-collapse-skip-pattern-issue-rows-by-qname-3578}
 
 **Pipeline stage:** `Step 7 Comparison and validation functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3271`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3578`
 
 **Signature**
 
@@ -5719,11 +6284,11 @@ def collapse_skip_pattern_issue_rows_by_qname(df: pl.DataFrame) -> pl.DataFrame:
         return collapsed.select(df.columns)
     ```
 
-### `make_presence_issues` {#fn-make-presence-issues-3341}
+### `make_presence_issues` {#fn-make-presence-issues-3648}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3341`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3648`
 
 **Signature**
 
@@ -5870,11 +6435,11 @@ def make_presence_issues(added: pl.DataFrame, removed: pl.DataFrame, reference_q
         return pl.concat([added_issues, removed_issues, moved_issues], how="vertical")
     ```
 
-### `make_mandatory_issues` {#fn-make-mandatory-issues-3465}
+### `make_mandatory_issues` {#fn-make-mandatory-issues-3772}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3465`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3772`
 
 **Signature**
 
@@ -5909,11 +6474,11 @@ def make_mandatory_issues(mandatory_diff: pl.DataFrame) -> pl.DataFrame:
         )
     ```
 
-### `make_option_issues` {#fn-make-option-issues-3479}
+### `make_option_issues` {#fn-make-option-issues-3786}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3479`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3786`
 
 **Signature**
 
@@ -5948,11 +6513,11 @@ def make_option_issues(option_diff: pl.DataFrame) -> pl.DataFrame:
         )
     ```
 
-### `make_option_presence_issues` {#fn-make-option-presence-issues-3497}
+### `make_option_presence_issues` {#fn-make-option-presence-issues-3804}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3497`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3804`
 
 **Signature**
 
@@ -5995,11 +6560,11 @@ def make_option_presence_issues(added_options: pl.DataFrame, removed_options: pl
         return pl.concat([added_issues, removed_issues], how="vertical")
     ```
 
-### `build_option_changes_view` {#fn-build-option-changes-view-3518}
+### `build_option_changes_view` {#fn-build-option-changes-view-3825}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3518`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3825`
 
 **Signature**
 
@@ -6150,11 +6715,11 @@ def build_option_changes_view(en_option_diff: pl.DataFrame, en_added_options: pl
         )
     ```
 
-### `build_option_changes_view._scope_view` {#fn--scope-view-3538}
+### `build_option_changes_view._scope_view` {#fn--scope-view-3845}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3538`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3845`
 
 **Signature**
 
@@ -6221,11 +6786,11 @@ def _scope_view(option_diff, added_opts, removed_opts, renumber_opts, scope):
             })
     ```
 
-### `collapse_removed_option_with_cascading_drift` {#fn-collapse-removed-option-with-cascading-drift-3640}
+### `collapse_removed_option_with_cascading_drift` {#fn-collapse-removed-option-with-cascading-drift-3947}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3640`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3947`
 
 **Signature**
 
@@ -6368,11 +6933,11 @@ def collapse_removed_option_with_cascading_drift(option_changes_view: pl.DataFra
         return out_df.select(option_changes_view.columns)
     ```
 
-### `collapse_removed_option_with_cascading_drift._norm_label` {#fn--norm-label-3663}
+### `collapse_removed_option_with_cascading_drift._norm_label` {#fn--norm-label-3970}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3663`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3970`
 
 **Signature**
 
@@ -6399,11 +6964,11 @@ def _norm_label(v: str) -> str:
             return txt
     ```
 
-### `collapse_removed_option_with_cascading_drift._infer_drift_from_lookups` {#fn--infer-drift-from-lookups-3668}
+### `collapse_removed_option_with_cascading_drift._infer_drift_from_lookups` {#fn--infer-drift-from-lookups-3975}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3668`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3975`
 
 **Signature**
 
@@ -6454,11 +7019,11 @@ def _infer_drift_from_lookups(q_name: str) -> bool:
             return any(cur_map[k] != ref_map[k] for k in common)
     ```
 
-### `_join_limited_tokens` {#fn--join-limited-tokens-3758}
+### `_join_limited_tokens` {#fn--join-limited-tokens-4065}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3758`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4065`
 
 **Signature**
 
@@ -6496,11 +7061,11 @@ def _join_limited_tokens(items, limit=20):
         return ", ".join(vals[:limit]) + f", ... (+{len(vals) - limit} more)"
     ```
 
-### `_option_code_sort_key` {#fn--option-code-sort-key-3774}
+### `_option_code_sort_key` {#fn--option-code-sort-key-4081}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3774`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4081`
 
 **Signature**
 
@@ -6528,11 +7093,11 @@ def _option_code_sort_key(raw):
         return (1, txt.lower())
     ```
 
-### `_format_option_entries` {#fn--format-option-entries-3781}
+### `_format_option_entries` {#fn--format-option-entries-4088}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3781`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4088`
 
 **Signature**
 
@@ -6588,11 +7153,11 @@ def _format_option_entries(entries: list[tuple[str, str]], header: str, empty_la
         return f"{header}:\n" + "\n".join(out)
     ```
 
-### `_build_option_lookup_by_qname` {#fn--build-option-lookup-by-qname-3813}
+### `_build_option_lookup_by_qname` {#fn--build-option-lookup-by-qname-4120}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3813`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4120`
 
 **Signature**
 
@@ -6638,11 +7203,11 @@ def _build_option_lookup_by_qname(options_df: pl.DataFrame | None) -> dict[str, 
         return out
     ```
 
-### `_format_code_entries` {#fn--format-code-entries-3838}
+### `_format_code_entries` {#fn--format-code-entries-4145}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3838`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4145`
 
 **Signature**
 
@@ -6689,11 +7254,11 @@ def _format_code_entries(entries: list[tuple[str, str]], header: str, empty_labe
         return f"{header}:\n" + "\n".join(out)
     ```
 
-### `_build_codes_lookup_by_qname` {#fn--build-codes-lookup-by-qname-3862}
+### `_build_codes_lookup_by_qname` {#fn--build-codes-lookup-by-qname-4169}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3862`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4169`
 
 **Signature**
 
@@ -6748,11 +7313,11 @@ def _build_codes_lookup_by_qname(codes_df: pl.DataFrame | None) -> dict[str, lis
         return out
     ```
 
-### `enrich_codes_issue_lists` {#fn-enrich-codes-issue-lists-3896}
+### `enrich_codes_issue_lists` {#fn-enrich-codes-issue-lists-4203}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3896`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4203`
 
 **Signature**
 
@@ -6893,11 +7458,11 @@ def enrich_codes_issue_lists(codes_df: pl.DataFrame, current_codes: pl.DataFrame
         return out.select(codes_df.columns)
     ```
 
-### `enrich_codes_issue_lists._norm_pair` {#fn--norm-pair-3923}
+### `enrich_codes_issue_lists._norm_pair` {#fn--norm-pair-4230}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3923`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4230`
 
 **Signature**
 
@@ -6923,11 +7488,11 @@ def _norm_pair(code_raw: str, tok_raw: str) -> tuple[str, str]:
             return (str(code_raw or "").strip().lower(), str(tok_raw or "").strip().lower())
     ```
 
-### `enrich_codes_issue_lists._format_code_entries_marked` {#fn--format-code-entries-marked-3926}
+### `enrich_codes_issue_lists._format_code_entries_marked` {#fn--format-code-entries-marked-4233}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:3926`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4233`
 
 **Signature**
 
@@ -6977,11 +7542,11 @@ def _format_code_entries_marked(entries: list[tuple[str, str]], header: str, mar
             return f"{header}:\n" + "\n".join(out)
     ```
 
-### `_extract_option_codes_from_field` {#fn--extract-option-codes-from-field-4014}
+### `_extract_option_codes_from_field` {#fn--extract-option-codes-from-field-4321}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4014`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4321`
 
 **Signature**
 
@@ -7019,11 +7584,11 @@ def _extract_option_codes_from_field(rows: list[dict]) -> list[str]:
         return out
     ```
 
-### `_combine_lang_scope` {#fn--combine-lang-scope-4031}
+### `_combine_lang_scope` {#fn--combine-lang-scope-4338}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4031`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4338`
 
 **Signature**
 
@@ -7070,11 +7635,11 @@ def _combine_lang_scope(values: list[str], target_lang: str) -> str:
         return "N/A"
     ```
 
-### `_option_scope_flags` {#fn--option-scope-flags-4056}
+### `_option_scope_flags` {#fn--option-scope-flags-4363}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4056`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4363`
 
 **Signature**
 
@@ -7107,11 +7672,11 @@ def _option_scope_flags(lang_scope: str, has_lang_cols: bool, target_lang: str) 
         return show_en, show_tgt
     ```
 
-### `_option_label_delta_tokens` {#fn--option-label-delta-tokens-4066}
+### `_option_label_delta_tokens` {#fn--option-label-delta-tokens-4373}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4066`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4373`
 
 **Signature**
 
@@ -7150,11 +7715,11 @@ def _option_label_delta_tokens(current_entries: list[tuple[str, str]], reference
         return []
     ```
 
-### `merge_added_removed_option_rows` {#fn-merge-added-removed-option-rows-4082}
+### `merge_added_removed_option_rows` {#fn-merge-added-removed-option-rows-4389}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4082`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4389`
 
 **Signature**
 
@@ -7293,11 +7858,11 @@ def merge_added_removed_option_rows(option_changes_view: pl.DataFrame, current_l
         return pl.concat([keep, merged_df], how="vertical")
     ```
 
-### `collapse_option_issue_rows_by_qname` {#fn-collapse-option-issue-rows-by-qname-4196}
+### `collapse_option_issue_rows_by_qname` {#fn-collapse-option-issue-rows-by-qname-4503}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4196`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4503`
 
 **Signature**
 
@@ -7588,11 +8153,11 @@ def collapse_option_issue_rows_by_qname(df: pl.DataFrame, issue_types: list[str]
         return pl.concat([keep_df, collapsed], how="vertical")
     ```
 
-### `collapse_option_issue_rows_by_qname._norm_label` {#fn--norm-label-4224}
+### `collapse_option_issue_rows_by_qname._norm_label` {#fn--norm-label-4531}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4224`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4531`
 
 **Signature**
 
@@ -7619,11 +8184,11 @@ def _norm_label(txt: str) -> str:
             return out
     ```
 
-### `collapse_option_issue_rows_by_qname._delta_by_label` {#fn--delta-by-label-4229}
+### `collapse_option_issue_rows_by_qname._delta_by_label` {#fn--delta-by-label-4536}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4229`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4536`
 
 **Signature**
 
@@ -7664,11 +8229,11 @@ def _delta_by_label(cur_entries: list[tuple[str, str]], ref_entries: list[tuple[
             return []
     ```
 
-### `collapse_option_issue_rows_by_qname._common_label_code_shift` {#fn--common-label-code-shift-4246}
+### `collapse_option_issue_rows_by_qname._common_label_code_shift` {#fn--common-label-code-shift-4553}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4246`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4553`
 
 **Signature**
 
@@ -7705,11 +8270,11 @@ def _common_label_code_shift(cur_entries: list[tuple[str, str]], ref_entries: li
             return any(cur[k] != ref[k] for k in common)
     ```
 
-### `collapse_option_issue_rows_by_qname._token_set` {#fn--token-set-4260}
+### `collapse_option_issue_rows_by_qname._token_set` {#fn--token-set-4567}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4260`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4567`
 
 **Signature**
 
@@ -7734,11 +8299,11 @@ def _token_set(txt: str) -> set[str]:
             return {t for t in re.findall(r"[A-Za-z0-9\u0600-\u06FF]+", str(txt or "").lower()) if t}
     ```
 
-### `collapse_option_issue_rows_by_qname._is_hard_replacement` {#fn--is-hard-replacement-4263}
+### `collapse_option_issue_rows_by_qname._is_hard_replacement` {#fn--is-hard-replacement-4570}
 
 **Pipeline stage:** `Step 8 Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4263`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4570`
 
 **Signature**
 
@@ -7771,11 +8336,11 @@ def _is_hard_replacement(curr_label: str, ref_label: str) -> bool:
             return jacc < 0.30
     ```
 
-### `compare_question_presence` {#fn-compare-question-presence-4468}
+### `compare_question_presence` {#fn-compare-question-presence-4775}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4468`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4775`
 
 **Signature**
 
@@ -7823,16 +8388,16 @@ def compare_question_presence(current_questions: pl.DataFrame, reference_questio
         return added, removed
     ```
 
-### `validate_module_presence` {#fn-validate-module-presence-4494}
+### `validate_module_presence` {#fn-validate-module-presence-4801}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4494`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4801`
 
 **Signature**
 
 ```python
-def validate_module_presence(current_modules: pl.DataFrame, reference_modules: pl.DataFrame, template_modules: pl.DataFrame) -> pl.DataFrame:
+def validate_module_presence(current_modules: pl.DataFrame, reference_modules: pl.DataFrame, template_modules: pl.DataFrame, template_questions: pl.DataFrame | None=None) -> pl.DataFrame:
 ```
 
 **Returns:** `pl.DataFrame`
@@ -7846,6 +8411,7 @@ def validate_module_presence(current_modules: pl.DataFrame, reference_modules: p
 | `current_modules` | positional_or_keyword | Yes | `-` | `pl.DataFrame` | Input used by the `Step 9 Run the full pipeline` stage. |
 | `reference_modules` | positional_or_keyword | Yes | `-` | `pl.DataFrame` | Input used by the `Step 9 Run the full pipeline` stage. |
 | `template_modules` | positional_or_keyword | Yes | `-` | `pl.DataFrame` | Input used by the `Step 9 Run the full pipeline` stage. |
+| `template_questions` | positional_or_keyword | No | `None` | `pl.DataFrame | None` | Questionnaire structure table used by comparison and checks. |
 
 ??? note "Function source"
 
@@ -7854,12 +8420,28 @@ def validate_module_presence(current_modules: pl.DataFrame, reference_modules: p
         current_modules: pl.DataFrame,
         reference_modules: pl.DataFrame,
         template_modules: pl.DataFrame,
+        template_questions: pl.DataFrame | None = None,
     ) -> pl.DataFrame:
         """
         Module-level structure checks:
-          - module_removed (high): template module missing in current (always enforced)
+          - module_removed: template module missing in current. High when the
+            template module contains at least one mandatory (core/panel/spiel)
+            question; info when every question in it is optional, since dropping
+            an optional module is an allowed country choice. Without
+            template_questions every removal is high (previous behaviour).
           - module_added (info): current module absent from selected reference
         """
+        core_module_keys: set[str] | None = None
+        if template_questions is not None and {"module", "Mandatory", "Q Name"} <= set(template_questions.columns):
+            core_module_keys = set(
+                template_questions
+                .with_columns(
+                    pl.col("module").map_elements(_normalize_module_token, return_dtype=pl.Utf8).alias("_mod"),
+                    _mandatory_cat_expr("Q Name", "Mandatory").alias("_cat"),
+                )
+                .filter(pl.col("_cat").is_in(["mandatory", "mandatory-panel"]))
+                ["_mod"].to_list()
+            )
         schema = {
             "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
             "module": pl.Utf8, "field": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
@@ -7894,8 +8476,12 @@ def validate_module_presence(current_modules: pl.DataFrame, reference_modules: p
                 "module": mod_label,
                 "field": "module",
                 "current": "missing_in_current",
-                "reference": "present_in_template",
-                "severity": "high",
+                "reference": (
+                    "present_in_template"
+                    if core_module_keys is None or key in core_module_keys
+                    else "present_in_template (optional questions only)"
+                ),
+                "severity": "high" if core_module_keys is None or key in core_module_keys else "info",
                 "excel_row": src.get("excel_row"),
             })
 
@@ -7917,11 +8503,11 @@ def validate_module_presence(current_modules: pl.DataFrame, reference_modules: p
         return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
     ```
 
-### `validate_module_presence._to_map` {#fn--to-map-4510}
+### `validate_module_presence._to_map` {#fn--to-map-4833}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4510`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4833`
 
 **Signature**
 
@@ -7953,11 +8539,11 @@ def _to_map(df: pl.DataFrame) -> dict[str, dict]:
             return out
     ```
 
-### `_attach_module_column_to_issues` {#fn--attach-module-column-to-issues-4561}
+### `_attach_module_column_to_issues` {#fn--attach-module-column-to-issues-4888}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4561`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4888`
 
 **Signature**
 
@@ -8030,11 +8616,11 @@ def _attach_module_column_to_issues(issues_df: pl.DataFrame, current_questions: 
         return out
     ```
 
-### `_attach_module_column_to_issues._part` {#fn--part-4572}
+### `_attach_module_column_to_issues._part` {#fn--part-4899}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4572`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4899`
 
 **Signature**
 
@@ -8071,11 +8657,11 @@ def _part(df: pl.DataFrame, prio: int) -> pl.DataFrame:
             )
     ```
 
-### `compare_mandatory` {#fn-compare-mandatory-4610}
+### `compare_mandatory` {#fn-compare-mandatory-4937}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4610`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4937`
 
 **Signature**
 
@@ -8173,11 +8759,11 @@ def compare_mandatory(current_questions: pl.DataFrame, reference_questions: pl.D
         )
     ```
 
-### `_mandatory_cat_expr` {#fn--mandatory-cat-expr-4685}
+### `_mandatory_cat_expr` {#fn--mandatory-cat-expr-5012}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4685`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5012`
 
 **Signature**
 
@@ -8211,11 +8797,11 @@ def _mandatory_cat_expr(qname_col: str, mandatory_col: str) -> pl.Expr:
         )
     ```
 
-### `_normalize_qtype_value` {#fn--normalize-qtype-value-4697}
+### `_normalize_qtype_value` {#fn--normalize-qtype-value-5024}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4697`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5024`
 
 **Signature**
 
@@ -8250,11 +8836,11 @@ def _normalize_qtype_value(value: str) -> str:
         return s
     ```
 
-### `_qtype_mode` {#fn--qtype-mode-4711}
+### `_qtype_mode` {#fn--qtype-mode-5038}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4711`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5038`
 
 **Signature**
 
@@ -8288,11 +8874,11 @@ def _qtype_mode(value: str) -> str:
         return "non_option"
     ```
 
-### `_is_known_qtype_value` {#fn--is-known-qtype-value-4735}
+### `_is_known_qtype_value` {#fn--is-known-qtype-value-5062}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4735`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5062`
 
 **Signature**
 
@@ -8328,11 +8914,11 @@ def _is_known_qtype_value(value: str) -> bool:
         return False
     ```
 
-### `_qtype_change_severity` {#fn--qtype-change-severity-4750}
+### `_qtype_change_severity` {#fn--qtype-change-severity-5077}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4750`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5077`
 
 **Signature**
 
@@ -8416,11 +9002,11 @@ def _qtype_change_severity(curr_mode: str, ref_mode: str, curr_option_count: int
         return "medium"
     ```
 
-### `compare_qtype_changes` {#fn-compare-qtype-changes-4806}
+### `compare_qtype_changes` {#fn-compare-qtype-changes-5133}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4806`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5133`
 
 **Signature**
 
@@ -8546,16 +9132,16 @@ def compare_qtype_changes(current_questions: pl.DataFrame, reference_questions: 
         )
     ```
 
-### `compare_legacy_text_field_changes` {#fn-compare-legacy-text-field-changes-4908}
+### `compare_legacy_text_field_changes` {#fn-compare-legacy-text-field-changes-5235}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4908`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5235`
 
 **Signature**
 
 ```python
-def compare_legacy_text_field_changes(current_questions: pl.DataFrame, reference_questions: pl.DataFrame, column_name: str, issue_type: str, default_severity: str='medium', high_when_mandatory: bool=False) -> pl.DataFrame:
+def compare_legacy_text_field_changes(current_questions: pl.DataFrame, reference_questions: pl.DataFrame, column_name: str, issue_type: str, default_severity: str='medium', high_when_mandatory: bool=False, info_when_reference_blank: bool=False) -> pl.DataFrame:
 ```
 
 **Returns:** `pl.DataFrame`
@@ -8572,6 +9158,7 @@ def compare_legacy_text_field_changes(current_questions: pl.DataFrame, reference
 | `issue_type` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 9 Run the full pipeline` stage. |
 | `default_severity` | positional_or_keyword | No | `'medium'` | `str` | Severity label used for final issue classification. |
 | `high_when_mandatory` | positional_or_keyword | No | `False` | `bool` | Input used by the `Step 9 Run the full pipeline` stage. |
+| `info_when_reference_blank` | positional_or_keyword | No | `False` | `bool` | Input used by the `Step 9 Run the full pipeline` stage. |
 
 ??? note "Function source"
 
@@ -8583,8 +9170,14 @@ def compare_legacy_text_field_changes(current_questions: pl.DataFrame, reference
         issue_type: str,
         default_severity: str = "medium",
         high_when_mandatory: bool = False,
+        info_when_reference_blank: bool = False,
     ) -> pl.DataFrame:
-        """Legacy column parity checks with normalization to avoid cosmetic false positives."""
+        """Legacy column parity checks with normalization to avoid cosmetic false positives.
+
+        info_when_reference_blank: a value filled in where the reference cell is
+        empty (e.g. Universe 'All' on a spiel row the template leaves blank) is
+        reported as info rather than at the column's normal severity.
+        """
         EMPTY = {
             "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
             "field": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
@@ -8625,6 +9218,12 @@ def compare_legacy_text_field_changes(current_questions: pl.DataFrame, reference
         else:
             joined = joined.with_columns(pl.lit(default_severity).alias("severity"))
 
+        if info_when_reference_blank:
+            joined = joined.with_columns(
+                pl.when(pl.col("_ref_norm") == "").then(pl.lit("info"))
+                .otherwise(pl.col("severity")).alias("severity")
+            )
+
         return (
             joined
             .with_columns([
@@ -8638,11 +9237,11 @@ def compare_legacy_text_field_changes(current_questions: pl.DataFrame, reference
         )
     ```
 
-### `validate_conditional_removed_for_mandatory` {#fn-validate-conditional-removed-for-mandatory-4970}
+### `validate_conditional_removed_for_mandatory` {#fn-validate-conditional-removed-for-mandatory-5309}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:4970`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5309`
 
 **Signature**
 
@@ -8718,11 +9317,11 @@ def validate_conditional_removed_for_mandatory(current_questions: pl.DataFrame, 
         )
     ```
 
-### `validate_conditional_routing` {#fn-validate-conditional-routing-5038}
+### `validate_conditional_routing` {#fn-validate-conditional-routing-5377}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5038`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5377`
 
 **Signature**
 
@@ -8848,11 +9447,11 @@ def validate_conditional_routing(current_questions: pl.DataFrame, current_option
         return pl.DataFrame(issues)
     ```
 
-### `validate_conditional_routing._looks_like_qname` {#fn--looks-like-qname-5077}
+### `validate_conditional_routing._looks_like_qname` {#fn--looks-like-qname-5416}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5077`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5416`
 
 **Signature**
 
@@ -8877,11 +9476,11 @@ def _looks_like_qname(token: str) -> bool:
             return "_" in token or token in curr_qnames
     ```
 
-### `compare_question_labels_single` {#fn-compare-question-labels-single-5142}
+### `compare_question_labels_single` {#fn-compare-question-labels-single-5481}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5142`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5481`
 
 **Signature**
 
@@ -8972,11 +9571,11 @@ def compare_question_labels_single(current_questions: pl.DataFrame, reference_qu
         )
     ```
 
-### `build_question_changes_view` {#fn-build-question-changes-view-5208}
+### `build_question_changes_view` {#fn-build-question-changes-view-5547}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5208`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5547`
 
 **Signature**
 
@@ -9129,11 +9728,11 @@ def build_question_changes_view(core_question_issues: pl.DataFrame, en_label_dif
         return pl.concat([core_view, label_view], how="vertical")
     ```
 
-### `build_question_changes_view._scope_view` {#fn--scope-view-5252}
+### `build_question_changes_view._scope_view` {#fn--scope-view-5591}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5252`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5591`
 
 **Signature**
 
@@ -9172,11 +9771,11 @@ def _scope_view(label_diff: pl.DataFrame, scope: str) -> pl.DataFrame:
             )
     ```
 
-### `compare_option_labels_single` {#fn-compare-option-labels-single-5337}
+### `compare_option_labels_single` {#fn-compare-option-labels-single-5676}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5337`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5676`
 
 **Signature**
 
@@ -9225,11 +9824,11 @@ def compare_option_labels_single(current_options: pl.DataFrame, reference_option
         )
     ```
 
-### `compare_option_presence_single` {#fn-compare-option-presence-single-5363}
+### `compare_option_presence_single` {#fn-compare-option-presence-single-5702}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5363`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5702`
 
 **Signature**
 
@@ -9289,11 +9888,11 @@ def compare_option_presence_single(current_options: pl.DataFrame, reference_opti
         return added_options, removed_options
     ```
 
-### `compare_option_code_renumber_single` {#fn-compare-option-code-renumber-single-5400}
+### `compare_option_code_renumber_single` {#fn-compare-option-code-renumber-single-5739}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5400`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5739`
 
 **Signature**
 
@@ -9380,11 +9979,11 @@ def compare_option_code_renumber_single(current_options: pl.DataFrame, reference
         )
     ```
 
-### `compare_codes_presence_single` {#fn-compare-codes-presence-single-5464}
+### `compare_codes_presence_single` {#fn-compare-codes-presence-single-5803}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5464`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5803`
 
 **Signature**
 
@@ -9438,11 +10037,11 @@ def compare_codes_presence_single(current_codes: pl.DataFrame, reference_codes: 
         return added_codes, removed_codes
     ```
 
-### `compare_codes_token_mismatch_single` {#fn-compare-codes-token-mismatch-single-5496}
+### `compare_codes_token_mismatch_single` {#fn-compare-codes-token-mismatch-single-5835}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5496`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5835`
 
 **Signature**
 
@@ -9517,11 +10116,11 @@ def compare_codes_token_mismatch_single(current_codes: pl.DataFrame, reference_c
         return mismatch.join(renumber_positions, on=["Q Name", "code_num"], how="anti")
     ```
 
-### `compare_codes_renumber_single` {#fn-compare-codes-renumber-single-5548}
+### `compare_codes_renumber_single` {#fn-compare-codes-renumber-single-5887}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5548`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5887`
 
 **Signature**
 
@@ -9602,11 +10201,11 @@ def compare_codes_renumber_single(current_codes: pl.DataFrame, reference_codes: 
         )
     ```
 
-### `build_codes_changes_view` {#fn-build-codes-changes-view-5607}
+### `build_codes_changes_view` {#fn-build-codes-changes-view-5946}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5607`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5946`
 
 **Signature**
 
@@ -9706,11 +10305,11 @@ def build_codes_changes_view(token_mismatch: pl.DataFrame, added_codes: pl.DataF
         ])
     ```
 
-### `apply_codes_severity_by_mandatory` {#fn-apply-codes-severity-by-mandatory-5682}
+### `apply_codes_severity_by_mandatory` {#fn-apply-codes-severity-by-mandatory-6021}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5682`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6021`
 
 **Signature**
 
@@ -9770,11 +10369,11 @@ def apply_codes_severity_by_mandatory(codes_df: pl.DataFrame, q_mandatory_map: d
         )
     ```
 
-### `apply_option_severity_by_mandatory` {#fn-apply-option-severity-by-mandatory-5720}
+### `apply_option_severity_by_mandatory` {#fn-apply-option-severity-by-mandatory-6059}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5720`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6059`
 
 **Signature**
 
@@ -9835,11 +10434,11 @@ def apply_option_severity_by_mandatory(option_df: pl.DataFrame, q_mandatory_map:
         )
     ```
 
-### `collapse_codes_issue_rows_by_qname` {#fn-collapse-codes-issue-rows-by-qname-5759}
+### `collapse_codes_issue_rows_by_qname` {#fn-collapse-codes-issue-rows-by-qname-6098}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5759`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6098`
 
 **Signature**
 
@@ -10012,11 +10611,11 @@ def collapse_codes_issue_rows_by_qname(codes_df: pl.DataFrame) -> pl.DataFrame:
         return pl.concat([keep_df, collapsed], how="vertical")
     ```
 
-### `collapse_codes_issue_rows_by_qname._uniq` {#fn--uniq-5787}
+### `collapse_codes_issue_rows_by_qname._uniq` {#fn--uniq-6126}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5787`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6126`
 
 **Signature**
 
@@ -10052,11 +10651,11 @@ def _uniq(items: list[str]) -> list[str]:
             return out
     ```
 
-### `build_codes_not_comparable_rows` {#fn-build-codes-not-comparable-rows-5911}
+### `build_codes_not_comparable_rows` {#fn-build-codes-not-comparable-rows-6250}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5911`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6250`
 
 **Signature**
 
@@ -10139,16 +10738,16 @@ def build_codes_not_comparable_rows(current_codes: pl.DataFrame, reference_codes
         return pl.DataFrame(rows, schema=schema)
     ```
 
-### `build_codes_option_count_mismatch_rows` {#fn-build-codes-option-count-mismatch-rows-5970}
+### `build_codes_option_count_mismatch_rows` {#fn-build-codes-option-count-mismatch-rows-6309}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5970`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6309`
 
 **Signature**
 
 ```python
-def build_codes_option_count_mismatch_rows(current_options_en: pl.DataFrame, current_codes: pl.DataFrame, reference_options_en: pl.DataFrame, reference_codes: pl.DataFrame, target_lang: str) -> pl.DataFrame:
+def build_codes_option_count_mismatch_rows(current_options_en: pl.DataFrame, current_codes: pl.DataFrame, reference_options_en: pl.DataFrame, reference_codes: pl.DataFrame, target_lang: str, skip_qnames: set[str] | None=None) -> pl.DataFrame:
 ```
 
 **Returns:** `pl.DataFrame`
@@ -10164,6 +10763,7 @@ def build_codes_option_count_mismatch_rows(current_options_en: pl.DataFrame, cur
 | `reference_options_en` | positional_or_keyword | Yes | `-` | `pl.DataFrame` | Questionnaire structure table used by comparison and checks. |
 | `reference_codes` | positional_or_keyword | Yes | `-` | `pl.DataFrame` | Input used by the `Step 9 Run the full pipeline` stage. |
 | `target_lang` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 9 Run the full pipeline` stage. |
+| `skip_qnames` | positional_or_keyword | No | `None` | `set[str] | None` | Input used by the `Step 9 Run the full pipeline` stage. |
 
 ??? note "Function source"
 
@@ -10174,13 +10774,19 @@ def build_codes_option_count_mismatch_rows(current_options_en: pl.DataFrame, cur
         reference_options_en: pl.DataFrame,
         reference_codes: pl.DataFrame,
         target_lang: str,
+        skip_qnames: set[str] | None = None,
     ) -> pl.DataFrame:
         """
         Internal consistency check (CURRENT questionnaire only):
         flag questions where parsed option codes and parsed Codes entries are not aligned
         (count mismatch or code-number set mismatch).
         Reference columns are provided only as contextual baseline.
+
+        skip_qnames: Q Names excluded from this check -- Matrix Table questions,
+        whose options are the shared answer scale and whose Codes are the matrix
+        rows (sub-variables), so the two lists are not expected to align.
         """
+        _skip = {str(q).strip().lower() for q in (skip_qnames or set())}
         schema = {
             "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8, "field": pl.Utf8,
             "lang_scope": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
@@ -10243,6 +10849,8 @@ def build_codes_option_count_mismatch_rows(current_options_en: pl.DataFrame, cur
 
         rows: list[dict] = []
         for qk, cur_opt_entries in opt_lookup_cur.items():
+            if qk in _skip:
+                continue
             cur_code_entries = code_lookup_cur.get(qk, [])
             ref_code_entries = code_lookup_ref.get(qk, [])
             # CURRENT-only consistency: evaluate when current has parsed codes.
@@ -10323,11 +10931,11 @@ def build_codes_option_count_mismatch_rows(current_options_en: pl.DataFrame, cur
         ])
     ```
 
-### `build_codes_option_count_mismatch_rows._parse_int_codes` {#fn--parse-int-codes-5992}
+### `build_codes_option_count_mismatch_rows._parse_int_codes` {#fn--parse-int-codes-6337}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:5992`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6337`
 
 **Signature**
 
@@ -10357,11 +10965,11 @@ def _parse_int_codes(entries: list[tuple[str, str]]) -> set[int]:
             return out
     ```
 
-### `build_codes_option_count_mismatch_rows._formatted_codes_with_option_alignment` {#fn--formatted-codes-with-option-alignment-6000}
+### `build_codes_option_count_mismatch_rows._formatted_codes_with_option_alignment` {#fn--formatted-codes-with-option-alignment-6345}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6000`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6345`
 
 **Signature**
 
@@ -10409,11 +11017,11 @@ def _formatted_codes_with_option_alignment(code_entries: list[tuple[str, str]], 
             return f"{header}:\n" + "\n".join(vals)
     ```
 
-### `validate_critical_sets` {#fn-validate-critical-sets-6129}
+### `validate_critical_sets` {#fn-validate-critical-sets-6476}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6129`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6476`
 
 **Signature**
 
@@ -10522,11 +11130,11 @@ def validate_critical_sets(questions_df: pl.DataFrame, exact_sets: dict) -> pl.D
         return pl.DataFrame(issues)
     ```
 
-### `validate_critical_sets._wealth_optional_variant` {#fn--wealth-optional-variant-6156}
+### `validate_critical_sets._wealth_optional_variant` {#fn--wealth-optional-variant-6503}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6156`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6503`
 
 **Signature**
 
@@ -10554,11 +11162,11 @@ def _wealth_optional_variant(q_name: str) -> str:
             return ""
     ```
 
-### `validate_prefix_counts` {#fn-validate-prefix-counts-6216}
+### `validate_prefix_counts` {#fn-validate-prefix-counts-6563}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6216`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6563`
 
 **Signature**
 
@@ -10621,11 +11229,11 @@ def validate_prefix_counts(current_questions: pl.DataFrame, min_count_sets: dict
         return pl.DataFrame(issues)
     ```
 
-### `validate_crop_harvest` {#fn-validate-crop-harvest-6257}
+### `validate_crop_harvest` {#fn-validate-crop-harvest-6604}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6257`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6604`
 
 **Signature**
 
@@ -10684,11 +11292,11 @@ def validate_crop_harvest(current_questions: pl.DataFrame, crop_rules: dict) -> 
         return pl.DataFrame(issues)
     ```
 
-### `_indicator_present` {#fn--indicator-present-6305}
+### `_indicator_present` {#fn--indicator-present-6652}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6305`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6652`
 
 **Signature**
 
@@ -10721,11 +11329,11 @@ def _indicator_present(qnames: set[str], indicator_cfg: dict) -> bool:
         return False
     ```
 
-### `validate_fs_indicators` {#fn-validate-fs-indicators-6316}
+### `validate_fs_indicators` {#fn-validate-fs-indicators-6663}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6316`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6663`
 
 **Signature**
 
@@ -10813,11 +11421,11 @@ def validate_fs_indicators(current_questions: pl.DataFrame, rules: dict, modalit
         return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
     ```
 
-### `validate_agri_cs_count` {#fn-validate-agri-cs-count-6381}
+### `validate_agri_cs_count` {#fn-validate-agri-cs-count-6728}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6381`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6728`
 
 **Signature**
 
@@ -10901,11 +11509,11 @@ def validate_agri_cs_count(current_questions: pl.DataFrame, rules: dict) -> pl.D
         return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
     ```
 
-### `validate_variable_pairs` {#fn-validate-variable-pairs-6443}
+### `validate_variable_pairs` {#fn-validate-variable-pairs-6790}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6443`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6790`
 
 **Signature**
 
@@ -10969,11 +11577,214 @@ def validate_variable_pairs(current_questions: pl.DataFrame, rules: dict) -> pl.
         return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
     ```
 
-### `validate_authoring_consistency` {#fn-validate-authoring-consistency-6485}
+### `validate_fixed_option_codes` {#fn-validate-fixed-option-codes-6832}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6485`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6832`
+
+**Signature**
+
+```python
+def validate_fixed_option_codes(current_options: pl.DataFrame | None, rules: dict) -> pl.DataFrame:
+```
+
+**Returns:** `pl.DataFrame`
+
+**What it does:** Questions whose answer codes must be exactly a fixed set, configured under
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `current_options` | positional_or_keyword | Yes | `-` | `pl.DataFrame | None` | Questionnaire structure table used by comparison and checks. |
+| `rules` | positional_or_keyword | Yes | `-` | `dict` | Input used by the `Step 9 Run the full pipeline` stage. |
+
+??? note "Function source"
+
+    ```python
+    def validate_fixed_option_codes(
+        current_options: pl.DataFrame | None,
+        rules: dict,
+    ) -> pl.DataFrame:
+        """
+        Questions whose answer codes must be exactly a fixed set, configured under
+        fixed_option_codes in critical_sets.yaml. Used for questions whose options
+        are shown dynamically (e.g. ls_main_confirm shows only the tied livestock
+        types) -- GeoPoll must keep the fixed codes, so the code list in the
+        questionnaire must not be renumbered, extended (e.g. with DK/REF) or cut.
+        Questions absent from the questionnaire are skipped (presence is checked
+        elsewhere).
+        """
+        schema = {
+            "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
+            "field": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
+            "severity": pl.Utf8, "excel_row": pl.Int64,
+        }
+        rules_cfg: list[dict] = rules.get("fixed_option_codes") or []
+        if not rules_cfg or current_options is None or current_options.height == 0:
+            return pl.DataFrame(schema=schema)
+
+        codes_by_q = {
+            row["Q Name"]: (set(int(c) for c in row["codes"] if c is not None), row["excel_row"])
+            for row in (
+                current_options
+                .group_by("Q Name")
+                .agg(pl.col("option_code").alias("codes"), pl.col("excel_row").min().cast(pl.Int64))
+                .iter_rows(named=True)
+            )
+        }
+        rows: list[dict] = []
+        for rule in rules_cfg:
+            q = str(rule.get("q_name") or "").strip()
+            expected = {int(c) for c in (rule.get("codes") or [])}
+            if not q or not expected or q not in codes_by_q:
+                continue
+            found, excel_row = codes_by_q[q]
+            if found == expected:
+                continue
+            missing, extra = sorted(expected - found), sorted(found - expected)
+            rows.append({
+                "issue_type": "fixed_codes_mismatch",
+                "set_name": "FIXED_CODES", "Q Name": q,
+                "field": str(rule.get("description") or "fixed answer codes"),
+                "current": f"codes {sorted(found)}; missing {missing or '-'}; unexpected {extra or '-'}",
+                "reference": f"codes must be exactly {sorted(expected)}",
+                "severity": str(rule.get("severity") or "high"), "excel_row": excel_row,
+            })
+        return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
+    ```
+
+### `validate_tlu_weights` {#fn-validate-tlu-weights-6884}
+
+**Pipeline stage:** `Step 9 Run the full pipeline`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6884`
+
+**Signature**
+
+```python
+def validate_tlu_weights(tlu_df: pl.DataFrame, rules: dict) -> pl.DataFrame:
+```
+
+**Returns:** `pl.DataFrame`
+
+**What it does:** Tropical Livestock Unit weights (Additional information sheet, TLU
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `tlu_df` | positional_or_keyword | Yes | `-` | `pl.DataFrame` | Input used by the `Step 9 Run the full pipeline` stage. |
+| `rules` | positional_or_keyword | Yes | `-` | `dict` | Input used by the `Step 9 Run the full pipeline` stage. |
+
+??? note "Function source"
+
+    ```python
+    def validate_tlu_weights(tlu_df: pl.DataFrame, rules: dict) -> pl.DataFrame:
+        """
+        Tropical Livestock Unit weights (Additional information sheet, TLU
+        section) feed the ls_main calculation, so every configured species must
+        have a weight that is a positive number, and the weight must be the same
+        in every language column that is filled. Configured under tlu_weights in
+        critical_sets.yaml.
+          - tlu_weight_missing (high): species row absent or weight blank
+          - tlu_weight_invalid (high): weight not a number > 0
+          - tlu_weight_inconsistent (medium): language columns disagree
+        """
+        schema = {
+            "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
+            "field": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
+            "severity": pl.Utf8, "excel_row": pl.Int64,
+        }
+        cfg = rules.get("tlu_weights") or {}
+        species_cfg = [str(s).strip() for s in (cfg.get("species") or []) if str(s or "").strip()]
+        if not species_cfg:
+            return pl.DataFrame(schema=schema)
+
+        weight_cols = [c for c in tlu_df.columns if c != "species"] if tlu_df is not None else []
+        by_species: dict[str, dict] = {}
+        if tlu_df is not None and tlu_df.height > 0:
+            for row in tlu_df.iter_rows(named=True):
+                by_species.setdefault(str(row["species"]).strip().lower(), row)
+
+        def _issue(issue_type, species, current, reference, severity):
+            return {
+                "issue_type": issue_type, "set_name": "TLU", "Q Name": "",
+                "field": f"TLU weight: {species}", "current": current,
+                "reference": reference, "severity": severity, "excel_row": None,
+            }
+
+        rows: list[dict] = []
+        for species in species_cfg:
+            row = by_species.get(species.lower())
+            values = {c: str(row.get(c) or "").strip() for c in weight_cols} if row else {}
+            filled = {c: v for c, v in values.items() if v}
+            if not filled:
+                rows.append(_issue("tlu_weight_missing", species, "blank / row missing",
+                                   "weight required in Additional information (TLU section)", "high"))
+                continue
+            parsed: dict[str, float | None] = {}
+            for c, v in filled.items():
+                try:
+                    parsed[c] = float(v.replace(",", "."))
+                except ValueError:
+                    parsed[c] = None
+            bad = {c: filled[c] for c, p in parsed.items() if p is None or p <= 0}
+            if bad:
+                rows.append(_issue("tlu_weight_invalid", species,
+                                   "; ".join(f"{c}={v}" for c, v in bad.items()),
+                                   "weight must be a number > 0", "high"))
+                continue
+            if len({round(p, 6) for p in parsed.values()}) > 1:
+                rows.append(_issue("tlu_weight_inconsistent", species,
+                                   "; ".join(f"{c}={v}" for c, v in filled.items()),
+                                   "same weight expected in every language column", "medium"))
+        return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
+    ```
+
+### `validate_tlu_weights._issue` {#fn--issue-6911}
+
+**Pipeline stage:** `Step 9 Run the full pipeline`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6911`
+
+**Signature**
+
+```python
+def _issue(issue_type, species, current, reference, severity):
+```
+
+**Returns:** `None or implicit return`
+
+**What it does:** Implements logic in the `Step 9 Run the full pipeline` phase.
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `issue_type` | positional_or_keyword | Yes | `-` | `-` | Input used by the `Step 9 Run the full pipeline` stage. |
+| `species` | positional_or_keyword | Yes | `-` | `-` | Input used by the `Step 9 Run the full pipeline` stage. |
+| `current` | positional_or_keyword | Yes | `-` | `-` | Input used by the `Step 9 Run the full pipeline` stage. |
+| `reference` | positional_or_keyword | Yes | `-` | `-` | Input used by the `Step 9 Run the full pipeline` stage. |
+| `severity` | positional_or_keyword | Yes | `-` | `-` | Severity label used for final issue classification. |
+
+??? note "Function source"
+
+    ```python
+    def _issue(issue_type, species, current, reference, severity):
+            return {
+                "issue_type": issue_type, "set_name": "TLU", "Q Name": "",
+                "field": f"TLU weight: {species}", "current": current,
+                "reference": reference, "severity": severity, "excel_row": None,
+            }
+    ```
+
+### `validate_authoring_consistency` {#fn-validate-authoring-consistency-6946}
+
+**Pipeline stage:** `Step 9 Run the full pipeline`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6946`
 
 **Signature**
 
@@ -11051,11 +11862,11 @@ def validate_authoring_consistency(current_questions: pl.DataFrame, max_qname_le
         return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
     ```
 
-### `_tick` {#fn--tick-6547}
+### `_tick` {#fn--tick-7008}
 
 **Pipeline stage:** `Step 9 Run the full pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:6547`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7008`
 
 **Signature**
 
@@ -11083,11 +11894,11 @@ def _tick(label: str):
         _t_prev = _now
     ```
 
-### `_header_row` {#fn--header-row-7271}
+### `_header_row` {#fn--header-row-7768}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7271`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7768`
 
 **Signature**
 
@@ -11118,11 +11929,11 @@ def _header_row(ws, row, values):
         ws.row_dimensions[row].height = 18
     ```
 
-### `_section_header` {#fn--section-header-7278}
+### `_section_header` {#fn--section-header-7775}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7278`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7775`
 
 **Signature**
 
@@ -11154,11 +11965,11 @@ def _section_header(ws, row, title, n_cols):
         ws.row_dimensions[row].height = 20
     ```
 
-### `_data_row` {#fn--data-row-7285}
+### `_data_row` {#fn--data-row-7782}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7285`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7782`
 
 **Signature**
 
@@ -11193,11 +12004,11 @@ def _data_row(ws, row, n_cols, severity='', fill=None):
                 c.fill = use_fill
     ```
 
-### `_autofit` {#fn--autofit-7294}
+### `_autofit` {#fn--autofit-7791}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7294`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7791`
 
 **Signature**
 
@@ -11226,11 +12037,11 @@ def _autofit(ws, mn=12, mx=55):
             ws.column_dimensions[get_column_letter(col_cells[0].column)].width = min(max(w + 2, mn), mx)
     ```
 
-### `_action_for_issue_type` {#fn--action-for-issue-type-7357}
+### `_action_for_issue_type` {#fn--action-for-issue-type-7854}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7357`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7854`
 
 **Signature**
 
@@ -11256,11 +12067,11 @@ def _action_for_issue_type(issue_type: str) -> str:
         return ISSUE_ACTION_MAP.get(key, "Review issue details")
     ```
 
-### `_optional_counterparts_for_missing_skip_targets` {#fn--optional-counterparts-for-missing-skip-targets-7362}
+### `_optional_counterparts_for_missing_skip_targets` {#fn--optional-counterparts-for-missing-skip-targets-7859}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7362`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7859`
 
 **Signature**
 
@@ -11316,11 +12127,11 @@ def _optional_counterparts_for_missing_skip_targets(source_q: str, current_text:
             return []
     ```
 
-### `_action_for_issue_row` {#fn--action-for-issue-row-7396}
+### `_action_for_issue_row` {#fn--action-for-issue-row-7893}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7396`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7893`
 
 **Signature**
 
@@ -11355,11 +12166,11 @@ def _action_for_issue_row(issue_type: str, q_name: str='', current_text: str='')
         return _action_for_issue_type(key)
     ```
 
-### `_issues_col_map` {#fn--issues-col-map-7408}
+### `_issues_col_map` {#fn--issues-col-map-7905}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7408`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7905`
 
 **Signature**
 
@@ -11403,11 +12214,11 @@ def _issues_col_map(field_label: str='Field'):
         ]
     ```
 
-### `_issues_table` {#fn--issues-table-7431}
+### `_issues_table` {#fn--issues-table-7928}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7431`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7928`
 
 **Signature**
 
@@ -11475,11 +12286,11 @@ def _issues_table(ws, start_row, df, field_label: str='Field'):
         return r + 1
     ```
 
-### `_tokenize_for_word_diff` {#fn--tokenize-for-word-diff-7486}
+### `_tokenize_for_word_diff` {#fn--tokenize-for-word-diff-7983}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7486`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7983`
 
 **Signature**
 
@@ -11511,11 +12322,11 @@ def _tokenize_for_word_diff(text: str):
         return out
     ```
 
-### `_coalesce_segments` {#fn--coalesce-segments-7497}
+### `_coalesce_segments` {#fn--coalesce-segments-7994}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7497`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7994`
 
 **Signature**
 
@@ -11548,11 +12359,11 @@ def _coalesce_segments(parts):
         return merged
     ```
 
-### `_build_diff_segments` {#fn--build-diff-segments-7509}
+### `_build_diff_segments` {#fn--build-diff-segments-8006}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7509`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8006`
 
 **Signature**
 
@@ -11593,11 +12404,11 @@ def _build_diff_segments(current_text: str, reference_text: str):
         return _coalesce_segments(current_parts), _coalesce_segments(reference_parts)
     ```
 
-### `_set_rich_text` {#fn--set-rich-text-7528}
+### `_set_rich_text` {#fn--set-rich-text-8025}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7528`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8025`
 
 **Signature**
 
@@ -11636,11 +12447,11 @@ def _set_rich_text(cell, full_text: str, parts):
         cell.value = CellRichText(*blocks)
     ```
 
-### `_set_rich_text_with_bold_tokens` {#fn--set-rich-text-with-bold-tokens-7544}
+### `_set_rich_text_with_bold_tokens` {#fn--set-rich-text-with-bold-tokens-8041}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7544`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8041`
 
 **Signature**
 
@@ -11709,11 +12520,11 @@ def _set_rich_text_with_bold_tokens(cell, full_text: str, tokens: list[str], col
         cell.value = CellRichText(*blocks) if blocks else full_text
     ```
 
-### `_apply_inline_diff_for_issue` {#fn--apply-inline-diff-for-issue-7588}
+### `_apply_inline_diff_for_issue` {#fn--apply-inline-diff-for-issue-8085}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7588`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8085`
 
 **Signature**
 
@@ -11776,11 +12587,11 @@ def _apply_inline_diff_for_issue(ws, start_row, df, issue_types):
                 _set_rich_text(ws.cell(row=start_row + offset, column=cidx[ref_key]), ref_txt, ref_parts)
     ```
 
-### `_apply_inline_diff_for_issue._match_issue` {#fn--match-issue-7597}
+### `_apply_inline_diff_for_issue._match_issue` {#fn--match-issue-8094}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7597`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8094`
 
 **Signature**
 
@@ -11811,11 +12622,11 @@ def _match_issue(issue_val: str) -> bool:
             return False
     ```
 
-### `_apply_option_detail_highlights` {#fn--apply-option-detail-highlights-7627}
+### `_apply_option_detail_highlights` {#fn--apply-option-detail-highlights-8124}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7627`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8124`
 
 **Signature**
 
@@ -11876,11 +12687,11 @@ def _apply_option_detail_highlights(ws, start_row, df):
             )
     ```
 
-### `_apply_codes_alignment_marker_highlights` {#fn--apply-codes-alignment-marker-highlights-7665}
+### `_apply_codes_alignment_marker_highlights` {#fn--apply-codes-alignment-marker-highlights-8162}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7665`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8162`
 
 **Signature**
 
@@ -11944,11 +12755,11 @@ def _apply_codes_alignment_marker_highlights(ws, start_row, df):
                 )
     ```
 
-### `_set_status` {#fn--set-status-7708}
+### `_set_status` {#fn--set-status-8205}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7708`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8205`
 
 **Signature**
 
@@ -12031,14 +12842,34 @@ def _set_status(all_issues, rules):
                 status, details = "PASS", "All variable pairs complete"
             results.append({"set": "VAR_PAIRS", "status": status, "details": details})
 
+        if rules.get("fixed_option_codes"):
+            si = all_issues.filter(pl.col("set_name") == "FIXED_CODES")
+            if si.height > 0:
+                status  = "FAIL" if si.filter(pl.col("severity") == "high").height > 0 else "WARNING"
+                details = "; ".join(r["Q Name"] for r in si.to_dicts())
+            else:
+                status, details = "PASS", "Fixed answer codes respected"
+            results.append({"set": "FIXED_CODES", "status": status, "details": details})
+
+        if rules.get("tlu_weights"):
+            si = all_issues.filter(pl.col("set_name") == "TLU")
+            if si.filter(pl.col("severity") == "high").height > 0:
+                status = "FAIL"
+            elif si.height > 0:
+                status = "WARNING"
+            else:
+                status = "PASS"
+            details = "; ".join(r["field"] for r in si.to_dicts()) if si.height else "All TLU weights filled and valid"
+            results.append({"set": "TLU", "status": status, "details": details})
+
         return results
     ```
 
-### `_cat_counts` {#fn--cat-counts-7772}
+### `_cat_counts` {#fn--cat-counts-8289}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7772`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8289`
 
 **Signature**
 
@@ -12067,11 +12898,11 @@ def _cat_counts(df):
         return {cat: df.filter(pl.col("mandatory_cat") == cat).height for cat in cats}
     ```
 
-### `_extract_round_token` {#fn--extract-round-token-7780}
+### `_extract_round_token` {#fn--extract-round-token-8297}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7780`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8297`
 
 **Signature**
 
@@ -12107,11 +12938,11 @@ def _extract_round_token(name: str) -> str:
         return ""
     ```
 
-### `_extract_iso3_token` {#fn--extract-iso3-token-7795}
+### `_extract_iso3_token` {#fn--extract-iso3-token-8312}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7795`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8312`
 
 **Signature**
 
@@ -12160,11 +12991,11 @@ def _extract_iso3_token(name: str) -> str:
         return ""
     ```
 
-### `_reference_descriptor` {#fn--reference-descriptor-7823}
+### `_reference_descriptor` {#fn--reference-descriptor-8340}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7823`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8340`
 
 **Signature**
 
@@ -12203,11 +13034,11 @@ No parameters.
         return f"{mode} | {lang} template | {ref_name}"
     ```
 
-### `_write_category_breakdown_block` {#fn--write-category-breakdown-block-7843}
+### `_write_category_breakdown_block` {#fn--write-category-breakdown-block-8360}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7843`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8360`
 
 **Signature**
 
@@ -12305,11 +13136,11 @@ def _write_category_breakdown_block(ws, r: int, title: str, categories: list[tup
         return r
     ```
 
-### `write_summary_sheet` {#fn-write-summary-sheet-7917}
+### `write_summary_sheet` {#fn-write-summary-sheet-8434}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:7917`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8434`
 
 **Signature**
 
@@ -12449,18 +13280,21 @@ def write_summary_sheet(wb, all_issues, rules, replacement_status=None):
         ws.cell(row=r, column=3, value=f"High: {_qt_high}; Medium: {_qt_med}; Info: {_qt_info}")
         _data_row(ws, r, 7, fill=STATUS_FILL.get(_qt_status)); r += 1
 
-        _mod_removed = all_issues.filter(pl.col("issue_type") == "module_removed").height
+        _mod_removed_all = all_issues.filter(pl.col("issue_type") == "module_removed")
+        _mod_removed = _mod_removed_all.filter(pl.col("severity") == "high").height
+        _mod_removed_optional = _mod_removed_all.height - _mod_removed
         _mod_added = all_issues.filter(pl.col("issue_type") == "module_added").height
-        _mod_status = "FAIL" if _mod_removed > 0 else "PASS"
+        _mod_status = "FAIL" if _mod_removed > 0 else ("INFO" if _mod_removed_optional > 0 else "PASS")
         ws.cell(row=r, column=1, value="Module presence (template-required)")
         ws.cell(row=r, column=2, value=_mod_status)
         ws.cell(
             row=r,
             column=3,
             value=(
-                f"Template modules missing: {_mod_removed}; Modules added vs reference: {_mod_added}"
-                if _mod_removed > 0 else
-                f"No template module missing; Modules added vs reference: {_mod_added}"
+                (f"Template modules with core questions missing: {_mod_removed}"
+                 if _mod_removed > 0 else "No template module with core questions missing")
+                + (f"; optional-only modules removed: {_mod_removed_optional}" if _mod_removed_optional else "")
+                + f"; Modules added vs reference: {_mod_added}"
             ),
         )
         _data_row(ws, r, 7, fill=STATUS_FILL.get(_mod_status)); r += 1
@@ -12580,11 +13414,11 @@ def write_summary_sheet(wb, all_issues, rules, replacement_status=None):
         )
     ```
 
-### `write_structure_skip_sheet` {#fn-write-structure-skip-sheet-8165}
+### `write_structure_skip_sheet` {#fn-write-structure-skip-sheet-8685}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8165`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8685`
 
 **Signature**
 
@@ -12658,11 +13492,11 @@ def write_structure_skip_sheet(wb, all_issues: pl.DataFrame):
         _autofit(ws)
     ```
 
-### `write_structure_skip_sheet._sorted` {#fn--sorted-8169}
+### `write_structure_skip_sheet._sorted` {#fn--sorted-8689}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8169`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8689`
 
 **Signature**
 
@@ -12698,11 +13532,11 @@ def _sorted(df: pl.DataFrame) -> pl.DataFrame:
             )
     ```
 
-### `write_replacement_issues_sheet` {#fn-write-replacement-issues-sheet-8217}
+### `write_replacement_issues_sheet` {#fn-write-replacement-issues-sheet-8737}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8217`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8737`
 
 **Signature**
 
@@ -12749,11 +13583,11 @@ def write_replacement_issues_sheet(wb, all_issues: pl.DataFrame):
         _autofit(ws)
     ```
 
-### `write_critical_sets_sheet` {#fn-write-critical-sets-sheet-8243}
+### `write_critical_sets_sheet` {#fn-write-critical-sets-sheet-8763}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8243`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8763`
 
 **Signature**
 
@@ -12803,11 +13637,11 @@ def write_critical_sets_sheet(wb, all_issues, found_info=None):
         _autofit(ws)
     ```
 
-### `write_question_changes_sheet` {#fn-write-question-changes-sheet-8271}
+### `write_question_changes_sheet` {#fn-write-question-changes-sheet-8791}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8271`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8791`
 
 **Signature**
 
@@ -12883,11 +13717,11 @@ def write_question_changes_sheet(wb, question_changes_view):
         _autofit(ws)
     ```
 
-### `write_option_changes_sheet` {#fn-write-option-changes-sheet-8326}
+### `write_option_changes_sheet` {#fn-write-option-changes-sheet-8846}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8326`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8846`
 
 **Signature**
 
@@ -12986,11 +13820,11 @@ def write_option_changes_sheet(wb, option_changes_view):
         _autofit(ws)
     ```
 
-### `export_validation_report` {#fn-export-validation-report-8404}
+### `export_validation_report` {#fn-export-validation-report-8924}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8404`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8924`
 
 **Signature**
 
@@ -13040,11 +13874,11 @@ def export_validation_report(all_issues, question_changes_view, option_changes_v
         return out_path
     ```
 
-### `_resolve_survey_sheet` {#fn--resolve-survey-sheet-8427}
+### `_resolve_survey_sheet` {#fn--resolve-survey-sheet-8947}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8427`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8947`
 
 **Signature**
 
@@ -13072,11 +13906,11 @@ def _resolve_survey_sheet(workbook):
         return ws
     ```
 
-### `_sheet_header_map` {#fn--sheet-header-map-8434}
+### `_sheet_header_map` {#fn--sheet-header-map-8954}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8434`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8954`
 
 **Signature**
 
@@ -13112,11 +13946,11 @@ def _sheet_header_map(ws, header_row: int=3) -> dict[str, int]:
         return mapping
     ```
 
-### `_count_selected_crops` {#fn--count-selected-crops-8448}
+### `_count_selected_crops` {#fn--count-selected-crops-8968}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8448`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8968`
 
 **Signature**
 
@@ -13152,11 +13986,11 @@ def _count_selected_crops(crop_df: pl.DataFrame, language: str) -> tuple[int, in
         return selected_count, total_candidates, "ok"
     ```
 
-### `_placeholder_scan_columns` {#fn--placeholder-scan-columns-8462}
+### `_placeholder_scan_columns` {#fn--placeholder-scan-columns-8982}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8462`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8982`
 
 **Signature**
 
@@ -13185,11 +14019,11 @@ def _placeholder_scan_columns(questions_df: pl.DataFrame, candidate_columns: Opt
         return cols
     ```
 
-### `_extract_placeholder_tokens` {#fn--extract-placeholder-tokens-8469}
+### `_extract_placeholder_tokens` {#fn--extract-placeholder-tokens-8989}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8469`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8989`
 
 **Signature**
 
@@ -13214,11 +14048,11 @@ def _extract_placeholder_tokens(text: str) -> list[str]:
         return re.findall(r"\$[^$\r\n]+\$", str(text or ""))
     ```
 
-### `_has_broken_placeholder_token` {#fn--has-broken-placeholder-token-8473}
+### `_has_broken_placeholder_token` {#fn--has-broken-placeholder-token-8993}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8473`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8993`
 
 **Signature**
 
@@ -13247,11 +14081,11 @@ def _has_broken_placeholder_token(text: str) -> bool:
         return "$" in stripped
     ```
 
-### `_count_unresolved_placeholders` {#fn--count-unresolved-placeholders-8481}
+### `_count_unresolved_placeholders` {#fn--count-unresolved-placeholders-9001}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8481`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:9001`
 
 **Signature**
 
@@ -13286,11 +14120,11 @@ def _count_unresolved_placeholders(questions_df: pl.DataFrame, candidate_columns
         return unresolved
     ```
 
-### `_selected_crop_labels` {#fn--selected-crop-labels-8494}
+### `_selected_crop_labels` {#fn--selected-crop-labels-9014}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8494`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:9014`
 
 **Signature**
 
@@ -13331,11 +14165,11 @@ def _selected_crop_labels(crop_df: pl.DataFrame, language: str, limit: int=15) -
         return labels
     ```
 
-### `_selected_crop_entries` {#fn--selected-crop-entries-8512}
+### `_selected_crop_entries` {#fn--selected-crop-entries-9032}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8512`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:9032`
 
 **Signature**
 
@@ -13385,11 +14219,11 @@ def _selected_crop_entries(crop_df: pl.DataFrame, language: str) -> list[dict]:
         return out
     ```
 
-### `_join_short` {#fn--join-short-8540}
+### `_join_short` {#fn--join-short-9060}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8540`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:9060`
 
 **Signature**
 
@@ -13419,11 +14253,11 @@ def _join_short(items: list[str], limit: int=12) -> str:
         return ", ".join(items[:limit]) + f", ... (+{len(items) - limit} more)"
     ```
 
-### `_build_crop_round_delta_issue_rows` {#fn--build-crop-round-delta-issue-rows-8548}
+### `_build_crop_round_delta_issue_rows` {#fn--build-crop-round-delta-issue-rows-9068}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8548`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:9068`
 
 **Signature**
 
@@ -13499,11 +14333,11 @@ def _build_crop_round_delta_issue_rows(current_crop_df: pl.DataFrame, reference_
         return pl.DataFrame([row], schema=schema)
     ```
 
-### `_build_replacement_issue_rows` {#fn--build-replacement-issue-rows-8600}
+### `_build_replacement_issue_rows` {#fn--build-replacement-issue-rows-9120}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8600`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:9120`
 
 **Signature**
 
@@ -13605,6 +14439,11 @@ def _build_replacement_issue_rows(validated_questions: pl.DataFrame, replacement
         missing_key_locs = set()
 
         if reference_questions is not None and reference_questions.height > 0:
+            # Only template rows for questions the country kept: a placeholder in a
+            # question that was removed (e.g. id_panel) needs no replacement value.
+            reference_questions = reference_questions.filter(
+                pl.col("Q Name").is_in(validated_questions["Q Name"].to_list())
+            )
             ref_cols = _placeholder_scan_columns(reference_questions)
             for row in reference_questions.select(["Q Name", "excel_row"] + ref_cols).iter_rows(named=True):
                 qname = str(row.get("Q Name") or "")
@@ -13628,6 +14467,25 @@ def _build_replacement_issue_rows(validated_questions: pl.DataFrame, replacement
                         if _normalize_placeholder_token(token).startswith("EXPECTED OR NOTHING"):
                             continue
                         tok_norm = _normalize_placeholder_token(token)
+                        # A '#' inside a $...$ token means $-placeholders and
+                        # #-runtime variables were mixed up (e.g. "$ADM1#" for
+                        # "#ADM1#"): the delimiters are wrong, not the key.
+                        if "#" in token:
+                            key = ("replacement_malformed_placeholder", qname, col, token)
+                            if key not in seen:
+                                seen.add(key)
+                                missing_key_locs.add((qname, col, tok_norm))
+                                rows.append({
+                                    "issue_type": "replacement_malformed_placeholder",
+                                    "set_name": "REPLACEMENT",
+                                    "Q Name": qname,
+                                    "field": col,
+                                    "current": token,
+                                    "reference": "Mixed $ / # delimiters: use $KEY$ for Additional information values and #VAR# for runtime variables",
+                                    "severity": "high",
+                                    "excel_row": excel_row,
+                                })
+                            continue
                         key = ("replacement_missing_key", qname, col, token)
                         if key in seen:
                             continue
@@ -13714,11 +14572,11 @@ def _build_replacement_issue_rows(validated_questions: pl.DataFrame, replacement
         return pl.DataFrame(rows, schema=schema)
     ```
 
-### `_build_replacement_issue_rows._effective_replacements_for_col` {#fn--effective-replacements-for-col-8665}
+### `_build_replacement_issue_rows._effective_replacements_for_col` {#fn--effective-replacements-for-col-9185}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8665`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:9185`
 
 **Signature**
 
@@ -13746,11 +14604,11 @@ def _effective_replacements_for_col(col_name: str) -> dict[str, str]:
             return replacements or {}
     ```
 
-### `_fetch_admin_reference` {#fn--fetch-admin-reference-8784}
+### `_fetch_admin_reference` {#fn--fetch-admin-reference-9328}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8784`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:9328`
 
 **Signature**
 
@@ -13822,11 +14680,11 @@ def _fetch_admin_reference(admin_level: str, iso3: str) -> tuple[list[dict], str
         return rows, ""
     ```
 
-### `_write_table_sheet` {#fn--write-table-sheet-8834}
+### `_write_table_sheet` {#fn--write-table-sheet-9378}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8834`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:9378`
 
 **Signature**
 
@@ -13863,11 +14721,11 @@ def _write_table_sheet(ws, rows: list[dict]):
         return len(rows)
     ```
 
-### `_apply_admin_sheets` {#fn--apply-admin-sheets-8849}
+### `_apply_admin_sheets` {#fn--apply-admin-sheets-9393}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8849`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:9393`
 
 **Signature**
 
@@ -13932,11 +14790,11 @@ def _apply_admin_sheets(output_questionnaire_path: Path, iso3: str) -> dict:
         return {"rows": rows}
     ```
 
-### `_build_replacement_status_rows` {#fn--build-replacement-status-rows-8892}
+### `_build_replacement_status_rows` {#fn--build-replacement-status-rows-9436}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:8892`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:9436`
 
 **Signature**
 
@@ -14074,11 +14932,11 @@ def _build_replacement_status_rows(validated_questions: pl.DataFrame, crop_df: p
         return {"rows": rows}
     ```
 
-### `write_validated_questionnaire` {#fn-write-validated-questionnaire-9001}
+### `write_validated_questionnaire` {#fn-write-validated-questionnaire-9545}
 
 **Pipeline stage:** `Step 10 Export to Excel`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:9001`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/geopoll_validator.py:9545`
 
 **Signature**
 

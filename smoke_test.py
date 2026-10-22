@@ -22,14 +22,13 @@ import yaml
 REPO = Path(__file__).resolve().parent
 CFG_PATH = REPO / "configuration" / "validation_config.yaml"
 
-# Minimum sheets each tool's report must contain
-REQUIRED_SHEETS = {
-    "kobo":    {"Summary", "Question Changes", "Choice Changes", "Questionnaire Structure", "Replacement Issues"},
-    "geopoll": {"Summary", "Question Changes", "Option Changes",  "Questionnaire Structure", "Replacement Issues"},
-}
-
-# Columns that must appear in the Question Changes sheet header row
-ISSUE_COLUMNS_REQUIRED = {"issue_type", "severity"}
+# Minimum sheets each tool's report must contain, and the columns required
+# in the Question Changes sheet header row. Sourced from app/config_schema.py
+# (single source of truth, also used by the Streamlit UI's Results Browser)
+# rather than duplicated here — see app/config_schema.py's docstring and
+# CLAUDE.md > "Before adding or changing anything".
+from app.config_schema import REQUIRED_REPORT_SHEETS as REQUIRED_SHEETS
+from app.config_schema import ISSUE_COLUMNS_REQUIRED
 
 # ---------------------------------------------------------------------------
 
@@ -247,6 +246,30 @@ def _check_admin_config() -> None:
     _check("sync.mode is valid", sync_mode in {"subset_from_agol", "full_from_agol", "keep_previous"}, f"got {sync_mode!r}")
 
 
+def _check_streamlit_ui_schema(cfg: dict) -> None:
+    """Guardrail for the Streamlit UI (app/) drift-prevention mechanism
+    described in CLAUDE.md > Architecture > "Streamlit UI (app/)": fails
+    loudly here instead of the UI silently offering stale choices."""
+    _section("Streamlit UI schema (app/config_schema.py)")
+    try:
+        from app.config_schema import LANGUAGES, REFERENCE_MODES, TOOLS
+    except Exception as exc:
+        _check("app/config_schema.py importable", False, str(exc))
+        return
+    _check("app/config_schema.py importable", True)
+
+    tool = str(cfg.get("tool") or "").lower()
+    _check(f"current tool {tool!r} is a known UI choice", tool in TOOLS, f"TOOLS={TOOLS}")
+    language = str(cfg.get("language") or "").lower()
+    _check(f"current language {language!r} is a known UI choice", language in LANGUAGES, f"LANGUAGES={LANGUAGES}")
+    reference_mode = str(cfg.get("reference_mode") or "").lower()
+    _check(
+        f"current reference_mode {reference_mode!r} is a known UI choice",
+        reference_mode in REFERENCE_MODES,
+        f"REFERENCE_MODES={REFERENCE_MODES}",
+    )
+
+
 # ---------------------------------------------------------------------------
 
 def main() -> int:
@@ -268,6 +291,7 @@ def main() -> int:
         print("\n  Skipping output checks — validator did not complete cleanly.")
 
     _check_admin_config()
+    _check_streamlit_ui_schema(cfg)
 
     n_pass = sum(_passes)
     n_fail = len(_passes) - n_pass

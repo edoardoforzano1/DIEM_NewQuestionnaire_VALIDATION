@@ -13,6 +13,7 @@ import pathlib
 import yaml
 
 from scripts.output_housekeeping import run_output_housekeeping
+from scripts.template_sync import sync_templates
 
 ROOT    = pathlib.Path(__file__).parent
 CFG     = ROOT / "configuration" / "validation_config.yaml"
@@ -74,6 +75,20 @@ def main() -> None:
             print(f"  Housekeeping warnings: {len(hk_result.get('errors'))}")
             for msg in (hk_result.get("errors") or [])[:5]:
                 print(f"    - {msg}")
+
+    # Refresh local templates from the official shared folder (if configured)
+    # so latest_template mode always compares against the newest template.
+    sync = sync_templates(
+        raw.get("templates_source_dir") or "",
+        raw.get("templates_dir") or (ROOT / "Template"),
+        tools=list(VALIDATORS.keys()),
+    )
+    if sync["enabled"]:
+        print("Template sync:")
+        print(f"  Source          : {sync['source_dir']}")
+        print(f"  Copied          : {', '.join(sync['copied']) or 'none (already up to date)'}")
+        for msg in sync["errors"]:
+            print(f"  WARNING: {msg} -- using templates already in templates_dir")
 
     script = VALIDATORS[tool]
     if not script.exists():

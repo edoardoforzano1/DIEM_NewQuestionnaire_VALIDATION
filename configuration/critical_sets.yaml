@@ -37,12 +37,19 @@ exact_sets: {}
 #              (hh_wealth_* OR custom variant c_hh_wealth_*)
 #              Examples: hh_wealth_toilet / c_hh_wealth_toilet
 #              More than one is fine.
+#
+# relax_individual_mandatory: true — the template tags every question of the
+#              set as mandatory, but only the min_count is really required.
+#              While the set passes, removed_question / mandatory_to_optional /
+#              mandatory_column_mismatch rows for its questions are downgraded
+#              to info (still listed, so the change is visible).
 
 min_count_sets:
 
   WEALTH:
     prefix: hh_wealth_
     min_count: 1
+    relax_individual_mandatory: true
     description: "At least 1 wealth question required (hh_wealth_* or c_hh_wealth_*)"
 
 
@@ -137,6 +144,9 @@ variable_pairs:
   - label: "fish sales price"
     a: "fish_salesprice_amount"
     b: "fish_salesprice_unit"
+  - label: "main livestock (computed ls_main + tie-break ls_main_confirm)"
+    a: "ls_main_confirm"
+    b: "ls_main"
 
 # ── Crop harvest rule ──────────────────────────────────────────────────────────
 # The questionnaire must contain EITHER:
@@ -153,3 +163,36 @@ crop_harvest:
     - crp_harv_unit
     - crp_harv_unit_kg
     - crp_harv_lastyr
+
+# ── Fixed answer codes ─────────────────────────────────────────────────────────
+# Questions whose answer codes must be exactly this set. Used where GeoPoll
+# shows the options dynamically (only a subset is displayed) but must keep the
+# fixed codes, so the list must not be renumbered, cut, or extended (e.g. with
+# DON'T KNOW / REFUSED). Questions absent from the questionnaire are skipped.
+#   q_name      — question to check
+#   codes       — the exact code set required
+#   description — shown in the report
+#   severity    — optional, default high
+
+fixed_option_codes:
+  - q_name: ls_main_confirm
+    codes: [1, 2, 3, 4, 5, 6, 7, 8]
+    description: "ls_main_confirm: 8 livestock types only (no Other / DK / REF), fixed codes 1-8"
+
+# ── Tropical Livestock Unit weights ───────────────────────────────────────────
+# The Additional information sheet carries a TLU weights table (one row per
+# species) used to compute ls_main. Rows are found by the section banner left
+# of the 'Original' column; they are excluded from placeholder replacement.
+# Each species must have a numeric weight > 0, identical across languages.
+
+tlu_weights:
+  section_marker: "TROPICAL LIVESTOCK UNIT"
+  species:
+    - cattle
+    - goat
+    - sheep
+    - swine
+    - equine
+    - small domesticated mammals
+    - poultry
+    - camelid

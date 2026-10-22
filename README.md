@@ -77,6 +77,19 @@ Source selection is controlled by:
 - `tool_admin_sync`: creates a new questionnaire file using one of the sync modes (`keep_previous`, `subset_from_agol`, `full_from_agol`).
 - `tool_admin_parent_remap`: repairs invalid `admin3` parents when old `admin2` codes were replaced by merged local codes.
 
+## Streamlit UI (optional)
+
+A browser front end over the commands above — configure and run validation with a form
+instead of hand-editing YAML, browse past reports, and run the admin tools, all with a
+live log. It never replaces the CLI: everything below still works exactly as documented.
+
+```powershell
+streamlit_ui
+```
+
+Opens at `http://localhost:8501/`. See `docs/tools/streamlit-ui.md` for details, including
+exactly what it writes to disk and what it never touches.
+
 ## Output Retention
 
 Before each `validate` run, the optional `housekeeping` block in

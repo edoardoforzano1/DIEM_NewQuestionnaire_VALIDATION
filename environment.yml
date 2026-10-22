@@ -10,8 +10,11 @@ dependencies:
   - pyyaml>=6.0
   - xlsxwriter>=3.0
   # Documentation — required to view the local docs site
+  # Streamlit UI (app/) — optional front end over validate.py / tool_admin_*
+  - ruamel.yaml>=0.18
   - pip
   - pip:
     - mkdocs>=1.6
     - mkdocs-material>=9.0
     - pymdown-extensions>=10.0
+    - streamlit>=1.40

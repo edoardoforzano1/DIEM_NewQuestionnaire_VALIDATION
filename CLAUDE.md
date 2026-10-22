@@ -14,7 +14,7 @@ All commands must run inside the `diem-validation` conda environment. When runni
 conda activate diem-validation
 ```
 
-Core dependencies: `polars`, `openpyxl`, `pyyaml`, `xlsxwriter`, `mkdocs-material`.
+Core dependencies: `polars`, `openpyxl`, `pyyaml`, `xlsxwriter`, `mkdocs-material`, `streamlit`, `ruamel.yaml`.
 
 ## Commands
 
@@ -31,14 +31,18 @@ tool_admin_sync
 # Launch local documentation site at http://127.0.0.1:8000/
 .\documentation
 
+# Launch the Streamlit UI (browser front end over the commands above)
+streamlit_ui
+
 # Regenerate auto-built function reference pages after editing validator scripts
 python scripts/regenerate_function_docs.py
 
-# Smoke test — run the full pipeline and verify output structure
+# Smoke test — run the full pipeline and verify output structure (also checks
+# the Streamlit UI's config_schema.py for drift, see "Streamlit UI (app/)" below)
 smoke_test
 ```
 
-Each `.bat` launcher at the repo root simply calls `python "%~dp0<script>.py" %*`.
+Each `.bat` launcher at the repo root simply calls `python "%~dp0<script>.py" %*`, except `streamlit_ui.bat` which calls `streamlit run "%~dp0app\Home.py" %*`.
 
 Optional CLI flags for admin tools:
 
@@ -52,6 +56,8 @@ tool_admin_sync  --source-file "filename.xlsx" --sync-mode full_from_agol
 ### Entry point and dispatch
 
 `validate.py` reads `configuration/validation_config.yaml`, resolves an optional `config_profile` override, then **launches the selected validator as a subprocess** (`subprocess.run([sys.executable, str(script)])`). It does not import the validators — they are not importable modules.
+
+Before dispatch, `validate.py` also calls `scripts/template_sync.py`: when `templates_source_dir` is set (the DIEM Toolbox folder on SharePoint/OneDrive), any newer or missing `*geopoll*`/`*kobo*` template there is copied into the local `templates_dir`. Templates are copied rather than read in place because OneDrive placeholder files raise `PermissionError` when opened directly from Python (`shutil.copy2` works). An unreachable source only warns.
 
 Before dispatch, `validate.py` calls `scripts/output_housekeeping.py` to archive or delete old output files according to retention rules in the `housekeeping:` config block.
 
@@ -105,6 +111,16 @@ Config snapshots: `config_{tool}_{lang}_{ISO3}_{timestamp}.yaml`
 Admin tool outputs: `admin_check_report_{source}_{timestamp}.xlsx`, `{source}_adminsync_{mode}_{timestamp}.xlsx`
 
 All land in subfolders of `output_dir`: `kobo_output/` or `geopoll_output/` for validators, `admin_tools_output/` for admin tools.
+
+### Streamlit UI (app/)
+
+`app/` is an **additive** browser front end over the CLI above — a "Run Validation" page, a "Results Browser" page, and an "Admin Tools" page. It never imports `kobo_validator.py`/`geopoll_validator.py` (see Known gotchas below) and never imports `tool_admin_check.py`/`tool_admin_sync.py`/`tool_admin_parent_remap.py` either — every run it starts shells out exactly the way the `.bat` launchers do (`app/lib/subprocess_runner.py`). The CLI/`.bat` workflow is unchanged and works exactly as before whether or not `app/` is ever used.
+
+- **Run Validation** writes changed fields back into the *tracked* `configuration/validation_config.yaml` — this is the only page that touches a tracked config file, because both validators read that exact path at module level with no override hook (see `_cfg_base_path` in each validator). It does so narrowly: `app/lib/config_io.py`'s `WRITABLE_KEYS` whitelist is the only set of dotted keys it will ever write, and it backs up the previous version to `configuration/.streamlit_backups/` before every save. Two different mechanisms depending on value type, not one — see the module docstring: scalar keys go through a comment-preserving `ruamel.yaml` round-trip (not `yaml.safe_dump`, which would destroy every comment in that heavily-documented file); list keys (e.g. `kobo_options.country_specific_list_names`) instead go through a small line-level text patcher (`_replace_list_lines`), because testing against the real file showed ruamel's round-trip silently drops comments adjacent to a block list whenever that list's *value* changes — even mutated in place — while leaving everything else untouched. One narrow, tested, purely-cosmetic residual on the ruamel side: a boolean written with non-canonical casing (`False`/`True` instead of `false`/`true`) gets normalized to lowercase on any save, even on an untouched key — semantically identical, never changes the parsed value.
+- **Admin Tools** never edits the tracked `configuration/admin_tools_config.yaml`: it writes a throwaway full copy (base file + your overrides) and passes it via the `--config` flag the admin tools already support (`merge_runtime_config`), so the tracked file is untouched.
+- **Results Browser** is read-only.
+
+**Keeping the UI in sync when the validators/config change**: most config keys the UI shows are rendered generically from whatever is in the YAML, so adding/removing an ordinary key needs no UI change. The exceptions — enum choices not declared anywhere in YAML (`tool`, `language`, `reference_mode`, `source.mode`, `sync.mode`, `modality`), and the output file/sheet contract the Results Browser reads — are collected in one file, `app/config_schema.py`, whose docstring names exactly what to update. `smoke_test.py` imports its `REQUIRED_SHEETS`/`ISSUE_COLUMNS_REQUIRED` from that same file and cross-checks it against the live config on every `smoke_test` run, so drift between `app/config_schema.py` and reality fails the smoke test instead of silently going stale in the UI.
 
 ## Working approach
 
@@ -160,8 +176,11 @@ The validators are large, tightly coupled scripts where a change in one place ca
 
 5. **The placeholder pipeline is order-dependent**: steps 1–5 in `produce_validated_questionnaire()` must run in sequence. Adding a step or changing what a step writes to the workbook can corrupt the input to subsequent steps.
 
+6. **Check the Streamlit UI**: if you change a config key enum (`tool`, `language`, `reference_mode`, `source.mode`, `sync.mode`, `modality`), a report/validated-questionnaire filename pattern, a required report sheet name, or an admin/validator CLI flag, update `app/config_schema.py` to match — see "Streamlit UI (app/)" above. Run `smoke_test` afterwards; it checks `app/config_schema.py` against the live config and will fail if it's now stale.
+
 ## Do not touch
 
+- **The original files on SharePoint/OneDrive — never, for any reason.** Everything under `templates_source_dir` (DIEM Toolbox, `…/03. Toolbox/02. Questionnaires/`) and any country questionnaire the user shares from there is read-only: no edits, renames, moves, deletes or re-saves. Only *copy* them (e.g. `template_sync.py` into `templates_dir`, or staging into the scratchpad) and work on the copy.
 - `docs/function-reference/kobo-validator.md` and `docs/function-reference/geopoll-validator.md` — auto-generated by `regenerate_function_docs.py`; regenerate after editing the validator scripts
 - `site/` — MkDocs build output, not source
 - `batch_output/` — runtime output, not tracked in git

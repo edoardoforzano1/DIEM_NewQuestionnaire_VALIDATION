@@ -68,4 +68,5 @@ nav:
       - Images and Placeholders: report-output/images-and-placeholders.md
   - Tools:
       - Admin Tools: tools/admin-tools.md
+      - Streamlit UI: tools/streamlit-ui.md
   - FAQ: faq.md

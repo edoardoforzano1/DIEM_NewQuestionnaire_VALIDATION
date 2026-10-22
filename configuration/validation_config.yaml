@@ -22,13 +22,13 @@ tool: "geopoll"
 working_dir: "C:/Temp"
 
 # Current questionnaire filename (resolved under working_dir).
-questionnaire_file: "draft_household_questionnaire_fr_geopoll_DRC_20262906.xlsx"
+questionnaire_file: "diem_household_questionnaire_geopoll_yemen_20261022.xlsx"
 
 # Language code: en | fr | ar | es
-language: "fr"
+language: "ar"
 
 # ISO3 country code
-iso3: "COD"
+iso3: "YEM"
 
 # Reference mode:
 #   latest_template -> auto-detect newest matching file in templates_dir
@@ -38,8 +38,15 @@ reference_mode: "latest_template"
 # Only used when reference_mode = previous_round
 previous_round_file: "validated_questionnaire_kobo_ar_PSE_20250623155613.xlsx"
 
-# Folder containing all template Excel files
+# Folder containing all template Excel files (read by the validators)
 templates_dir: "c:/git/DIEM_NewQuestionnaire_VALIDATION/Template"
+
+# Official template folder (DIEM Toolbox on SharePoint, synced by OneDrive).
+# Before every run validate.py copies any newer/missing geopoll/kobo template
+# from here into templates_dir, so latest_template always uses the newest
+# version. Leave empty to disable. If the folder is unreachable the run
+# continues with the templates already in templates_dir (with a warning).
+templates_source_dir: "C:/Users/edoar/Food and Agriculture Organization/OER - 01. DIEM Monitoring/03. Toolbox/02. Questionnaires"
 
 # Base output folder. Each tool writes to its own subfolder automatically:
 #   kobo   -> output_dir/kobo_output/
@@ -137,6 +144,29 @@ geopoll_options:
   # Survey modality: capi | cati
   # Controls whether the FS indicator ceiling check (capi_max in critical_sets.yaml) applies.
   modality: "cati"
+
+  # Placeholders computed from another Additional information value rather
+  # than typed by the country team (template 20261007+). The value is
+  # repeat_digit repeated len(digits of source) + extra_digits times, e.g.
+  # MAX AMOUNT = 10000000 -> $MAX DIGIT DK$ = 88888888, $MAX DIGIT REF$ = 99999999.
+  # A value typed in the sheet always wins. Remove an entry to stop deriving it.
+  derived_placeholders:
+    MAX DIGIT DK:
+      source: "MAX AMOUNT"
+      repeat_digit: "8"
+      extra_digits: 0
+    MAX DIGIT REF:
+      source: "MAX AMOUNT"
+      repeat_digit: "9"
+      extra_digits: 0
+
+  # Closing options appended to the expanded crop lists (crp_all, crp_salesmain, ...)
+  # as 91) no crop production / 92) don't know / 93) refused, per language column.
+  # Wording taken from the 20261007 template; a language not listed uses English.
+  crop_list_closing_options:
+    EN: {no_crop: "No crop production", dont_know: "DON'T KNOW", refused: "REFUSED"}
+    FR: {no_crop: "Aucune production végétale", dont_know: "NE SAIT PAS", refused: "REFUS"}
+    AR: {no_crop: "عدم إنتاج المحاصيل", dont_know: "لا أعرف", refused: "رفض الاجابة"}
 
 # Report metadata
 validation_number: 1
