@@ -377,6 +377,32 @@ _DATA_TYPES = {
 _GROUP_BEGIN_TYPES = {"begin_group", "begin_repeat"}
 _GROUP_END_TYPES = {"end_group", "end_repeat"}
 
+# Custom / optional question prefixes. "c_" (custom, current templates)
+# replaced the legacy "o_" prefix; "o_" stays recognised so previous-round
+# files keep validating. Mirrors the GeoPoll validator.
+CUSTOM_QNAME_PREFIXES = ("c_", "o_")
+_CUSTOM_QNAME_RE = r"^(?:" + "|".join(re.escape(p) for p in CUSTOM_QNAME_PREFIXES) + r")"
+
+
+def _custom_qname_expr(col_name: str) -> pl.Expr:
+    """True when the question name carries a custom/optional prefix."""
+    return pl.col(col_name).cast(pl.Utf8).str.strip_chars().str.contains(_CUSTOM_QNAME_RE)
+
+
+def _core_qname_expr(col_name: str) -> pl.Expr:
+    """Question name with any custom/optional prefix removed, lowercased."""
+    return (
+        pl.col(col_name).cast(pl.Utf8).str.strip_chars()
+        .str.replace(_CUSTOM_QNAME_RE, "")
+        .str.to_lowercase()
+    )
+
+
+def _custom_variants(q_name: str) -> list[str]:
+    """Custom/optional spellings of a template question (hh_wealth_x -> c_hh_wealth_x, o_hh_wealth_x)."""
+    q = str(q_name or "").strip()
+    return [f"{p}{q}" for p in CUSTOM_QNAME_PREFIXES] if q else []
+
 
 def _normalize_survey_type_token(value) -> str:
     txt = str(value or "").strip().lower()
@@ -701,7 +727,7 @@ def read_kobo_survey(path: str, language: str = "en", _wb=None) -> pl.DataFrame:
         mand_cat = _normalize_mandatory(get(row, mand_col))
         if not mand_cat and q_type in _DATA_TYPES:
             mand_cat = "non-mandatory"
-        if q_name.startswith("o_"):
+        if q_name.startswith(CUSTOM_QNAME_PREFIXES):
             mand_cat = "optional"
 
         module_key = module_stack[-1][0] if module_stack else ""
@@ -1016,9 +1042,23 @@ _cfg_include_admin3 = _as_bool(_kobo_opt.get("include_admin3", False), False)
 _cfg_skip_restore_and_replacement = _as_bool(_kobo_opt.get("skip_restore_and_replacement", False), False)
 _cfg_require_additional_info = _as_bool(_kobo_opt.get("require_additional_info", True), True)
 _cfg_require_crop_list = _as_bool(_kobo_opt.get("require_crop_list", True), True)
+_cfg_max_qname_length = int(_kobo_opt.get("max_qname_length", 32))
+_cfg_modality = str(_kobo_opt.get("modality", "capi")).strip().lower()
+
+
+def _normalize_languages_in_scope(value) -> list[str]:
+    """languages_in_scope config value -> lowercase codes; empty list = every filled language."""
+    if isinstance(value, str):
+        value = [v for v in value.split(",")]
+    return [str(v).strip().lower() for v in (value or []) if str(v).strip()]
+
+
+_cfg_languages_in_scope = _normalize_languages_in_scope(cfg.get("languages_in_scope"))
 _info("Admin3", "enabled" if _cfg_include_admin3 else "disabled")
 _info("Repl mode", "skip restore/replacement" if _cfg_skip_restore_and_replacement else "restore/replace enabled")
 _info("Req inputs", f"additional_info={_cfg_require_additional_info} | crop_list={_cfg_require_crop_list}")
+_info("Modality", f"{_cfg_modality} | max qname length={_cfg_max_qname_length}")
+_info("Lang scope", ", ".join(_cfg_languages_in_scope) if _cfg_languages_in_scope else "all filled languages")
 _ignore_module_raw = (
     cfg.get("ignore_modules_from_comparison")
     if "ignore_modules_from_comparison" in cfg
@@ -1879,12 +1919,12 @@ def compare_question_presence(current, reference):
     added = (
         current.select([key])
         .join(reference.select([key]), on=key, how="anti")
-        .with_columns(pl.col(key).str.starts_with("o_").alias("is_optional"))
+        .with_columns(_custom_qname_expr(key).alias("is_optional"))
     )
     removed = (
         reference.select([key])
         .join(current.select([key]), on=key, how="anti")
-        .with_columns(pl.col(key).str.starts_with("o_").alias("is_optional"))
+        .with_columns(_custom_qname_expr(key).alias("is_optional"))
     )
     return added, removed
 
@@ -2869,9 +2909,9 @@ def validate_relevant(
 
     curr_qnames = set(current_survey["Q Name"].to_list())
 
-    # Build lookup: stripped core name -> o_name for all optional-prefixed questions
+    # Build lookup: stripped core name -> custom name for all custom-prefixed questions
     _optional_by_core: dict[str, str] = {
-        qn[2:]: qn for qn in curr_qnames if qn.startswith("o_")
+        re.sub(_CUSTOM_QNAME_RE, "", qn): qn for qn in curr_qnames if qn.startswith(CUSTOM_QNAME_PREFIXES)
     }
 
     cur_rows = {r["Q Name"]: r for r in
@@ -3470,11 +3510,9 @@ def validate_critical_sets(questions_df, exact_sets):
 
     present_qnames = set(questions_df["Q Name"].to_list())
 
-    def _wealth_optional_variant(q_name: str) -> str:
+    def _wealth_optional_variants(q_name: str) -> list[str]:
         q = str(q_name or "").strip()
-        if q.startswith("hh_wealth_"):
-            return "o_hh_wealth_" + q[len("hh_wealth_"):]
-        return ""
+        return _custom_variants(q) if q.startswith("hh_wealth_") else []
 
     issues = []
     for set_name, set_rules in exact_sets.items():
@@ -3482,8 +3520,9 @@ def validate_critical_sets(questions_df, exact_sets):
             q_name   = rule["q_name"]
             expected = rule.get("expected_mandatory", "")
             required = rule.get("required", True)
-            alt_q_name = _wealth_optional_variant(q_name)
-            matched_q_name = q_name if q_name in present_qnames else (alt_q_name if alt_q_name in present_qnames else "")
+            alt_q_names = _wealth_optional_variants(q_name)
+            alt_q_name = " / ".join(alt_q_names)
+            matched_q_name = q_name if q_name in present_qnames else next((a for a in alt_q_names if a in present_qnames), "")
             if not matched_q_name:
                 issues.append({
                     "issue_type": "missing_critical_question" if required else "advisory_question",
@@ -3532,10 +3571,10 @@ def validate_prefix_counts(questions_df, min_count_sets):
         prefix    = rule.get("prefix", "")
         min_count = rule.get("min_count", 1)
         desc      = rule.get("description", f"At least {min_count} '{prefix}*' questions required")
-        prefix_alt = "o_hh_wealth_" if str(prefix) == "hh_wealth_" or str(set_name).upper() == "WEALTH" else ""
+        prefix_alts = tuple(_custom_variants(prefix)) if str(prefix) == "hh_wealth_" or str(set_name).upper() == "WEALTH" else ()
         matched = sorted(
             q for q in all_qnames
-            if (prefix and q.startswith(prefix)) or (prefix_alt and q.startswith(prefix_alt))
+            if (prefix and q.startswith(prefix)) or (prefix_alts and q.startswith(prefix_alts))
         )
         if len(matched) < min_count:
             found_str = f"{len(matched)} found" + (f": {', '.join(matched)}" if matched else " (none)")
@@ -3596,6 +3635,336 @@ def validate_crop_harvest(survey: pl.DataFrame, crop_harvest_cfg: dict) -> pl.Da
         "excel_row":  -1,
     }], schema=EMPTY)
 
+
+_RULE_ISSUE_SCHEMA = {
+    "issue_type": pl.Utf8, "set_name": pl.Utf8, "Q Name": pl.Utf8,
+    "field": pl.Utf8, "current": pl.Utf8, "reference": pl.Utf8,
+    "severity": pl.Utf8, "excel_row": pl.Int64,
+}
+
+
+def _rule_issues_df(rows: list[dict]) -> pl.DataFrame:
+    return pl.DataFrame(rows, schema=_RULE_ISSUE_SCHEMA) if rows else pl.DataFrame(schema=_RULE_ISSUE_SCHEMA)
+
+
+def _indicator_present(qnames: set[str], indicator_cfg: dict) -> bool:
+    """Returns True if the indicator has at least one question in the questionnaire."""
+    prefix = indicator_cfg.get("anchor_prefix")
+    qname  = indicator_cfg.get("anchor_qname")
+    if prefix and any(q.startswith(prefix) for q in qnames):
+        return True
+    if qname and qname in qnames:
+        return True
+    return False
+
+
+def validate_fs_indicators(
+    current_questions: pl.DataFrame,
+    rules: dict,
+    modality: str = "capi",
+) -> pl.DataFrame:
+    """
+    Food Security indicator presence and CAPI ceiling (fs_indicators block in
+    critical_sets.yaml), same rule as the GeoPoll validator:
+      - each mandatory indicator (FIES, FCS, LCSI) needs at least one question
+      - when modality='capi', mandatory + optional indicators found must not
+        exceed capi_max
+    """
+    fs_rules = rules.get("fs_indicators", {})
+    if not fs_rules:
+        return _rule_issues_df([])
+
+    qnames: set[str] = set(current_questions["Q Name"].to_list())
+    capi_max = int(fs_rules.get("capi_max", 4))
+    rows: list[dict] = []
+
+    found_mandatory: list[str] = []
+    for name, ind_cfg in fs_rules.get("mandatory", {}).items():
+        if _indicator_present(qnames, ind_cfg):
+            found_mandatory.append(name)
+        else:
+            rows.append({
+                "issue_type": "fs_indicator_missing",
+                "set_name": "FS_INDICATORS", "Q Name": "",
+                "field": name, "current": "not found",
+                "reference": f"mandatory indicator -- expected prefix/qname: "
+                             f"{ind_cfg.get('anchor_prefix') or ind_cfg.get('anchor_qname')}",
+                "severity": "high", "excel_row": None,
+            })
+    found_optional = [
+        name for name, ind_cfg in fs_rules.get("optional", {}).items()
+        if _indicator_present(qnames, ind_cfg)
+    ]
+
+    if modality == "capi":
+        total = len(found_mandatory) + len(found_optional)
+        if total > capi_max:
+            rows.append({
+                "issue_type": "fs_indicator_capi_excess",
+                "set_name": "FS_INDICATORS", "Q Name": "",
+                "field": "indicator count",
+                "current": f"{total} indicators present: {', '.join(found_mandatory + found_optional)}",
+                "reference": f"max {capi_max} for CAPI modality",
+                "severity": "high", "excel_row": None,
+            })
+    return _rule_issues_df(rows)
+
+
+def _agri_signal_patterns_kobo(agri_signals: list[dict]) -> list[re.Pattern]:
+    """
+    Regexes matching an agri signal in KoBo `relevant` syntax:
+    ${var} = 'v' / ${var}='v' / selected(${var}, 'v'). Matches both
+    `kobo_values` (current KoBo choice names, e.g. hh_agricactivity =
+    crp/ls/fish) and `values` (numeric codes used by earlier KoBo templates).
+    """
+    patterns: list[re.Pattern] = []
+    for sig in agri_signals:
+        var = re.escape(str(sig.get("variable", "")))
+        vals = list(sig.get("kobo_values") or []) + list(sig.get("values") or [])
+        val_pat = "|".join(re.escape(str(v)) for v in vals)
+        if not var or not val_pat:
+            continue
+        patterns.append(re.compile(
+            rf"\$\{{{var}\}}\s*=\s*['\"]?(?:{val_pat})['\"]?(?![\w])"
+            rf"|selected\(\s*\$\{{{var}\}}\s*,\s*['\"](?:{val_pat})['\"]\s*\)",
+            re.IGNORECASE,
+        ))
+    return patterns
+
+
+def validate_agri_cs_count(
+    current_questions: pl.DataFrame,
+    rules: dict,
+) -> pl.DataFrame:
+    """
+    Counts coping strategy questions (cs_prefixes) whose `relevant` references
+    an agricultural signal (agri_cs_check in critical_sets.yaml). Fewer than
+    min_agri_cs raises a high-severity issue. KoBo counterpart of the GeoPoll
+    check, which reads the Conditional column instead.
+    """
+    agri_cfg = rules.get("agri_cs_check", {})
+    if not agri_cfg or "relevant" not in current_questions.columns:
+        return _rule_issues_df([])
+
+    cs_prefixes = list(agri_cfg.get("cs_prefixes", []))
+    min_agri_cs = int(agri_cfg.get("min_agri_cs", 4))
+    patterns = _agri_signal_patterns_kobo(agri_cfg.get("agri_signals", []))
+    if not cs_prefixes or not patterns:
+        return _rule_issues_df([])
+
+    cs_df = current_questions.filter(
+        pl.any_horizontal([_core_qname_expr("Q Name").str.starts_with(p) for p in cs_prefixes])
+    ).select(["Q Name", pl.col("relevant").cast(pl.Utf8).fill_null("")])
+
+    agri_cs = sorted(
+        q for q, rel in cs_df.iter_rows()
+        if any(pat.search(rel) for pat in patterns)
+    )
+    if len(agri_cs) >= min_agri_cs:
+        return _rule_issues_df([])
+    return _rule_issues_df([{
+        "issue_type": "agri_cs_count_insufficient",
+        "set_name": "AGRI_CS", "Q Name": "",
+        "field": "agri-related CS count",
+        "current": f"{len(agri_cs)} found" + (f": {', '.join(agri_cs)}" if agri_cs else ""),
+        "reference": f"minimum {min_agri_cs} agriculture-related CS required",
+        "severity": "high", "excel_row": None,
+    }])
+
+
+def validate_variable_pairs(
+    current_questions: pl.DataFrame,
+    rules: dict,
+) -> pl.DataFrame:
+    """If either question of a pair (variable_pairs in critical_sets.yaml) is present, both must be."""
+    pairs_cfg: list[dict] = rules.get("variable_pairs", [])
+    if not pairs_cfg:
+        return _rule_issues_df([])
+
+    qnames: set[str] = set(current_questions["Q Name"].to_list())
+    rows: list[dict] = []
+    for pair in pairs_cfg:
+        a, b, label = pair.get("a", ""), pair.get("b", ""), pair.get("label", "")
+        a_present, b_present = a in qnames, b in qnames
+        if a_present == b_present:
+            continue
+        present, missing = (a, b) if a_present else (b, a)
+        rows.append({
+            "issue_type": "variable_pair_incomplete",
+            "set_name": "VAR_PAIRS", "Q Name": present,
+            "field": label,
+            "current": f"'{present}' present but '{missing}' absent",
+            "reference": "both variables required when either is included",
+            "severity": "medium", "excel_row": None,
+        })
+    return _rule_issues_df(rows)
+
+
+def _code_sort_key(value: str) -> tuple:
+    return (0, int(value), value) if value.lstrip("-").isdigit() else (1, 0, value)
+
+
+def validate_fixed_option_codes(
+    current_options: pl.DataFrame | None,
+    rules: dict,
+) -> pl.DataFrame:
+    """
+    Questions whose choice names must be exactly a fixed code set
+    (fixed_option_codes in critical_sets.yaml; `kobo_codes` when given, else
+    `codes`), e.g. ls_main_confirm = the 8 livestock types.
+    Questions absent from the questionnaire are skipped.
+    """
+    rules_cfg: list[dict] = rules.get("fixed_option_codes") or []
+    if not rules_cfg or current_options is None or current_options.height == 0:
+        return _rule_issues_df([])
+
+    codes_by_q = {
+        row["Q Name"]: {str(c).strip() for c in row["codes"] if c is not None and str(c).strip()}
+        for row in (
+            current_options
+            .group_by("Q Name")
+            .agg(pl.col("option_name").cast(pl.Utf8).alias("codes"))
+            .iter_rows(named=True)
+        )
+    }
+    rows: list[dict] = []
+    for rule in rules_cfg:
+        q = str(rule.get("q_name") or "").strip()
+        expected = {str(c).strip() for c in (rule.get("kobo_codes") or rule.get("codes") or [])}
+        if not q or not expected or q not in codes_by_q:
+            continue
+        found = codes_by_q[q]
+        if found == expected:
+            continue
+        missing = sorted(expected - found, key=_code_sort_key)
+        extra = sorted(found - expected, key=_code_sort_key)
+        rows.append({
+            "issue_type": "fixed_codes_mismatch",
+            "set_name": "FIXED_CODES", "Q Name": q,
+            "field": str(rule.get("description") or "fixed answer codes"),
+            "current": f"codes {sorted(found, key=_code_sort_key)}; missing {missing or '-'}; unexpected {extra or '-'}",
+            "reference": f"codes must be exactly {sorted(expected, key=_code_sort_key)}",
+            "severity": str(rule.get("severity") or "high"), "excel_row": None,
+        })
+    return _rule_issues_df(rows)
+
+
+def read_tlu_weights(path: str, section_marker: str) -> pl.DataFrame | None:
+    """
+    Tropical Livestock Unit weights from the Additional information sheet
+    (20261007 template on). The section banner sits left of the 'Original'
+    column on the first row of the section; every following row belongs to
+    it until the next banner. Returns species + one 'Replacement (xx)' column
+    per language, or None when the sheet is absent.
+    """
+    try:
+        wb = openpyxl.load_workbook(path, data_only=True, read_only=True)
+        if "Additional information" not in wb.sheetnames:
+            wb.close()
+            return None
+        rows = list(wb["Additional information"].iter_rows(values_only=True))
+        wb.close()
+    except Exception:
+        return None
+    if len(rows) < 2 or not section_marker:
+        return pl.DataFrame(schema={"species": pl.Utf8})
+
+    headers = [str(h).strip() if h is not None else "" for h in rows[1]]
+    orig_idx = next((i for i, h in enumerate(headers) if _normalize_additional_info_header(h).startswith("original")), None)
+    if orig_idx is None:
+        return pl.DataFrame(schema={"species": pl.Utf8})
+    weight_idx = {headers[i]: i for i in _additional_info_replacement_indexes(headers).values() if i is not None}
+
+    records: list[dict] = []
+    section = ""
+    for row in rows[2:]:
+        banner = next((str(c).strip() for c in row[:orig_idx] if c is not None and str(c).strip()), "")
+        if banner:
+            section = banner
+        species = str(row[orig_idx]).strip() if orig_idx < len(row) and row[orig_idx] is not None else ""
+        if not species or section_marker.upper() not in section.upper():
+            continue
+        rec = {"species": species}
+        for col, i in weight_idx.items():
+            v = row[i] if i < len(row) else None
+            rec[col] = "" if v is None else str(v).strip()
+        records.append(rec)
+    schema = {"species": pl.Utf8, **{c: pl.Utf8 for c in weight_idx}}
+    return pl.DataFrame(records, schema=schema) if records else pl.DataFrame(schema=schema)
+
+
+def validate_tlu_weights(tlu_df: pl.DataFrame | None, rules: dict) -> pl.DataFrame:
+    """
+    Every species in tlu_weights (critical_sets.yaml) needs a numeric weight
+    > 0, identical in every filled language column. Skipped when the
+    Additional information sheet is absent (tlu_df is None).
+      - tlu_weight_missing (high), tlu_weight_invalid (high),
+        tlu_weight_inconsistent (medium)
+    """
+    cfg = rules.get("tlu_weights") or {}
+    species_cfg = [str(x).strip() for x in (cfg.get("species") or []) if str(x or "").strip()]
+    if not species_cfg or tlu_df is None:
+        return _rule_issues_df([])
+
+    weight_cols = [c for c in tlu_df.columns if c != "species"]
+    by_species: dict[str, dict] = {}
+    for row in tlu_df.iter_rows(named=True):
+        by_species.setdefault(str(row["species"]).strip().lower(), row)
+
+    def _issue(issue_type, species, current, reference, severity):
+        return {
+            "issue_type": issue_type, "set_name": "TLU", "Q Name": "",
+            "field": f"TLU weight: {species}", "current": current,
+            "reference": reference, "severity": severity, "excel_row": None,
+        }
+
+    rows: list[dict] = []
+    for species in species_cfg:
+        row = by_species.get(species.lower())
+        filled = {c: str(row.get(c) or "").strip() for c in weight_cols} if row else {}
+        filled = {c: v for c, v in filled.items() if v}
+        if not filled:
+            rows.append(_issue("tlu_weight_missing", species, "blank / row missing",
+                               "weight required in Additional information (TLU section)", "high"))
+            continue
+        parsed: dict[str, float | None] = {}
+        for c, v in filled.items():
+            try:
+                parsed[c] = float(v.replace(",", "."))
+            except ValueError:
+                parsed[c] = None
+        bad = {c: filled[c] for c, v in parsed.items() if v is None or v <= 0}
+        if bad:
+            rows.append(_issue("tlu_weight_invalid", species,
+                               "; ".join(f"{c}={v}" for c, v in bad.items()),
+                               "weight must be a number > 0", "high"))
+            continue
+        if len({round(v, 6) for v in parsed.values()}) > 1:
+            rows.append(_issue("tlu_weight_inconsistent", species,
+                               "; ".join(f"{c}={v}" for c, v in filled.items()),
+                               "same weight expected in every language column", "medium"))
+    return _rule_issues_df(rows)
+
+
+def validate_qname_length(current_questions: pl.DataFrame, max_qname_length: int) -> pl.DataFrame:
+    """Question names longer than max_qname_length (kobo_options) -> medium."""
+    if max_qname_length <= 0:
+        return _rule_issues_df([])
+    cols = ["Q Name"] + (["excel_row"] if "excel_row" in current_questions.columns else [])
+    long_q = (
+        current_questions.select(cols)
+        .filter(pl.col("Q Name").cast(pl.Utf8).str.len_chars() > max_qname_length)
+    )
+    return _rule_issues_df([
+        {
+            "issue_type": "qname_too_long", "set_name": "", "Q Name": r["Q Name"],
+            "field": "Q Name", "current": f"{len(r['Q Name'])} characters",
+            "reference": f"max {max_qname_length} characters",
+            "severity": "medium", "excel_row": r.get("excel_row"),
+        }
+        for r in long_q.iter_rows(named=True)
+    ])
+
 # ======================================================================
 # SECTION: ## Step 9 -- Issue unifiers
 _step("Issue unifiers")
@@ -3604,19 +3973,15 @@ _step("Issue unifiers")
 def make_presence_issues(added, removed, reference_survey=None):
     added_base = added
 
-    # Build optional counterpart lookup from added questions: core -> o_<core>
-    # Example: removed "confl_yn" + added "o_confl_yn" => mandatory_to_optional
+    # Build optional counterpart lookup from added questions: core -> c_<core> / o_<core>
+    # Example: removed "confl_yn" + added "c_confl_yn" => mandatory_to_optional
     added_opt_lookup = (
         added
         .with_columns([
             pl.col("Q Name").cast(pl.Utf8).str.strip_chars().alias("_q"),
-            pl.when(pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.starts_with("o_"))
-            .then(pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.slice(2))
-            .otherwise(pl.col("Q Name").cast(pl.Utf8).str.strip_chars())
-            .str.to_lowercase()
-            .alias("_core"),
+            _core_qname_expr("Q Name").alias("_core"),
         ])
-        .filter(pl.col("_q").str.starts_with("o_"))
+        .filter(_custom_qname_expr("_q"))
         .select(["_core", pl.col("Q Name").alias("_optional_qname")])
         .unique(subset=["_core"], keep="first")
     )
@@ -3629,11 +3994,7 @@ def make_presence_issues(added, removed, reference_survey=None):
                 on="Q Name", how="left"
             )
             .with_columns(
-                pl.when(pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.starts_with("o_"))
-                .then(pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.slice(2))
-                .otherwise(pl.col("Q Name").cast(pl.Utf8).str.strip_chars())
-                .str.to_lowercase()
-                .alias("_core")
+                _core_qname_expr("Q Name").alias("_core")
             )
         )
         severity_expr = (
@@ -3651,11 +4012,7 @@ def make_presence_issues(added, removed, reference_survey=None):
     else:
         removed_aug = removed.with_columns([
             pl.lit("").alias("mandatory_category"),
-            pl.when(pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.starts_with("o_"))
-            .then(pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.slice(2))
-            .otherwise(pl.col("Q Name").cast(pl.Utf8).str.strip_chars())
-            .str.to_lowercase()
-            .alias("_core"),
+            _core_qname_expr("Q Name").alias("_core"),
         ])
         severity_expr = (
             pl.when(pl.col("is_optional")).then(pl.lit("info")).otherwise(pl.lit("high"))
@@ -5357,6 +5714,17 @@ print(f"Module structure issues: {module_issues.height}")
 critical_issues = validate_critical_sets(current_cmp_q, rules.get("exact_sets", {}))
 count_issues    = validate_prefix_counts(current_cmp_q, rules.get("min_count_sets", {}))
 harvest_issues  = validate_crop_harvest(current_cmp_q, rules.get("crop_harvest", {}))
+fs_issues         = validate_fs_indicators(current_cmp_q, rules, modality=_cfg_modality)
+agri_cs_issues    = validate_agri_cs_count(current_cmp_q, rules)
+pair_issues       = validate_variable_pairs(current_cmp_q, rules)
+fixed_code_issues = validate_fixed_option_codes(current_options_vanilla_cmp, rules)
+current_tlu_weights = read_tlu_weights(
+    run["questionnaire_path"], str((rules.get("tlu_weights") or {}).get("section_marker", ""))
+)
+tlu_issues        = validate_tlu_weights(current_tlu_weights, rules)
+qname_length_issues = validate_qname_length(current_cmp_q, _cfg_max_qname_length)
+print(f"FS indicators: {fs_issues.height}  Agri CS: {agri_cs_issues.height}  Pairs: {pair_issues.height}  "
+      f"Fixed codes: {fixed_code_issues.height}  TLU: {tlu_issues.height}  Long names: {qname_length_issues.height}")
 
 print(f"Critical set issues: {critical_issues.height}  Count issues: {count_issues.height}")
 
@@ -5611,6 +5979,12 @@ all_issues = pl.concat(
      _with_choice_cols(critical_issues),
      _with_choice_cols(count_issues),
      _with_choice_cols(harvest_issues),
+     _with_choice_cols(fs_issues),
+     _with_choice_cols(agri_cs_issues),
+     _with_choice_cols(pair_issues),
+     _with_choice_cols(fixed_code_issues),
+     _with_choice_cols(tlu_issues),
+     _with_choice_cols(qname_length_issues),
      _with_choice_cols(relevant_issues),
      _with_choice_cols(structure_issues),
      _with_choice_cols(replacement_input_issues),
@@ -5699,7 +6073,7 @@ for _set_name, _rule in rules.get("min_count_sets", {}).items():
     if _prefix:
         _relaxed_prefixes.append(_prefix)
         if _prefix == "hh_wealth_" or _set_name.upper() == "WEALTH":
-            _relaxed_prefixes.append("o_hh_wealth_")
+            _relaxed_prefixes.extend(_custom_variants("hh_wealth_"))
 
 if _relaxed_prefixes:
     _q_matches = pl.any_horizontal([pl.col("Q Name").cast(pl.Utf8).str.starts_with(p) for p in _relaxed_prefixes])
@@ -5761,18 +6135,18 @@ for _set_name, _set_rules in rules.get("exact_sets", {}).items():
             _matched.append(q)
             continue
         if q.startswith("hh_wealth_"):
-            _alt = "o_hh_wealth_" + q[len("hh_wealth_"):]
-            if _alt in _cur_qnames:
+            _alt = next((a for a in _custom_variants(q) if a in _cur_qnames), "")
+            if _alt:
                 _matched.append(f"{q} (matched via {_alt})")
     _found_info[_set_name] = _matched
 
 # Prefix-count sets: keep matched names for display + count details.
 for _set_name, _rule in rules.get("min_count_sets", {}).items():
     _prefix  = str(_rule.get("prefix", "")).strip()
-    _prefix_alt = "o_hh_wealth_" if _prefix == "hh_wealth_" or _set_name.upper() == "WEALTH" else ""
+    _prefix_alts = tuple(_custom_variants(_prefix)) if _prefix == "hh_wealth_" or _set_name.upper() == "WEALTH" else ()
     _matched = sorted(
         q for q in _cur_qnames
-        if (_prefix and q.startswith(_prefix)) or (_prefix_alt and q.startswith(_prefix_alt))
+        if (_prefix and q.startswith(_prefix)) or (_prefix_alts and q.startswith(_prefix_alts))
     )
     _found_info[_set_name] = _matched
 
@@ -5845,6 +6219,15 @@ _ISSUE_LABELS = {
     "mandatory_category_unrecognized": "Mandatory value not a known category",
     "hint_changed"             : "Hint text changed",
     "crop_harvest_violation"   : "Crop harvest rule violation",
+    "fs_indicator_missing"     : "Mandatory FS indicator missing",
+    "fs_indicator_capi_excess" : "Too many FS indicators for CAPI",
+    "agri_cs_count_insufficient": "Too few agriculture-related coping strategies",
+    "variable_pair_incomplete" : "Variable pair incomplete",
+    "fixed_codes_mismatch"     : "Fixed answer codes changed",
+    "tlu_weight_missing"       : "TLU weight missing",
+    "tlu_weight_invalid"       : "TLU weight invalid",
+    "tlu_weight_inconsistent"  : "TLU weight differs across languages",
+    "qname_too_long"           : "Variable name too long",
     "choices_list_changed"     : "Choices list changed",
     "additional_information_replacement_change": "Additional information replacement change",
     "removed_choice"           : "Choice removed",
@@ -5969,6 +6352,15 @@ ISSUE_ACTION_MAP = {
     "advisory_question": "Review advisory question omission",
     "critical_mandatory_mismatch": "Align mandatory flag for critical question",
     "crop_harvest_violation": "Fix crop_harvest sequence/order",
+    "fs_indicator_missing": "Add the mandatory FS indicator module",
+    "fs_indicator_capi_excess": "Drop optional FS indicators to stay within the CAPI ceiling",
+    "agri_cs_count_insufficient": "Keep at least the minimum agriculture-related coping strategies",
+    "variable_pair_incomplete": "Add the missing variable of the pair (or remove both)",
+    "fixed_codes_mismatch": "Restore the fixed answer codes",
+    "tlu_weight_missing": "Fill the TLU weight in Additional information",
+    "tlu_weight_invalid": "Enter a numeric TLU weight > 0",
+    "tlu_weight_inconsistent": "Use the same TLU weight in every language column",
+    "qname_too_long": "Shorten the variable name",
 }
 
 
@@ -6308,11 +6700,15 @@ def _with_lang_scope_tag(df: pl.DataFrame, target_lang_label: str) -> pl.DataFra
 CRITICAL_ISSUE_TYPES = {
     "missing_critical_question", "advisory_question",
     "critical_mandatory_mismatch", "crop_harvest_violation",
+    "fs_indicator_missing", "fs_indicator_capi_excess", "agri_cs_count_insufficient",
+    "variable_pair_incomplete", "fixed_codes_mismatch",
+    "tlu_weight_missing", "tlu_weight_invalid", "tlu_weight_inconsistent",
 }
 RELEVANT_ISSUE_TYPES  = {"broken_relevant_reference", "relevant_inexact_reference", "relevant_modified"}
 STRUCTURE_ISSUE_TYPES = {
     "kobo_ref_loose_syntax", "kobo_ref_missing_variable", "kobo_ref_malformed_syntax",
     "duplicate_qname", "duplicate_choice_name", "choice_missing_bilingual_label", "type_changed",
+    "qname_too_long",
     "module_removed", "module_added",
 }
 REPLACEMENT_ISSUE_TYPES = {
@@ -6402,7 +6798,7 @@ def _normalise_qtype_for_summary(df):
     )
     return df.with_columns(
         pl.when(_mand.is_in(_valid)).then(_mand)
-        .when(_qnm.str.starts_with("o_")).then(pl.lit("optional"))
+        .when(_qnm.str.contains(_CUSTOM_QNAME_RE)).then(pl.lit("optional"))
         .otherwise(pl.lit("non-mandatory"))
         .alias("mandatory_cat")
     )
@@ -6562,6 +6958,21 @@ def write_summary_sheet(wb, all_issues, rules=None, critical_issues=None,
         _harv_det = ("Partial crop-harvest set -- see issues" if _harv_fail
                      else "Crop harvest rule satisfied")
         _set_row(ws, r, "CRP_HARV", not _harv_fail, _harv_det); r += 1
+
+    # Rule-based sets shared with GeoPoll (fs_indicators, agri_cs_check, ...)
+    _rule_rows = [
+        ("fs_indicators", "FS_INDICATORS", "FIES / FCS / LCSI present"
+         + (" (CAPI ceiling respected)" if _cfg_modality == "capi" else "")),
+        ("agri_cs_check", "AGRI_CS", "Enough agriculture-related coping strategies"),
+        ("variable_pairs", "VAR_PAIRS", "All variable pairs complete"),
+        ("fixed_option_codes", "FIXED_CODES", "Fixed answer codes intact"),
+        ("tlu_weights", "TLU", "TLU weights filled and consistent"),
+    ]
+    for _key, _set, _ok_det in _rule_rows:
+        if not _rules.get(_key):
+            continue
+        _n = all_issues.filter(pl.col("set_name") == _set).height
+        _set_row(ws, r, _set, _n == 0, _ok_det if _n == 0 else f"{_n} issue(s) -- see Critical Sets"); r += 1
 
     if not _rules.get("exact_sets") and not _rules.get("min_count_sets"):
         ws.cell(row=r, column=1, value="No critical sets defined")
@@ -8142,16 +8553,140 @@ def _fmt_choice_codes(items: set[str], limit: int = 12) -> str:
 
 
 
-def _scan_unresolved_placeholders(wb, sheet_name: str, limit: int = 5) -> tuple[int, list[str]]:
-    """Return (count, examples) of remaining #placeholder# tokens in a sheet."""
+_COLUMN_LANG_RE = _re.compile(r"\((\w{2,3})\)\s*$")
+
+
+def _column_language(header: str) -> str:
+    """Language code of a 'label::French (fr)'-style header, '' for non-language columns."""
+    h = str(header or "").strip()
+    if "::" not in h:
+        return ""
+    m = _COLUMN_LANG_RE.search(h)
+    return m.group(1).lower() if m else ""
+
+
+def _column_in_scope(header: str, languages_in_scope: list[str] | None) -> bool:
+    """False only for a language column whose language is not in languages_in_scope (empty = all)."""
+    if not languages_in_scope:
+        return True
+    lang = _column_language(header)
+    return not lang or lang in languages_in_scope
+
+
+def _sheet_scope_mask(ws, languages_in_scope: list[str] | None) -> list[bool]:
+    hdr_row = next(ws.iter_rows(min_row=1, max_row=1, values_only=True), None)
+    return [_column_in_scope(h, languages_in_scope) for h in (hdr_row or [])]
+
+
+def read_additional_info_keys(country_path: str) -> set[str]:
+    """Every 'Original' key in the Additional information sheet, lowercased -- including rows with blank replacements."""
+    try:
+        wb = openpyxl.load_workbook(country_path, data_only=True, read_only=True)
+        if "Additional information" not in wb.sheetnames:
+            wb.close()
+            return set()
+        rows = list(wb["Additional information"].iter_rows(values_only=True))
+        wb.close()
+    except Exception:
+        return set()
+    if len(rows) < 2:
+        return set()
+    headers = [str(h).strip() if h is not None else "" for h in rows[1]]
+    orig_idx = next((i for i, h in enumerate(headers) if _normalize_additional_info_header(h).startswith("original")), None)
+    if orig_idx is None:
+        return set()
+    return {
+        alias.lower()
+        for row in rows[2:]
+        if orig_idx < len(row) and row[orig_idx] is not None and str(row[orig_idx]).strip()
+        for alias in _placeholder_aliases(str(row[orig_idx]).strip())
+    }
+
+
+def build_unresolved_placeholder_issues(
+    unresolved_rows: list[dict],
+    additional_info_keys: set[str],
+    pairs_by_language: dict[str, dict[str, str]],
+    severity: str = "high",
+) -> list[dict]:
+    """
+    One issue per (placeholder token, cause) instead of one per cell, listing
+    the questions and columns affected. Cause, per cell language:
+      - not_in_additional_info: no Original row matches the token
+      - language_not_filled: the whole Replacement column of that language is empty (medium)
+      - blank_replacement: the row exists but its Replacement for that language is blank
+      - not_applied: a value exists but the token was not replaced (spelling/case variant)
+    """
+    tok_re = _re.compile(r"#[^#\n]+#")
+    filled_langs = {lang for lang, pairs in (pairs_by_language or {}).items() if pairs}
+    groups: dict[tuple[str, str], dict] = {}
+    for rr in unresolved_rows:
+        lang = rr.get("language", "")
+        for token in dict.fromkeys(tok_re.findall(str(rr.get("full_text") or rr.get("token_text") or ""))):
+            core = token.strip("#").strip()
+            in_ai = bool(_placeholder_aliases(core) & {k for k in additional_info_keys}) or core.lower() in additional_info_keys
+            if not in_ai:
+                cause = "not_in_additional_info"
+            elif lang and lang not in filled_langs:
+                cause = "language_not_filled"
+            elif lang and token in (pairs_by_language or {}).get(lang, {}):
+                cause = "not_applied"
+            else:
+                cause = "blank_replacement"
+            g = groups.setdefault((token, cause), {"qnames": [], "cells": [], "columns": [], "langs": [], "row": rr})
+            label = (
+                f"{rr.get('list_name')}/{rr.get('option_name')}" if rr.get("sheet") == "choices" and rr.get("list_name")
+                else rr.get("q_name", "")
+            )
+            if label and label not in g["qnames"]:
+                g["qnames"].append(label)
+            g["cells"].append(f"{rr.get('sheet')}!{rr.get('cell')}")
+            col = str(rr.get("column") or "")
+            if col and col not in g["columns"]:
+                g["columns"].append(col)
+            if lang and lang not in g["langs"]:
+                g["langs"].append(lang)
+
+    _reason = {
+        "not_in_additional_info": "No matching 'Original' row in Additional information -- add the row, or align the token spelling with an existing key",
+        "language_not_filled": "Replacement column for {langs} is empty for every key -- fill it, or leave the language out of languages_in_scope if it is not deployed",
+        "blank_replacement": "Additional information row exists but its Replacement is blank for {langs} -- fill it (or drop the question/option using it)",
+        "not_applied": "A replacement exists for {langs} but was not applied -- check spelling/case of the token vs the Original key",
+    }
+    out: list[dict] = []
+    for (token, cause), g in sorted(groups.items(), key=lambda kv: (kv[0][1] == "language_not_filled", kv[0][0])):
+        langs = ", ".join(l.upper() for l in g["langs"]) or "all languages"
+        n_q = len(g["qnames"])
+        out.append({
+            "issue_type": "replacement_unresolved_placeholder",
+            "q_name": ", ".join(g["qnames"]),
+            "field": token,
+            "current": (
+                f"{len(g['cells'])} cell(s) in {n_q} question/option(s); columns: {', '.join(g['columns']) or '-'}; "
+                f"cells: {', '.join(g['cells'][:12])}{' ...' if len(g['cells']) > 12 else ''}"
+            ),
+            "reference": _reason[cause].format(langs=langs),
+            "severity": "medium" if cause == "language_not_filled" else severity,
+            "excel_row": g["row"].get("excel_row") if len(g["cells"]) == 1 else None,
+        })
+    return out
+
+
+def _scan_unresolved_placeholders(
+    wb, sheet_name: str, limit: int = 5, languages_in_scope: list[str] | None = None,
+) -> tuple[int, list[str]]:
+    """Return (count, examples) of remaining #placeholder# tokens in a sheet (in-scope columns only)."""
     if sheet_name not in wb.sheetnames:
         return 0, []
     patt = _re.compile(r"#[^#]+#")
     ws = wb[sheet_name]
+    scope = _sheet_scope_mask(ws, languages_in_scope)
     count = 0
     examples: list[str] = []
     for row in ws.iter_rows():
-        for cell in row:
+        for i, cell in enumerate(row):
+            if i < len(scope) and not scope[i]:
+                continue
             v = cell.value
             if isinstance(v, str) and patt.search(v):
                 count += 1
@@ -8160,10 +8695,12 @@ def _scan_unresolved_placeholders(wb, sheet_name: str, limit: int = 5) -> tuple[
     return count, examples
 
 
-def _collect_unresolved_placeholder_cells(wb) -> list[dict]:
+def _collect_unresolved_placeholder_cells(wb, languages_in_scope: list[str] | None = None) -> list[dict]:
     """
-    Collect every unresolved #placeholder# cell from survey/choices with row context.
-    Returns rows with keys: sheet, cell, token_text, q_name, list_name, option_name, excel_row.
+    Collect every unresolved #placeholder# cell from survey/choices with row context,
+    skipping language columns outside languages_in_scope (empty = all).
+    Returns rows with keys: sheet, cell, column, language, token_text, full_text,
+    q_name, list_name, option_name, excel_row.
     """
     patt = _re.compile(r"#[^#]+#")
     out: list[dict] = []
@@ -8183,13 +8720,19 @@ def _collect_unresolved_placeholder_cells(wb) -> list[dict]:
             q_name = str(vals[q_col]).strip() if q_col is not None and q_col < len(vals) and vals[q_col] is not None else ""
             list_name = str(vals[list_col]).strip() if list_col is not None and list_col < len(vals) and vals[list_col] is not None else ""
             opt_name = str(vals[opt_col]).strip() if opt_col is not None and opt_col < len(vals) and vals[opt_col] is not None else ""
-            for cell in row:
+            for i, cell in enumerate(row):
                 v = cell.value
+                header = headers[i] if i < len(headers) else ""
+                if not _column_in_scope(header, languages_in_scope):
+                    continue
                 if isinstance(v, str) and patt.search(v):
                     out.append({
                         "sheet": sheet_name,
                         "cell": cell.coordinate,
+                        "column": header,
+                        "language": _column_language(header),
                         "token_text": v[:220],
+                        "full_text": v,
                         "q_name": q_name,
                         "list_name": list_name,
                         "option_name": opt_name,
@@ -8198,7 +8741,9 @@ def _collect_unresolved_placeholder_cells(wb) -> list[dict]:
     return out
 
 
-def _scan_malformed_placeholder_syntax(wb, sheet_name: str, limit: int = 5) -> tuple[int, list[str]]:
+def _scan_malformed_placeholder_syntax(
+    wb, sheet_name: str, limit: int = 5, languages_in_scope: list[str] | None = None,
+) -> tuple[int, list[str]]:
     """
     Return (count, examples) of malformed placeholder/reference syntax in a sheet:
       - malformed #...# tokens
@@ -8207,10 +8752,13 @@ def _scan_malformed_placeholder_syntax(wb, sheet_name: str, limit: int = 5) -> t
     if sheet_name not in wb.sheetnames:
         return 0, []
     ws = wb[sheet_name]
+    scope = _sheet_scope_mask(ws, languages_in_scope)
     count = 0
     examples: list[str] = []
     for row in ws.iter_rows():
-        for cell in row:
+        for i, cell in enumerate(row):
+            if i < len(scope) and not scope[i]:
+                continue
             v = cell.value
             if not isinstance(v, str):
                 continue
@@ -8247,6 +8795,7 @@ def produce_validated_questionnaire(
     replacement_status = {"rows": [], "notes": []}
     replacement_issue_rows: list[dict] = []
     _kobo_opt_local = cfg.get("kobo_options", {}) or {}
+    _languages_in_scope = _normalize_languages_in_scope(cfg.get("languages_in_scope"))
     _include_admin3 = _as_bool(_kobo_opt_local.get("include_admin3", False), False)
     _skip_restore_and_replacement = _as_bool(_kobo_opt_local.get("skip_restore_and_replacement", False), False)
     _require_additional_info = _as_bool(_kobo_opt_local.get("require_additional_info", True), True)
@@ -8742,10 +9291,8 @@ def produce_validated_questionnaire(
                 )
 
                 if (_miss_s + _miss_c) > 0:
-                    _sev = "high"
-                    _st = "FAIL"
-                    _det += "; missing rows cannot be restored by replacement pairs"
-                elif (_skp_s + _skp_c) > 0:
+                    _det += "; template rows absent from the questionnaire (removed by the country) need no restore"
+                if (_skp_s + _skp_c) > 0:
                     _sev = "medium"
                     _st = "WARN"
                 else:
@@ -8758,31 +9305,28 @@ def produce_validated_questionnaire(
                     _sev,
                 )
 
-                if (_miss_s + _miss_c) > 0:
-                    _iss_sev = "high"
-                    for _qn in (_restore_stats.get("survey_missing_qnames") or []):
-                        _add_issue_row(
-                            "replacement_restore_missing_target_row",
-                            "template survey name",
-                            str(_qn),
-                            "Template has placeholder cells but survey row is missing in current output",
-                            severity=_iss_sev,
-                            q_name=str(_qn),
-                        )
-                    for _key in (_restore_stats.get("choices_missing_keys") or []):
-                        _ln, _nm = "", ""
-                        _parts = str(_key).split("/", 1)
-                        if len(_parts) == 2:
-                            _ln, _nm = _parts[0], _parts[1]
-                        _add_issue_row(
-                            "replacement_restore_missing_target_row",
-                            "template choice key",
-                            str(_key),
-                            "Template has placeholder cells but choices row is missing in current output",
-                            severity=_iss_sev,
-                            list_name=_ln,
-                            option_name=_nm,
-                        )
+                # Template rows carrying placeholders that the country dropped: nothing
+                # to restore. One info row per sheet; core removals are already
+                # reported in Question Changes.
+                _miss_q = [str(q) for q in (_restore_stats.get("survey_missing_qnames") or [])]
+                _miss_k = [str(k) for k in (_restore_stats.get("choices_missing_keys") or [])]
+                if _miss_q:
+                    _add_issue_row(
+                        "replacement_restore_missing_target_row",
+                        "template survey rows",
+                        f"{len(_miss_q)} template question(s) with placeholders are not in this questionnaire",
+                        "Nothing to restore (question removed by the country); core removals are listed in Question Changes",
+                        severity="info",
+                        q_name=", ".join(_miss_q),
+                    )
+                if _miss_k:
+                    _add_issue_row(
+                        "replacement_restore_missing_target_row",
+                        "template choice rows",
+                        f"{len(_miss_k)} template choice(s) with placeholders are not in this questionnaire: {', '.join(_miss_k)}",
+                        "Nothing to restore (choice removed by the country)",
+                        severity="info",
+                    )
         else:
             _add_row(
                 "Placeholder vanilla restore",
@@ -8821,7 +9365,7 @@ def produce_validated_questionnaire(
         )
 
     # Explicit choices-level replacement integrity check
-    _ch_unresolved, _ch_examples = _scan_unresolved_placeholders(wb, "choices")
+    _ch_unresolved, _ch_examples = _scan_unresolved_placeholders(wb, "choices", languages_in_scope=_languages_in_scope)
     if _ch_unresolved == 0:
         _add_row(
             "Placeholder replacement in choices",
@@ -8838,27 +9382,30 @@ def produce_validated_questionnaire(
         else:
             _add_row("Placeholder replacement in choices", "FAIL", _det, "high")
 
-    _unresolved_rows = _collect_unresolved_placeholder_cells(wb)
+    _unresolved_rows = _collect_unresolved_placeholder_cells(wb, languages_in_scope=_languages_in_scope)
     if _unresolved_rows:
         _sev = "medium" if _skip_restore_and_replacement else "high"
-        for rr in _unresolved_rows:
+        for _iss in build_unresolved_placeholder_issues(
+            _unresolved_rows,
+            read_additional_info_keys(src),
+            globals().get("replacement_pairs_by_language") or {},
+            severity=_sev,
+        ):
             _add_issue_row(
-                "replacement_unresolved_placeholder",
-                f"{rr.get('sheet', '')}!{rr.get('cell', '')}",
-                rr.get("token_text", ""),
-                "Resolve with Additional information replacements or correct token",
-                severity=_sev,
-                q_name=rr.get("q_name", ""),
-                list_name=rr.get("list_name", ""),
-                option_name=rr.get("option_name", ""),
-                excel_row=rr.get("excel_row"),
+                _iss["issue_type"],
+                _iss["field"],
+                _iss["current"],
+                _iss["reference"],
+                severity=_iss["severity"],
+                q_name=_iss["q_name"],
+                excel_row=_iss["excel_row"],
             )
 
     # Malformed placeholder/reference syntax check on final workbook text.
     _malformed_total = 0
     _malformed_examples: list[str] = []
     for _sheet_name in ("survey", "choices"):
-        _cnt, _ex = _scan_malformed_placeholder_syntax(wb, _sheet_name, limit=3)
+        _cnt, _ex = _scan_malformed_placeholder_syntax(wb, _sheet_name, limit=3, languages_in_scope=_languages_in_scope)
         _malformed_total += _cnt
         if _ex:
             _malformed_examples.extend(_ex)

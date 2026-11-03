@@ -13,6 +13,7 @@ the report alone has known blind spots, so always do both halves below.
 
 Repo: the working directory (`validate.py`, `scripts/`, `configuration/`).
 Bundled tools (run with the validation environment's Python):
+- `scripts/inspect_questionnaire.py` — read-only facts about the file (tool, languages filled, settings, Additional information columns, modality hint) for the analyst check-in
 - `scripts/run_validation.py` — runs the validator on one file without permanently editing config
 - `scripts/summarize_report.py` — compact digest of the report
 - `scripts/check_validated_output.py` — deployability checks on the validated questionnaire
@@ -29,6 +30,30 @@ Infer what you can and confirm only what is ambiguous:
 - **Language** — the deployment language (`en`/`fr`/`ar`/…). The validator always checks the other filled language columns too, but the main comparison and output names follow this. If the country deploys in Arabic or French and the user didn't say, ask.
 - **Reference** — default `latest_template`. Use `previous_round` only when the user asks to compare with last round (needs that file).
 
+## 1b. Check in with the analyst (before running)
+
+Decisions the file can't settle on its own produce whole blocks of false
+issues when guessed wrong (e.g. Arabic columns left over from the template
+reported as dozens of unresolved placeholders). Settle them before the run,
+not by spotting them in the output. Work on a copy, then run:
+
+```bash
+<env-python> .claude/skills/diem-validate/scripts/inspect_questionnaire.py "<copy of the file>"
+```
+
+Show the analyst what you found and ask, in **one** message (use the
+question tool, recommended answer first), only the points that are open:
+- **Languages in scope** — list every language with filled `label`/`hint` cells and filled `Replacement (xx)` columns. A language filled in the survey but empty in Additional information is usually a template leftover. Ask which languages count; out-of-scope columns stay in the file and are simply not checked (`--languages en,fr`). Never delete a language column unless asked.
+- **Deployment language** — default from `settings.default_language` (KoBo) or the filename; confirm.
+- **Modality** — CAPI/CATI (KoBo `Sample` calculation, GeoPoll is normally CATI). Sets the FS-indicator ceiling and explains removed `cluster`/`gps_*`.
+- **Form type** — if `looks_like_kii` or the file is not a household questionnaire, there is no matching template: say so and agree on structural checks or a previous-round comparison instead of running against the household template.
+- **Reference** — latest template vs previous round, if the analyst hinted at a round comparison.
+- **Admin3** — whether admin3 should be rebuilt from AGOL (`include_admin3`), when the file has an admin3 list.
+
+Skip the check-in only when every point is already clear from the request.
+Record the answers and pass them to the runner; mention them in the final
+answer's header line.
+
 ## 2. Pre-flight (cheap, prevents misleading reports)
 
 - **Python env**: CLAUDE.md says `diem-validation`. If `conda env list` doesn't have it, use an env that imports `polars`, `openpyxl`, `yaml`, `xlsxwriter`, and tell the user which one you used. Call that interpreter's `python.exe` directly (not `conda run`, which crashes on non-ASCII output on Windows).
@@ -39,8 +64,11 @@ Infer what you can and confirm only what is ambiguous:
 ```bash
 <env-python> .claude/skills/diem-validate/scripts/run_validation.py --repo <repo> \
   --questionnaire "<path>" --tool geopoll --language en --iso3 YEM \
-  --python <env-python>
+  --languages en,fr --python <env-python>
 ```
+
+`--languages` sets `languages_in_scope` for the run (the languages agreed in
+1b); leave it out to check every filled language.
 
 It stages a copy of the file (avoids OneDrive/Excel locks), points `config_profile` at a temporary profile, runs `validate.py`, and restores `validation_config.yaml` byte-for-byte. Don't hand-edit `validation_config.yaml` for a run — CLAUDE.md requires confirmation for config edits, and the runner makes it unnecessary. Check in the JSON output: `ok`, `config_restored: true`, `reference` (which template was actually used — sanity-check its date against `templates_available`/`toolbox_templates`), and `counts`. On failure read `log_tail`.
 
@@ -63,6 +91,17 @@ Read the digest, then `references/issue-guide.md`. Before you call anything a co
 GeoPoll checks: no `$…$` left, no malformed `$…#`, runtime `#VAR#` inventory, repeated adjacent words (a replacement inserted next to the same word, e.g. "محافظة محافظة" — the country text already had the word), interview length (core+recommended ≤ 30 min), exactly 10 crops selected and selected crops listed first in every crop question, mandatory Additional information keys filled for each language in use, TLU weights, Admin 1/2(/3) sheets and parent codes.
 
 For KoBo the script's survey checks don't apply as-is; check manually: `settings` `form_title` has `#ADMIN0#` replaced by the country name, no `#placeholder#`/`$…$` left in `survey`/`choices` labels, crop and admin choice lists injected.
+
+## 5b. Second check-in (only if needed)
+
+If the report turns up a decision that changes the verdict and that the
+analyst can answer faster than the file can, ask it before writing the fix
+list, in one message: e.g. old vs new admin pcode scheme (deploy the
+country's own lists or rebuild from AGOL?), a core module removed that may be
+an approved exception (fish in a non-fishing country), a custom logic block
+replacing a template one. If the answer means a different run (other
+languages, admin3 on, other reference), re-run instead of explaining the
+noise away.
 
 ## 6. Write the answer
 

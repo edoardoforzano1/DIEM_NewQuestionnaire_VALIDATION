@@ -1,5 +1,5 @@
 # critical_sets.yaml
-# Validation rules for the GeoPoll questionnaire validator.
+# Validation rules for the GeoPoll and KoBo questionnaire validators.
 # Edit this file to update rules when questionnaire structure changes.
 # No code changes needed — the notebook loads this file automatically.
 #
@@ -108,6 +108,10 @@ fs_indicators:
 #   variable — exact variable name to look for in the Conditional text
 #   values   — which values of that variable signal agricultural relevance
 
+#   kobo_values — optional; KoBo choice names when they differ from the
+#                 GeoPoll codes (KoBo reads the `relevant` column instead of
+#                 Conditional and accepts both kobo_values and values)
+
 agri_cs_check:
   cs_prefixes:
     - "cs_stress_"
@@ -117,6 +121,7 @@ agri_cs_check:
   agri_signals:
     - variable: "hh_agricactivity"
       values: [1, 2, 3]
+      kobo_values: ["crp", "ls", "fish"]
     - variable: "income_main"
       values: [1, 2, 3, 4, 6]
     - variable: "income_sec"
@@ -173,11 +178,14 @@ crop_harvest:
 #   codes       — the exact code set required
 #   description — shown in the report
 #   severity    — optional, default high
+#   kobo_codes  — optional; KoBo choice names when they differ from the
+#                 GeoPoll codes (KoBo falls back to `codes` when absent)
 
 fixed_option_codes:
   - q_name: ls_main_confirm
     codes: [1, 2, 3, 4, 5, 6, 7, 8]
-    description: "ls_main_confirm: 8 livestock types only (no Other / DK / REF), fixed codes 1-8"
+    kobo_codes: [cattle, goat, sheep, swine, equine, smallmammals, poultry, camelid]
+    description: "ls_main_confirm: 8 livestock types only (no Other / DK / REF), fixed codes"
 
 # ── Tropical Livestock Unit weights ───────────────────────────────────────────
 # The Additional information sheet carries a TLU weights table (one row per

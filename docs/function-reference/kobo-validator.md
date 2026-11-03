@@ -3,7 +3,7 @@
 This page is organized by the validator pipeline stages used in the script.
 Use the stage map to navigate quickly, then open each function spec for parameters and full source.
 
-Total functions documented: **212**
+Total functions documented: **233**
 
 ## Pipeline Function Map
 
@@ -36,227 +36,251 @@ Total functions documented: **212**
 
 ### 4. Step 3 -- Readers
 
-- [`_normalize_survey_type_token`](#fn--normalize-survey-type-token-381)
-- [`_find_label_col`](#fn--find-label-col-385)
-- [`_find_hint_col`](#fn--find-hint-col-400)
-- [`_find_xlsform_header_row_idx`](#fn--find-xlsform-header-row-idx-410)
-- [`_find_ws_header_row_1based`](#fn--find-ws-header-row-1based-420)
-- [`_choices_header_key`](#fn--choices-header-key-439)
-- [`_choices_header_concept`](#fn--choices-header-concept-443)
-- [`_resolve_choices_output_headers`](#fn--resolve-choices-output-headers-450)
-- [`_remap_choices_row_to_headers`](#fn--remap-choices-row-to-headers-468)
-- [`_read_choices_headers_from_workbook`](#fn--read-choices-headers-from-workbook-507)
-- [`_normalize_list_token`](#fn--normalize-list-token-532)
-- [`_normalize_module_token`](#fn--normalize-module-token-543)
-- [`_extract_select_list_name_from_type`](#fn--extract-select-list-name-from-type-550)
-- [`_canonical_option_name_token`](#fn--canonical-option-name-token-575)
-- [`_normalized_list_expr`](#fn--normalized-list-expr-589)
-- [`_normalize_mandatory`](#fn--normalize-mandatory-593)
-- [`read_kobo_survey`](#fn-read-kobo-survey-606)
-- [`read_kobo_survey.get`](#fn-get-636)
-- [`read_kobo_choices`](#fn-read-kobo-choices-735)
-- [`read_kobo_choices.get`](#fn-get-752)
-- [`build_question_options`](#fn-build-question-options-770)
-- [`_normalized_module_expr`](#fn--normalized-module-expr-831)
-- [`_resolve_module_keys_from_tokens`](#fn--resolve-module-keys-from-tokens-835)
-- [`_filter_survey_by_module_keys`](#fn--filter-survey-by-module-keys-873)
-- [`_module_display_map`](#fn--module-display-map-884)
-- [`_collect_skip_module_payload`](#fn--collect-skip-module-payload-899)
-- [`_dedupe_keep_order`](#fn--dedupe-keep-order-939)
-- [`_format_module_scope_for_display`](#fn--format-module-scope-for-display-954)
+- [`_custom_qname_expr`](#fn--custom-qname-expr-387)
+- [`_core_qname_expr`](#fn--core-qname-expr-392)
+- [`_custom_variants`](#fn--custom-variants-401)
+- [`_normalize_survey_type_token`](#fn--normalize-survey-type-token-407)
+- [`_find_label_col`](#fn--find-label-col-411)
+- [`_find_hint_col`](#fn--find-hint-col-426)
+- [`_find_xlsform_header_row_idx`](#fn--find-xlsform-header-row-idx-436)
+- [`_find_ws_header_row_1based`](#fn--find-ws-header-row-1based-446)
+- [`_choices_header_key`](#fn--choices-header-key-465)
+- [`_choices_header_concept`](#fn--choices-header-concept-469)
+- [`_resolve_choices_output_headers`](#fn--resolve-choices-output-headers-476)
+- [`_remap_choices_row_to_headers`](#fn--remap-choices-row-to-headers-494)
+- [`_read_choices_headers_from_workbook`](#fn--read-choices-headers-from-workbook-533)
+- [`_normalize_list_token`](#fn--normalize-list-token-558)
+- [`_normalize_module_token`](#fn--normalize-module-token-569)
+- [`_extract_select_list_name_from_type`](#fn--extract-select-list-name-from-type-576)
+- [`_canonical_option_name_token`](#fn--canonical-option-name-token-601)
+- [`_normalized_list_expr`](#fn--normalized-list-expr-615)
+- [`_normalize_mandatory`](#fn--normalize-mandatory-619)
+- [`read_kobo_survey`](#fn-read-kobo-survey-632)
+- [`read_kobo_survey.get`](#fn-get-662)
+- [`read_kobo_choices`](#fn-read-kobo-choices-761)
+- [`read_kobo_choices.get`](#fn-get-778)
+- [`build_question_options`](#fn-build-question-options-796)
+- [`_normalized_module_expr`](#fn--normalized-module-expr-857)
+- [`_resolve_module_keys_from_tokens`](#fn--resolve-module-keys-from-tokens-861)
+- [`_filter_survey_by_module_keys`](#fn--filter-survey-by-module-keys-899)
+- [`_module_display_map`](#fn--module-display-map-910)
+- [`_collect_skip_module_payload`](#fn--collect-skip-module-payload-925)
+- [`_dedupe_keep_order`](#fn--dedupe-keep-order-965)
+- [`_format_module_scope_for_display`](#fn--format-module-scope-for-display-980)
 
-### 5. Step 4b -- Placeholder normalization
+### 5. Step 4 -- Load files
 
-- [`_normalize_additional_info_header`](#fn--normalize-additional-info-header-1127)
-- [`_additional_info_replacement_indexes`](#fn--additional-info-replacement-indexes-1131)
-- [`_placeholder_aliases`](#fn--placeholder-aliases-1148)
-- [`read_additional_info_all_languages`](#fn-read-additional-info-all-languages-1164)
-- [`read_additional_info_with_status`](#fn-read-additional-info-with-status-1212)
-- [`read_additional_info`](#fn-read-additional-info-1308)
-- [`restore_to_vanilla`](#fn-restore-to-vanilla-1313)
-- [`apply_replacements`](#fn-apply-replacements-1355)
-- [`read_crop_choice_rows_for_compare_with_status`](#fn-read-crop-choice-rows-for-compare-with-status-1381)
-- [`read_crop_choice_rows_for_compare`](#fn-read-crop-choice-rows-for-compare-1463)
-- [`fetch_admin_choice_rows_for_compare`](#fn-fetch-admin-choice-rows-for-compare-1468)
-- [`replace_choice_lists_for_compare`](#fn-replace-choice-lists-for-compare-1525)
-- [`_add_replacement_input_issue`](#fn--add-replacement-input-issue-1561)
-- [`_count_hash_placeholders_in_text_df`](#fn--count-hash-placeholders-in-text-df-1585)
+- [`_normalize_languages_in_scope`](#fn--normalize-languages-in-scope-1049)
 
-### 6. Step 5 -- Normalisation helpers
+### 6. Step 4b -- Placeholder normalization
 
-- [`normalize_text_expr`](#fn-normalize-text-expr-1842)
-- [`normalize_simple_expr`](#fn-normalize-simple-expr-1852)
-- [`normalize_logic_expr`](#fn-normalize-logic-expr-1861)
+- [`_normalize_additional_info_header`](#fn--normalize-additional-info-header-1167)
+- [`_additional_info_replacement_indexes`](#fn--additional-info-replacement-indexes-1171)
+- [`_placeholder_aliases`](#fn--placeholder-aliases-1188)
+- [`read_additional_info_all_languages`](#fn-read-additional-info-all-languages-1204)
+- [`read_additional_info_with_status`](#fn-read-additional-info-with-status-1252)
+- [`read_additional_info`](#fn-read-additional-info-1348)
+- [`restore_to_vanilla`](#fn-restore-to-vanilla-1353)
+- [`apply_replacements`](#fn-apply-replacements-1395)
+- [`read_crop_choice_rows_for_compare_with_status`](#fn-read-crop-choice-rows-for-compare-with-status-1421)
+- [`read_crop_choice_rows_for_compare`](#fn-read-crop-choice-rows-for-compare-1503)
+- [`fetch_admin_choice_rows_for_compare`](#fn-fetch-admin-choice-rows-for-compare-1508)
+- [`replace_choice_lists_for_compare`](#fn-replace-choice-lists-for-compare-1565)
+- [`_add_replacement_input_issue`](#fn--add-replacement-input-issue-1601)
+- [`_count_hash_placeholders_in_text_df`](#fn--count-hash-placeholders-in-text-df-1625)
 
-### 7. Step 6 -- Comparison functions
+### 7. Step 5 -- Normalisation helpers
 
-- [`compare_question_presence`](#fn-compare-question-presence-1876)
-- [`compare_mandatory_kobo`](#fn-compare-mandatory-kobo-1892)
-- [`validate_mandatory_category_unrecognized`](#fn-validate-mandatory-category-unrecognized-1929)
-- [`compare_list_name_changes`](#fn-compare-list-name-changes-1959)
-- [`compare_question_labels`](#fn-compare-question-labels-1989)
-- [`compare_constraint_changes`](#fn-compare-constraint-changes-2151)
-- [`validate_constraint_removed_for_mandatory`](#fn-validate-constraint-removed-for-mandatory-2208)
-- [`compare_required_changes`](#fn-compare-required-changes-2263)
-- [`compare_choice_filter_changes`](#fn-compare-choice-filter-changes-2300)
-- [`compare_appearance_changes`](#fn-compare-appearance-changes-2337)
-- [`compare_calculation_changes`](#fn-compare-calculation-changes-2374)
-- [`_normalize_qtype_value_kobo`](#fn--normalize-qtype-value-kobo-2412)
-- [`_qtype_mode_kobo`](#fn--qtype-mode-kobo-2426)
-- [`_is_known_qtype_value_kobo`](#fn--is-known-qtype-value-kobo-2462)
-- [`_qtype_change_severity_kobo`](#fn--qtype-change-severity-kobo-2473)
-- [`compare_type_changes`](#fn-compare-type-changes-2528)
-- [`_canonical_option_key_expr`](#fn--canonical-option-key-expr-2606)
-- [`compare_option_labels_single`](#fn-compare-option-labels-single-2611)
-- [`compare_option_presence_single`](#fn-compare-option-presence-single-2648)
-- [`compare_option_name_renumber_single`](#fn-compare-option-name-renumber-single-2692)
-- [`compare_hint_changes`](#fn-compare-hint-changes-2775)
+- [`normalize_text_expr`](#fn-normalize-text-expr-1882)
+- [`normalize_simple_expr`](#fn-normalize-simple-expr-1892)
+- [`normalize_logic_expr`](#fn-normalize-logic-expr-1901)
 
-### 8. Step 7 -- Relevant validation (KoBO skip logic)
+### 8. Step 6 -- Comparison functions
 
-- [`_has_broken_hash_placeholder_token`](#fn--has-broken-hash-placeholder-token-2818)
-- [`_has_malformed_kobo_ref_token`](#fn--has-malformed-kobo-ref-token-2839)
-- [`validate_relevant`](#fn-validate-relevant-2854)
-- [`validate_choice_label_language_completeness`](#fn-validate-choice-label-language-completeness-2936)
-- [`validate_questionnaire_structure`](#fn-validate-questionnaire-structure-2997)
-- [`_module_rows_from_survey`](#fn--module-rows-from-survey-3211)
-- [`validate_module_presence`](#fn-validate-module-presence-3266)
-- [`_attach_module_column_to_issues`](#fn--attach-module-column-to-issues-3336)
-- [`_attach_module_column_to_issues._lookup_part`](#fn--lookup-part-3353)
-- [`_attach_module_column_to_issues._lookup_part_en`](#fn--lookup-part-en-3368)
+- [`compare_question_presence`](#fn-compare-question-presence-1916)
+- [`compare_mandatory_kobo`](#fn-compare-mandatory-kobo-1932)
+- [`validate_mandatory_category_unrecognized`](#fn-validate-mandatory-category-unrecognized-1969)
+- [`compare_list_name_changes`](#fn-compare-list-name-changes-1999)
+- [`compare_question_labels`](#fn-compare-question-labels-2029)
+- [`compare_constraint_changes`](#fn-compare-constraint-changes-2191)
+- [`validate_constraint_removed_for_mandatory`](#fn-validate-constraint-removed-for-mandatory-2248)
+- [`compare_required_changes`](#fn-compare-required-changes-2303)
+- [`compare_choice_filter_changes`](#fn-compare-choice-filter-changes-2340)
+- [`compare_appearance_changes`](#fn-compare-appearance-changes-2377)
+- [`compare_calculation_changes`](#fn-compare-calculation-changes-2414)
+- [`_normalize_qtype_value_kobo`](#fn--normalize-qtype-value-kobo-2452)
+- [`_qtype_mode_kobo`](#fn--qtype-mode-kobo-2466)
+- [`_is_known_qtype_value_kobo`](#fn--is-known-qtype-value-kobo-2502)
+- [`_qtype_change_severity_kobo`](#fn--qtype-change-severity-kobo-2513)
+- [`compare_type_changes`](#fn-compare-type-changes-2568)
+- [`_canonical_option_key_expr`](#fn--canonical-option-key-expr-2646)
+- [`compare_option_labels_single`](#fn-compare-option-labels-single-2651)
+- [`compare_option_presence_single`](#fn-compare-option-presence-single-2688)
+- [`compare_option_name_renumber_single`](#fn-compare-option-name-renumber-single-2732)
+- [`compare_hint_changes`](#fn-compare-hint-changes-2815)
 
-### 9. Step 8 -- Critical sets
+### 9. Step 7 -- Relevant validation (KoBO skip logic)
 
-- [`validate_critical_sets`](#fn-validate-critical-sets-3449)
-- [`validate_critical_sets._wealth_optional_variant`](#fn--wealth-optional-variant-3473)
-- [`validate_prefix_counts`](#fn-validate-prefix-counts-3521)
-- [`validate_crop_harvest`](#fn-validate-crop-harvest-3552)
+- [`_has_broken_hash_placeholder_token`](#fn--has-broken-hash-placeholder-token-2858)
+- [`_has_malformed_kobo_ref_token`](#fn--has-malformed-kobo-ref-token-2879)
+- [`validate_relevant`](#fn-validate-relevant-2894)
+- [`validate_choice_label_language_completeness`](#fn-validate-choice-label-language-completeness-2976)
+- [`validate_questionnaire_structure`](#fn-validate-questionnaire-structure-3037)
+- [`_module_rows_from_survey`](#fn--module-rows-from-survey-3251)
+- [`validate_module_presence`](#fn-validate-module-presence-3306)
+- [`_attach_module_column_to_issues`](#fn--attach-module-column-to-issues-3376)
+- [`_attach_module_column_to_issues._lookup_part`](#fn--lookup-part-3393)
+- [`_attach_module_column_to_issues._lookup_part_en`](#fn--lookup-part-en-3408)
 
-### 10. Step 9 -- Issue unifiers
+### 10. Step 8 -- Critical sets
 
-- [`make_presence_issues`](#fn-make-presence-issues-3604)
-- [`make_mandatory_issues`](#fn-make-mandatory-issues-3717)
-- [`make_option_issues`](#fn-make-option-issues-3730)
-- [`make_option_presence_issues`](#fn-make-option-presence-issues-3743)
-- [`make_option_name_renumber_issues`](#fn-make-option-name-renumber-issues-3763)
-- [`merge_option_issue_views_en_target`](#fn-merge-option-issue-views-en-target-3777)
-- [`classify_choice_name_root_causes`](#fn-classify-choice-name-root-causes-3835)
-- [`classify_choice_name_root_causes._is_numeric_name`](#fn--is-numeric-name-3958)
-- [`classify_choice_name_root_causes._name_sort_key`](#fn--name-sort-key-3961)
-- [`classify_choice_name_root_causes._uniq`](#fn--uniq-3967)
-- [`classify_choice_name_root_causes._join_limited`](#fn--join-limited-3978)
-- [`classify_choice_name_root_causes._join_names`](#fn--join-names-3986)
-- [`classify_choice_name_root_causes._format_choice_list`](#fn--format-choice-list-3995)
-- [`classify_mandatory_choice_set_replaced`](#fn-classify-mandatory-choice-set-replaced-4261)
-- [`classify_mandatory_choice_set_replaced._name_sort_key`](#fn--name-sort-key-4392)
-- [`classify_mandatory_choice_set_replaced._uniq`](#fn--uniq-4398)
-- [`classify_mandatory_choice_set_replaced._join_names`](#fn--join-names-4409)
-- [`classify_mandatory_choice_set_replaced._format_choice_list`](#fn--format-choice-list-4418)
-- [`collapse_cluster_ea_option_changes`](#fn-collapse-cluster-ea-option-changes-4512)
-- [`_join_tokens_limited`](#fn--join-tokens-limited-4561)
-- [`_format_collapsed_choice_side`](#fn--format-collapsed-choice-side-4577)
-- [`_format_choice_entries`](#fn--format-choice-entries-4592)
-- [`_build_choice_lookup`](#fn--build-choice-lookup-4622)
-- [`_collapsed_choice_detail`](#fn--collapsed-choice-detail-4651)
-- [`_ordered_unique_names`](#fn--ordered-unique-names-4669)
-- [`_ordered_added_removed_names`](#fn--ordered-added-removed-names-4682)
-- [`merge_added_removed_choice_rows`](#fn-merge-added-removed-choice-rows-4714)
-- [`collapse_choice_issue_rows_by_key`](#fn-collapse-choice-issue-rows-by-key-4839)
-- [`collapse_choice_issue_rows_by_key._filter_choice_entries_by_names`](#fn--filter-choice-entries-by-names-4869)
-- [`suppress_enumerator_option_details`](#fn-suppress-enumerator-option-details-5012)
-- [`suppress_enumerator_option_details._split`](#fn--split-5033)
-- [`suppress_structural_choice_label_noise`](#fn-suppress-structural-choice-label-noise-5093)
-- [`suppress_structural_choice_label_noise._norm_lbl`](#fn--norm-lbl-5141)
-- [`suppress_structural_choice_label_noise._name_to_label`](#fn--name-to-label-5144)
+- [`validate_critical_sets`](#fn-validate-critical-sets-3489)
+- [`validate_critical_sets._wealth_optional_variants`](#fn--wealth-optional-variants-3513)
+- [`validate_prefix_counts`](#fn-validate-prefix-counts-3560)
+- [`validate_crop_harvest`](#fn-validate-crop-harvest-3591)
+- [`_rule_issues_df`](#fn--rule-issues-df-3646)
+- [`_indicator_present`](#fn--indicator-present-3650)
+- [`validate_fs_indicators`](#fn-validate-fs-indicators-3661)
+- [`_agri_signal_patterns_kobo`](#fn--agri-signal-patterns-kobo-3713)
+- [`validate_agri_cs_count`](#fn-validate-agri-cs-count-3735)
+- [`validate_variable_pairs`](#fn-validate-variable-pairs-3775)
+- [`_code_sort_key`](#fn--code-sort-key-3803)
+- [`validate_fixed_option_codes`](#fn-validate-fixed-option-codes-3807)
+- [`read_tlu_weights`](#fn-read-tlu-weights-3852)
+- [`validate_tlu_weights`](#fn-validate-tlu-weights-3896)
+- [`validate_tlu_weights._issue`](#fn--issue-3914)
+- [`validate_qname_length`](#fn-validate-qname-length-3949)
 
-### 11. Step 10 -- Run pipeline
+### 11. Step 9 -- Issue unifiers
 
-- [`_dedupe_questions_for_compare`](#fn--dedupe-questions-for-compare-5218)
-- [`_with_choice_cols`](#fn--with-choice-cols-5571)
+- [`make_presence_issues`](#fn-make-presence-issues-3973)
+- [`make_mandatory_issues`](#fn-make-mandatory-issues-4074)
+- [`make_option_issues`](#fn-make-option-issues-4087)
+- [`make_option_presence_issues`](#fn-make-option-presence-issues-4100)
+- [`make_option_name_renumber_issues`](#fn-make-option-name-renumber-issues-4120)
+- [`merge_option_issue_views_en_target`](#fn-merge-option-issue-views-en-target-4134)
+- [`classify_choice_name_root_causes`](#fn-classify-choice-name-root-causes-4192)
+- [`classify_choice_name_root_causes._is_numeric_name`](#fn--is-numeric-name-4315)
+- [`classify_choice_name_root_causes._name_sort_key`](#fn--name-sort-key-4318)
+- [`classify_choice_name_root_causes._uniq`](#fn--uniq-4324)
+- [`classify_choice_name_root_causes._join_limited`](#fn--join-limited-4335)
+- [`classify_choice_name_root_causes._join_names`](#fn--join-names-4343)
+- [`classify_choice_name_root_causes._format_choice_list`](#fn--format-choice-list-4352)
+- [`classify_mandatory_choice_set_replaced`](#fn-classify-mandatory-choice-set-replaced-4618)
+- [`classify_mandatory_choice_set_replaced._name_sort_key`](#fn--name-sort-key-4749)
+- [`classify_mandatory_choice_set_replaced._uniq`](#fn--uniq-4755)
+- [`classify_mandatory_choice_set_replaced._join_names`](#fn--join-names-4766)
+- [`classify_mandatory_choice_set_replaced._format_choice_list`](#fn--format-choice-list-4775)
+- [`collapse_cluster_ea_option_changes`](#fn-collapse-cluster-ea-option-changes-4869)
+- [`_join_tokens_limited`](#fn--join-tokens-limited-4918)
+- [`_format_collapsed_choice_side`](#fn--format-collapsed-choice-side-4934)
+- [`_format_choice_entries`](#fn--format-choice-entries-4949)
+- [`_build_choice_lookup`](#fn--build-choice-lookup-4979)
+- [`_collapsed_choice_detail`](#fn--collapsed-choice-detail-5008)
+- [`_ordered_unique_names`](#fn--ordered-unique-names-5026)
+- [`_ordered_added_removed_names`](#fn--ordered-added-removed-names-5039)
+- [`merge_added_removed_choice_rows`](#fn-merge-added-removed-choice-rows-5071)
+- [`collapse_choice_issue_rows_by_key`](#fn-collapse-choice-issue-rows-by-key-5196)
+- [`collapse_choice_issue_rows_by_key._filter_choice_entries_by_names`](#fn--filter-choice-entries-by-names-5226)
+- [`suppress_enumerator_option_details`](#fn-suppress-enumerator-option-details-5369)
+- [`suppress_enumerator_option_details._split`](#fn--split-5390)
+- [`suppress_structural_choice_label_noise`](#fn-suppress-structural-choice-label-noise-5450)
+- [`suppress_structural_choice_label_noise._norm_lbl`](#fn--norm-lbl-5498)
+- [`suppress_structural_choice_label_noise._name_to_label`](#fn--name-to-label-5501)
 
-### 12. Step 11 -- Export
+### 12. Step 10 -- Run pipeline
 
-- [`_hdr`](#fn--hdr-5880)
-- [`_sect`](#fn--sect-5887)
-- [`_style_row`](#fn--style-row-5894)
-- [`_autofit`](#fn--autofit-5902)
-- [`_ensure_column_widths_from_header`](#fn--ensure-column-widths-from-header-5908)
-- [`_action_for_issue_type`](#fn--action-for-issue-type-5975)
-- [`_col_map_with_field_header`](#fn--col-map-with-field-header-6007)
-- [`_prepare_table_df`](#fn--prepare-table-df-6019)
-- [`_resolve_table_cols`](#fn--resolve-table-cols-6029)
-- [`_table`](#fn--table-6061)
-- [`_tokenize_for_word_diff`](#fn--tokenize-for-word-diff-6083)
-- [`_coalesce_segments`](#fn--coalesce-segments-6096)
-- [`_build_diff_segments`](#fn--build-diff-segments-6108)
-- [`_set_rich_text`](#fn--set-rich-text-6127)
-- [`_set_rich_text_with_bold_tokens`](#fn--set-rich-text-with-bold-tokens-6143)
-- [`_apply_inline_diff_for_issue`](#fn--apply-inline-diff-for-issue-6181)
-- [`_apply_inline_diff_for_issue._match_issue`](#fn--match-issue-6195)
-- [`_apply_choice_detail_highlights`](#fn--apply-choice-detail-highlights-6222)
-- [`_with_lang_scope_tag`](#fn--with-lang-scope-tag-6274)
-- [`_question_change_expr`](#fn--question-change-expr-6344)
-- [`_ensure_question_field_detail`](#fn--ensure-question-field-detail-6348)
-- [`_normalise_qtype_for_summary`](#fn--normalise-qtype-for-summary-6382)
-- [`_grouped_table`](#fn--grouped-table-6411)
-- [`write_summary_sheet`](#fn-write-summary-sheet-6449)
-- [`write_summary_sheet._set_row`](#fn--set-row-6510)
-- [`write_summary_sheet._check_row`](#fn--check-row-6576)
-- [`write_critical_sets_sheet`](#fn-write-critical-sets-sheet-6694)
-- [`write_questionnaire_structure_sheet`](#fn-write-questionnaire-structure-sheet-6720)
-- [`write_replacement_issues_sheet`](#fn-write-replacement-issues-sheet-6778)
-- [`write_relevant_sheet`](#fn-write-relevant-sheet-6809)
-- [`write_question_changes_sheet`](#fn-write-question-changes-sheet-6819)
-- [`write_option_changes_sheet`](#fn-write-option-changes-sheet-6873)
-- [`export_report`](#fn-export-report-6896)
+- [`_dedupe_questions_for_compare`](#fn--dedupe-questions-for-compare-5575)
+- [`_with_choice_cols`](#fn--with-choice-cols-5939)
 
-### 13. Step 12 -- Validated questionnaire output
+### 13. Step 11 -- Export
 
-- [`_crop_label_idx`](#fn--crop-label-idx-6961)
-- [`_read_crop_choices`](#fn--read-crop-choices-6975)
-- [`_merge_crop_rows_for_multilang`](#fn--merge-crop-rows-for-multilang-7058)
-- [`_fetch_admin_choices`](#fn--fetch-admin-choices-7122)
-- [`_fetch_admin_choices._get`](#fn--get-7132)
-- [`_fetch_admin3_choices`](#fn--fetch-admin3-choices-7153)
-- [`_rebuild_choices_sheet`](#fn--rebuild-choices-sheet-7176)
-- [`_rebuild_choices_sheet._row_values`](#fn--row-values-7204)
-- [`_rebuild_choices_sheet._row_styles`](#fn--row-styles-7210)
-- [`_rebuild_choices_sheet._norm_key`](#fn--norm-key-7247)
-- [`_rebuild_choices_sheet._is_empty`](#fn--is-empty-7250)
-- [`_rebuild_choices_sheet._remember_sample`](#fn--remember-sample-7257)
-- [`_rebuild_choices_sheet._is_blank`](#fn--is-blank-7272)
-- [`_strip_skipped_module_blocks_from_survey_sheet`](#fn--strip-skipped-module-blocks-from-survey-sheet-7440)
-- [`_strip_skipped_module_blocks_from_survey_sheet._cell`](#fn--cell-7481)
-- [`_remove_choices_lists_rows`](#fn--remove-choices-lists-rows-7538)
-- [`_remove_choices_lists_rows._cell`](#fn--cell-7560)
-- [`_detect_kobo_header_language`](#fn--detect-kobo-header-language-7584)
-- [`_apply_replacements_to_wb`](#fn--apply-replacements-to-wb-7608)
-- [`_restore_placeholder_tokens_from_template`](#fn--restore-placeholder-tokens-from-template-7646)
-- [`_restore_placeholder_tokens_from_template._norm_txt`](#fn--norm-txt-7673)
-- [`_restore_placeholder_tokens_from_template._can_restore_template_value`](#fn--can-restore-template-value-7682)
-- [`_count_choices_list_rows`](#fn--count-choices-list-rows-7818)
-- [`_choices_header_index_map`](#fn--choices-header-index-map-7830)
-- [`_count_blank_labels_for_lists`](#fn--count-blank-labels-for-lists-7841)
-- [`_validate_admin_parent_links_in_choices_sheet`](#fn--validate-admin-parent-links-in-choices-sheet-7864)
-- [`_highlight_admin_parent_issue_rows_in_choices_sheet`](#fn--highlight-admin-parent-issue-rows-in-choices-sheet-7949)
-- [`_write_admin_parent_mismatch_text_report`](#fn--write-admin-parent-mismatch-text-report-7982)
-- [`_choices_has_language_col`](#fn--choices-has-language-col-8020)
-- [`_crop_list_has_language_col`](#fn--crop-list-has-language-col-8038)
-- [`_normalize_choice_text_token`](#fn--normalize-choice-text-token-8055)
-- [`_choice_pair_set_by_list`](#fn--choice-pair-set-by-list-8062)
-- [`_choice_pair_set_from_rows`](#fn--choice-pair-set-from-rows-8078)
-- [`_choice_code_set_by_list`](#fn--choice-code-set-by-list-8092)
-- [`_choice_code_set_from_rows`](#fn--choice-code-set-from-rows-8106)
-- [`_fmt_choice_pairs`](#fn--fmt-choice-pairs-8118)
-- [`_fmt_choice_pairs._sort_key`](#fn--sort-key-8119)
-- [`_fmt_choice_codes`](#fn--fmt-choice-codes-8134)
-- [`_scan_unresolved_placeholders`](#fn--scan-unresolved-placeholders-8145)
-- [`_collect_unresolved_placeholder_cells`](#fn--collect-unresolved-placeholder-cells-8163)
-- [`_scan_malformed_placeholder_syntax`](#fn--scan-malformed-placeholder-syntax-8201)
-- [`produce_validated_questionnaire`](#fn-produce-validated-questionnaire-8224)
-- [`produce_validated_questionnaire._add_row`](#fn--add-row-8255)
-- [`produce_validated_questionnaire._add_issue`](#fn--add-issue-8263)
-- [`produce_validated_questionnaire._add_issue_row`](#fn--add-issue-row-8277)
+- [`_hdr`](#fn--hdr-6263)
+- [`_sect`](#fn--sect-6270)
+- [`_style_row`](#fn--style-row-6277)
+- [`_autofit`](#fn--autofit-6285)
+- [`_ensure_column_widths_from_header`](#fn--ensure-column-widths-from-header-6291)
+- [`_action_for_issue_type`](#fn--action-for-issue-type-6367)
+- [`_col_map_with_field_header`](#fn--col-map-with-field-header-6399)
+- [`_prepare_table_df`](#fn--prepare-table-df-6411)
+- [`_resolve_table_cols`](#fn--resolve-table-cols-6421)
+- [`_table`](#fn--table-6453)
+- [`_tokenize_for_word_diff`](#fn--tokenize-for-word-diff-6475)
+- [`_coalesce_segments`](#fn--coalesce-segments-6488)
+- [`_build_diff_segments`](#fn--build-diff-segments-6500)
+- [`_set_rich_text`](#fn--set-rich-text-6519)
+- [`_set_rich_text_with_bold_tokens`](#fn--set-rich-text-with-bold-tokens-6535)
+- [`_apply_inline_diff_for_issue`](#fn--apply-inline-diff-for-issue-6573)
+- [`_apply_inline_diff_for_issue._match_issue`](#fn--match-issue-6587)
+- [`_apply_choice_detail_highlights`](#fn--apply-choice-detail-highlights-6614)
+- [`_with_lang_scope_tag`](#fn--with-lang-scope-tag-6666)
+- [`_question_change_expr`](#fn--question-change-expr-6740)
+- [`_ensure_question_field_detail`](#fn--ensure-question-field-detail-6744)
+- [`_normalise_qtype_for_summary`](#fn--normalise-qtype-for-summary-6778)
+- [`_grouped_table`](#fn--grouped-table-6807)
+- [`write_summary_sheet`](#fn-write-summary-sheet-6845)
+- [`write_summary_sheet._set_row`](#fn--set-row-6906)
+- [`write_summary_sheet._check_row`](#fn--check-row-6987)
+- [`write_critical_sets_sheet`](#fn-write-critical-sets-sheet-7105)
+- [`write_questionnaire_structure_sheet`](#fn-write-questionnaire-structure-sheet-7131)
+- [`write_replacement_issues_sheet`](#fn-write-replacement-issues-sheet-7189)
+- [`write_relevant_sheet`](#fn-write-relevant-sheet-7220)
+- [`write_question_changes_sheet`](#fn-write-question-changes-sheet-7230)
+- [`write_option_changes_sheet`](#fn-write-option-changes-sheet-7284)
+- [`export_report`](#fn-export-report-7307)
+
+### 14. Step 12 -- Validated questionnaire output
+
+- [`_crop_label_idx`](#fn--crop-label-idx-7372)
+- [`_read_crop_choices`](#fn--read-crop-choices-7386)
+- [`_merge_crop_rows_for_multilang`](#fn--merge-crop-rows-for-multilang-7469)
+- [`_fetch_admin_choices`](#fn--fetch-admin-choices-7533)
+- [`_fetch_admin_choices._get`](#fn--get-7543)
+- [`_fetch_admin3_choices`](#fn--fetch-admin3-choices-7564)
+- [`_rebuild_choices_sheet`](#fn--rebuild-choices-sheet-7587)
+- [`_rebuild_choices_sheet._row_values`](#fn--row-values-7615)
+- [`_rebuild_choices_sheet._row_styles`](#fn--row-styles-7621)
+- [`_rebuild_choices_sheet._norm_key`](#fn--norm-key-7658)
+- [`_rebuild_choices_sheet._is_empty`](#fn--is-empty-7661)
+- [`_rebuild_choices_sheet._remember_sample`](#fn--remember-sample-7668)
+- [`_rebuild_choices_sheet._is_blank`](#fn--is-blank-7683)
+- [`_strip_skipped_module_blocks_from_survey_sheet`](#fn--strip-skipped-module-blocks-from-survey-sheet-7851)
+- [`_strip_skipped_module_blocks_from_survey_sheet._cell`](#fn--cell-7892)
+- [`_remove_choices_lists_rows`](#fn--remove-choices-lists-rows-7949)
+- [`_remove_choices_lists_rows._cell`](#fn--cell-7971)
+- [`_detect_kobo_header_language`](#fn--detect-kobo-header-language-7995)
+- [`_apply_replacements_to_wb`](#fn--apply-replacements-to-wb-8019)
+- [`_restore_placeholder_tokens_from_template`](#fn--restore-placeholder-tokens-from-template-8057)
+- [`_restore_placeholder_tokens_from_template._norm_txt`](#fn--norm-txt-8084)
+- [`_restore_placeholder_tokens_from_template._can_restore_template_value`](#fn--can-restore-template-value-8093)
+- [`_count_choices_list_rows`](#fn--count-choices-list-rows-8229)
+- [`_choices_header_index_map`](#fn--choices-header-index-map-8241)
+- [`_count_blank_labels_for_lists`](#fn--count-blank-labels-for-lists-8252)
+- [`_validate_admin_parent_links_in_choices_sheet`](#fn--validate-admin-parent-links-in-choices-sheet-8275)
+- [`_highlight_admin_parent_issue_rows_in_choices_sheet`](#fn--highlight-admin-parent-issue-rows-in-choices-sheet-8360)
+- [`_write_admin_parent_mismatch_text_report`](#fn--write-admin-parent-mismatch-text-report-8393)
+- [`_choices_has_language_col`](#fn--choices-has-language-col-8431)
+- [`_crop_list_has_language_col`](#fn--crop-list-has-language-col-8449)
+- [`_normalize_choice_text_token`](#fn--normalize-choice-text-token-8466)
+- [`_choice_pair_set_by_list`](#fn--choice-pair-set-by-list-8473)
+- [`_choice_pair_set_from_rows`](#fn--choice-pair-set-from-rows-8489)
+- [`_choice_code_set_by_list`](#fn--choice-code-set-by-list-8503)
+- [`_choice_code_set_from_rows`](#fn--choice-code-set-from-rows-8517)
+- [`_fmt_choice_pairs`](#fn--fmt-choice-pairs-8529)
+- [`_fmt_choice_pairs._sort_key`](#fn--sort-key-8530)
+- [`_fmt_choice_codes`](#fn--fmt-choice-codes-8545)
+- [`_column_language`](#fn--column-language-8559)
+- [`_column_in_scope`](#fn--column-in-scope-8568)
+- [`_sheet_scope_mask`](#fn--sheet-scope-mask-8576)
+- [`read_additional_info_keys`](#fn-read-additional-info-keys-8581)
+- [`build_unresolved_placeholder_issues`](#fn-build-unresolved-placeholder-issues-8606)
+- [`_scan_unresolved_placeholders`](#fn--scan-unresolved-placeholders-8675)
+- [`_collect_unresolved_placeholder_cells`](#fn--collect-unresolved-placeholder-cells-8698)
+- [`_scan_malformed_placeholder_syntax`](#fn--scan-malformed-placeholder-syntax-8744)
+- [`produce_validated_questionnaire`](#fn-produce-validated-questionnaire-8772)
+- [`produce_validated_questionnaire._add_row`](#fn--add-row-8804)
+- [`produce_validated_questionnaire._add_issue`](#fn--add-issue-8812)
+- [`produce_validated_questionnaire._add_issue_row`](#fn--add-issue-row-8826)
 
 ## Full Specifications
 
@@ -963,11 +987,106 @@ def _as_bool(value, default: bool=False) -> bool:
         return default
     ```
 
-### `_normalize_survey_type_token` {#fn--normalize-survey-type-token-381}
+### `_custom_qname_expr` {#fn--custom-qname-expr-387}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:381`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:387`
+
+**Signature**
+
+```python
+def _custom_qname_expr(col_name: str) -> pl.Expr:
+```
+
+**Returns:** `pl.Expr`
+
+**What it does:** True when the question name carries a custom/optional prefix.
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `col_name` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 3 -- Readers` stage. |
+
+??? note "Function source"
+
+    ```python
+    def _custom_qname_expr(col_name: str) -> pl.Expr:
+        """True when the question name carries a custom/optional prefix."""
+        return pl.col(col_name).cast(pl.Utf8).str.strip_chars().str.contains(_CUSTOM_QNAME_RE)
+    ```
+
+### `_core_qname_expr` {#fn--core-qname-expr-392}
+
+**Pipeline stage:** `Step 3 -- Readers`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:392`
+
+**Signature**
+
+```python
+def _core_qname_expr(col_name: str) -> pl.Expr:
+```
+
+**Returns:** `pl.Expr`
+
+**What it does:** Question name with any custom/optional prefix removed, lowercased.
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `col_name` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 3 -- Readers` stage. |
+
+??? note "Function source"
+
+    ```python
+    def _core_qname_expr(col_name: str) -> pl.Expr:
+        """Question name with any custom/optional prefix removed, lowercased."""
+        return (
+            pl.col(col_name).cast(pl.Utf8).str.strip_chars()
+            .str.replace(_CUSTOM_QNAME_RE, "")
+            .str.to_lowercase()
+        )
+    ```
+
+### `_custom_variants` {#fn--custom-variants-401}
+
+**Pipeline stage:** `Step 3 -- Readers`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:401`
+
+**Signature**
+
+```python
+def _custom_variants(q_name: str) -> list[str]:
+```
+
+**Returns:** `list[str]`
+
+**What it does:** Custom/optional spellings of a template question (hh_wealth_x -> c_hh_wealth_x, o_hh_wealth_x).
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `q_name` | positional_or_keyword | Yes | `-` | `str` | Question identifier used to join or compare records. |
+
+??? note "Function source"
+
+    ```python
+    def _custom_variants(q_name: str) -> list[str]:
+        """Custom/optional spellings of a template question (hh_wealth_x -> c_hh_wealth_x, o_hh_wealth_x)."""
+        q = str(q_name or "").strip()
+        return [f"{p}{q}" for p in CUSTOM_QNAME_PREFIXES] if q else []
+    ```
+
+### `_normalize_survey_type_token` {#fn--normalize-survey-type-token-407}
+
+**Pipeline stage:** `Step 3 -- Readers`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:407`
 
 **Signature**
 
@@ -993,11 +1112,11 @@ def _normalize_survey_type_token(value) -> str:
         return re.sub(r"\s+", "_", txt)
     ```
 
-### `_find_label_col` {#fn--find-label-col-385}
+### `_find_label_col` {#fn--find-label-col-411}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:385`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:411`
 
 **Signature**
 
@@ -1026,11 +1145,11 @@ def _find_label_col(headers: list, language: str) -> str | None:
         return next((h for h in headers if h.startswith("label::")), None)
     ```
 
-### `_find_hint_col` {#fn--find-hint-col-400}
+### `_find_hint_col` {#fn--find-hint-col-426}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:400`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:426`
 
 **Signature**
 
@@ -1062,11 +1181,11 @@ def _find_hint_col(headers: list, language: str) -> str | None:
         return "hint" if "hint" in headers else None
     ```
 
-### `_find_xlsform_header_row_idx` {#fn--find-xlsform-header-row-idx-410}
+### `_find_xlsform_header_row_idx` {#fn--find-xlsform-header-row-idx-436}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:410`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:436`
 
 **Signature**
 
@@ -1097,11 +1216,11 @@ def _find_xlsform_header_row_idx(rows: list) -> int:
         return 0
     ```
 
-### `_find_ws_header_row_1based` {#fn--find-ws-header-row-1based-420}
+### `_find_ws_header_row_1based` {#fn--find-ws-header-row-1based-446}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:420`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:446`
 
 **Signature**
 
@@ -1133,11 +1252,11 @@ def _find_ws_header_row_1based(ws, max_scan: int=10) -> int:
         return 1
     ```
 
-### `_choices_header_key` {#fn--choices-header-key-439}
+### `_choices_header_key` {#fn--choices-header-key-465}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:439`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:465`
 
 **Signature**
 
@@ -1162,11 +1281,11 @@ def _choices_header_key(value) -> str:
         return str(value or "").strip().lower()
     ```
 
-### `_choices_header_concept` {#fn--choices-header-concept-443}
+### `_choices_header_concept` {#fn--choices-header-concept-469}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:443`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:469`
 
 **Signature**
 
@@ -1194,11 +1313,11 @@ def _choices_header_concept(value) -> str:
         return key
     ```
 
-### `_resolve_choices_output_headers` {#fn--resolve-choices-output-headers-450}
+### `_resolve_choices_output_headers` {#fn--resolve-choices-output-headers-476}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:450`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:476`
 
 **Signature**
 
@@ -1238,11 +1357,11 @@ def _resolve_choices_output_headers(current_headers: list[str], template_headers
         return out
     ```
 
-### `_remap_choices_row_to_headers` {#fn--remap-choices-row-to-headers-468}
+### `_remap_choices_row_to_headers` {#fn--remap-choices-row-to-headers-494}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:468`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:494`
 
 **Signature**
 
@@ -1306,11 +1425,11 @@ def _remap_choices_row_to_headers(values: list, styles: list, source_headers: li
         return out_vals, out_styles
     ```
 
-### `_read_choices_headers_from_workbook` {#fn--read-choices-headers-from-workbook-507}
+### `_read_choices_headers_from_workbook` {#fn--read-choices-headers-from-workbook-533}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:507`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:533`
 
 **Signature**
 
@@ -1347,11 +1466,11 @@ def _read_choices_headers_from_workbook(path: str) -> list[str]:
             wb.close()
     ```
 
-### `_normalize_list_token` {#fn--normalize-list-token-532}
+### `_normalize_list_token` {#fn--normalize-list-token-558}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:532`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:558`
 
 **Signature**
 
@@ -1383,11 +1502,11 @@ def _normalize_list_token(value) -> str:
         return txt
     ```
 
-### `_normalize_module_token` {#fn--normalize-module-token-543}
+### `_normalize_module_token` {#fn--normalize-module-token-569}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:543`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:569`
 
 **Signature**
 
@@ -1415,11 +1534,11 @@ def _normalize_module_token(value) -> str:
         return txt
     ```
 
-### `_extract_select_list_name_from_type` {#fn--extract-select-list-name-from-type-550}
+### `_extract_select_list_name_from_type` {#fn--extract-select-list-name-from-type-576}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:550`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:576`
 
 **Signature**
 
@@ -1465,11 +1584,11 @@ def _extract_select_list_name_from_type(q_type_raw: str) -> str:
         return ""
     ```
 
-### `_canonical_option_name_token` {#fn--canonical-option-name-token-575}
+### `_canonical_option_name_token` {#fn--canonical-option-name-token-601}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:575`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:601`
 
 **Signature**
 
@@ -1504,11 +1623,11 @@ def _canonical_option_name_token(value) -> str:
         return txt
     ```
 
-### `_normalized_list_expr` {#fn--normalized-list-expr-589}
+### `_normalized_list_expr` {#fn--normalized-list-expr-615}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:589`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:615`
 
 **Signature**
 
@@ -1533,11 +1652,11 @@ def _normalized_list_expr(col_name: str) -> pl.Expr:
         return pl.col(col_name).map_elements(_normalize_list_token, return_dtype=pl.Utf8)
     ```
 
-### `_normalize_mandatory` {#fn--normalize-mandatory-593}
+### `_normalize_mandatory` {#fn--normalize-mandatory-619}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:593`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:619`
 
 **Signature**
 
@@ -1571,11 +1690,11 @@ def _normalize_mandatory(val) -> str:
         return ""
     ```
 
-### `read_kobo_survey` {#fn-read-kobo-survey-606}
+### `read_kobo_survey` {#fn-read-kobo-survey-632}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:606`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:632`
 
 **Signature**
 
@@ -1696,7 +1815,7 @@ def read_kobo_survey(path: str, language: str='en', _wb=None) -> pl.DataFrame:
             mand_cat = _normalize_mandatory(get(row, mand_col))
             if not mand_cat and q_type in _DATA_TYPES:
                 mand_cat = "non-mandatory"
-            if q_name.startswith("o_"):
+            if q_name.startswith(CUSTOM_QNAME_PREFIXES):
                 mand_cat = "optional"
 
             module_key = module_stack[-1][0] if module_stack else ""
@@ -1727,11 +1846,11 @@ def read_kobo_survey(path: str, language: str='en', _wb=None) -> pl.DataFrame:
         return pl.DataFrame(records) if records else pl.DataFrame(schema=EMPTY)
     ```
 
-### `read_kobo_survey.get` {#fn-get-636}
+### `read_kobo_survey.get` {#fn-get-662}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:636`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:662`
 
 **Signature**
 
@@ -1758,11 +1877,11 @@ def get(row, col):
             return row[i] if i is not None and i < len(row) else None
     ```
 
-### `read_kobo_choices` {#fn-read-kobo-choices-735}
+### `read_kobo_choices` {#fn-read-kobo-choices-761}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:735`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:761`
 
 **Signature**
 
@@ -1820,11 +1939,11 @@ def read_kobo_choices(path: str, language: str='en', _wb=None) -> pl.DataFrame:
         return pl.DataFrame(records) if records else pl.DataFrame(schema=EMPTY)
     ```
 
-### `read_kobo_choices.get` {#fn-get-752}
+### `read_kobo_choices.get` {#fn-get-778}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:752`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:778`
 
 **Signature**
 
@@ -1851,11 +1970,11 @@ def get(row, col):
             return row[i] if i is not None and i < len(row) else None
     ```
 
-### `build_question_options` {#fn-build-question-options-770}
+### `build_question_options` {#fn-build-question-options-796}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:770`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:796`
 
 **Signature**
 
@@ -1938,11 +2057,11 @@ def build_question_options(survey_df: pl.DataFrame, choices_df: pl.DataFrame) ->
         return pl.DataFrame(records, schema=schema) if records else pl.DataFrame(schema=schema)
     ```
 
-### `_normalized_module_expr` {#fn--normalized-module-expr-831}
+### `_normalized_module_expr` {#fn--normalized-module-expr-857}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:831`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:857`
 
 **Signature**
 
@@ -1967,11 +2086,11 @@ def _normalized_module_expr(col_name: str) -> pl.Expr:
         return pl.col(col_name).map_elements(_normalize_module_token, return_dtype=pl.Utf8)
     ```
 
-### `_resolve_module_keys_from_tokens` {#fn--resolve-module-keys-from-tokens-835}
+### `_resolve_module_keys_from_tokens` {#fn--resolve-module-keys-from-tokens-861}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:835`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:861`
 
 **Signature**
 
@@ -2031,11 +2150,11 @@ def _resolve_module_keys_from_tokens(tokens: list[str], survey_dfs: list[pl.Data
         return resolved, unresolved
     ```
 
-### `_filter_survey_by_module_keys` {#fn--filter-survey-by-module-keys-873}
+### `_filter_survey_by_module_keys` {#fn--filter-survey-by-module-keys-899}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:873`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:899`
 
 **Signature**
 
@@ -2068,11 +2187,11 @@ def _filter_survey_by_module_keys(df: pl.DataFrame, excluded_module_keys: set[st
         )
     ```
 
-### `_module_display_map` {#fn--module-display-map-884}
+### `_module_display_map` {#fn--module-display-map-910}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:884`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:910`
 
 **Signature**
 
@@ -2108,11 +2227,11 @@ def _module_display_map(*survey_dfs: pl.DataFrame) -> dict[str, str]:
         return out
     ```
 
-### `_collect_skip_module_payload` {#fn--collect-skip-module-payload-899}
+### `_collect_skip_module_payload` {#fn--collect-skip-module-payload-925}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:899`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:925`
 
 **Signature**
 
@@ -2174,11 +2293,11 @@ def _collect_skip_module_payload(current_survey_df: pl.DataFrame, skip_module_ke
         return skip_qnames, removable_lists
     ```
 
-### `_dedupe_keep_order` {#fn--dedupe-keep-order-939}
+### `_dedupe_keep_order` {#fn--dedupe-keep-order-965}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:939`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:965`
 
 **Signature**
 
@@ -2214,11 +2333,11 @@ def _dedupe_keep_order(items: list[str]) -> list[str]:
         return out
     ```
 
-### `_format_module_scope_for_display` {#fn--format-module-scope-for-display-954}
+### `_format_module_scope_for_display` {#fn--format-module-scope-for-display-980}
 
 **Pipeline stage:** `Step 3 -- Readers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:954`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:980`
 
 **Signature**
 
@@ -2257,11 +2376,43 @@ def _format_module_scope_for_display(configured_tokens: list[str], resolved_keys
         return cfg_txt
     ```
 
-### `_normalize_additional_info_header` {#fn--normalize-additional-info-header-1127}
+### `_normalize_languages_in_scope` {#fn--normalize-languages-in-scope-1049}
+
+**Pipeline stage:** `Step 4 -- Load files`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1049`
+
+**Signature**
+
+```python
+def _normalize_languages_in_scope(value) -> list[str]:
+```
+
+**Returns:** `list[str]`
+
+**What it does:** languages_in_scope config value -> lowercase codes; empty list = every filled language.
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `value` | positional_or_keyword | Yes | `-` | `-` | Input used by the `Step 4 -- Load files` stage. |
+
+??? note "Function source"
+
+    ```python
+    def _normalize_languages_in_scope(value) -> list[str]:
+        """languages_in_scope config value -> lowercase codes; empty list = every filled language."""
+        if isinstance(value, str):
+            value = [v for v in value.split(",")]
+        return [str(v).strip().lower() for v in (value or []) if str(v).strip()]
+    ```
+
+### `_normalize_additional_info_header` {#fn--normalize-additional-info-header-1167}
 
 **Pipeline stage:** `Step 4b -- Placeholder normalization`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1127`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1167`
 
 **Signature**
 
@@ -2286,11 +2437,11 @@ def _normalize_additional_info_header(value) -> str:
         return re.sub(r"\s+", " ", str(value or "").strip()).lower()
     ```
 
-### `_additional_info_replacement_indexes` {#fn--additional-info-replacement-indexes-1131}
+### `_additional_info_replacement_indexes` {#fn--additional-info-replacement-indexes-1171}
 
 **Pipeline stage:** `Step 4b -- Placeholder normalization`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1131`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1171`
 
 **Signature**
 
@@ -2328,11 +2479,11 @@ def _additional_info_replacement_indexes(headers: list[str]) -> dict[str, int | 
         return out
     ```
 
-### `_placeholder_aliases` {#fn--placeholder-aliases-1148}
+### `_placeholder_aliases` {#fn--placeholder-aliases-1188}
 
 **Pipeline stage:** `Step 4b -- Placeholder normalization`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1148`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1188`
 
 **Signature**
 
@@ -2369,11 +2520,11 @@ def _placeholder_aliases(s: str) -> set[str]:
         return aliases
     ```
 
-### `read_additional_info_all_languages` {#fn-read-additional-info-all-languages-1164}
+### `read_additional_info_all_languages` {#fn-read-additional-info-all-languages-1204}
 
 **Pipeline stage:** `Step 4b -- Placeholder normalization`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1164`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1204`
 
 **Signature**
 
@@ -2442,11 +2593,11 @@ def read_additional_info_all_languages(country_path: str) -> dict[str, dict[str,
         return out
     ```
 
-### `read_additional_info_with_status` {#fn-read-additional-info-with-status-1212}
+### `read_additional_info_with_status` {#fn-read-additional-info-with-status-1252}
 
 **Pipeline stage:** `Step 4b -- Placeholder normalization`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1212`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1252`
 
 **Signature**
 
@@ -2564,11 +2715,11 @@ def read_additional_info_with_status(country_path: str, language: str='en') -> t
         return pairs, status
     ```
 
-### `read_additional_info` {#fn-read-additional-info-1308}
+### `read_additional_info` {#fn-read-additional-info-1348}
 
 **Pipeline stage:** `Step 4b -- Placeholder normalization`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1308`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1348`
 
 **Signature**
 
@@ -2595,11 +2746,11 @@ def read_additional_info(country_path: str, language: str='en') -> dict[str, str
         return pairs
     ```
 
-### `restore_to_vanilla` {#fn-restore-to-vanilla-1313}
+### `restore_to_vanilla` {#fn-restore-to-vanilla-1353}
 
 **Pipeline stage:** `Step 4b -- Placeholder normalization`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1313`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1353`
 
 **Signature**
 
@@ -2665,11 +2816,11 @@ def restore_to_vanilla(current_df: pl.DataFrame, reference_df: pl.DataFrame, col
         return result
     ```
 
-### `apply_replacements` {#fn-apply-replacements-1355}
+### `apply_replacements` {#fn-apply-replacements-1395}
 
 **Pipeline stage:** `Step 4b -- Placeholder normalization`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1355`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1395`
 
 **Signature**
 
@@ -2711,11 +2862,11 @@ def apply_replacements(df: pl.DataFrame, pairs: dict[str, str], cols: list[str])
         return result
     ```
 
-### `read_crop_choice_rows_for_compare_with_status` {#fn-read-crop-choice-rows-for-compare-with-status-1381}
+### `read_crop_choice_rows_for_compare_with_status` {#fn-read-crop-choice-rows-for-compare-with-status-1421}
 
 **Pipeline stage:** `Step 4b -- Placeholder normalization`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1381`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1421`
 
 **Signature**
 
@@ -2819,11 +2970,11 @@ def read_crop_choice_rows_for_compare_with_status(country_path: str, language: s
         return ({name: combined + specials for name, specials in _CROP_SPECIALS_COMPARE.items()}, status)
     ```
 
-### `read_crop_choice_rows_for_compare` {#fn-read-crop-choice-rows-for-compare-1463}
+### `read_crop_choice_rows_for_compare` {#fn-read-crop-choice-rows-for-compare-1503}
 
 **Pipeline stage:** `Step 4b -- Placeholder normalization`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1463`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1503`
 
 **Signature**
 
@@ -2850,11 +3001,11 @@ def read_crop_choice_rows_for_compare(country_path: str, language: str) -> dict[
         return rows
     ```
 
-### `fetch_admin_choice_rows_for_compare` {#fn-fetch-admin-choice-rows-for-compare-1468}
+### `fetch_admin_choice_rows_for_compare` {#fn-fetch-admin-choice-rows-for-compare-1508}
 
 **Pipeline stage:** `Step 4b -- Placeholder normalization`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1468`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1508`
 
 **Signature**
 
@@ -2933,11 +3084,11 @@ def fetch_admin_choice_rows_for_compare(iso3: str, include_admin3: bool=False) -
             return {}
     ```
 
-### `replace_choice_lists_for_compare` {#fn-replace-choice-lists-for-compare-1525}
+### `replace_choice_lists_for_compare` {#fn-replace-choice-lists-for-compare-1565}
 
 **Pipeline stage:** `Step 4b -- Placeholder normalization`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1525`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1565`
 
 **Signature**
 
@@ -2989,11 +3140,11 @@ def replace_choice_lists_for_compare(choices_df: pl.DataFrame, country_rows: dic
         return pl.concat([kept, new_df], how="vertical")
     ```
 
-### `_add_replacement_input_issue` {#fn--add-replacement-input-issue-1561}
+### `_add_replacement_input_issue` {#fn--add-replacement-input-issue-1601}
 
 **Pipeline stage:** `Step 4b -- Placeholder normalization`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1561`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1601`
 
 **Signature**
 
@@ -3047,11 +3198,11 @@ def _add_replacement_input_issue(issue_type: str, field: str, current: str, refe
         })
     ```
 
-### `_count_hash_placeholders_in_text_df` {#fn--count-hash-placeholders-in-text-df-1585}
+### `_count_hash_placeholders_in_text_df` {#fn--count-hash-placeholders-in-text-df-1625}
 
 **Pipeline stage:** `Step 4b -- Placeholder normalization`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1585`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1625`
 
 **Signature**
 
@@ -3084,11 +3235,11 @@ def _count_hash_placeholders_in_text_df(df: pl.DataFrame, cols: list[str]) -> in
         return int(total)
     ```
 
-### `normalize_text_expr` {#fn-normalize-text-expr-1842}
+### `normalize_text_expr` {#fn-normalize-text-expr-1882}
 
 **Pipeline stage:** `Step 5 -- Normalisation helpers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1842`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1882`
 
 **Signature**
 
@@ -3119,11 +3270,11 @@ def normalize_text_expr(col_name: str) -> pl.Expr:
         )
     ```
 
-### `normalize_simple_expr` {#fn-normalize-simple-expr-1852}
+### `normalize_simple_expr` {#fn-normalize-simple-expr-1892}
 
 **Pipeline stage:** `Step 5 -- Normalisation helpers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1852`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1892`
 
 **Signature**
 
@@ -3153,11 +3304,11 @@ def normalize_simple_expr(col_name: str) -> pl.Expr:
         )
     ```
 
-### `normalize_logic_expr` {#fn-normalize-logic-expr-1861}
+### `normalize_logic_expr` {#fn-normalize-logic-expr-1901}
 
 **Pipeline stage:** `Step 5 -- Normalisation helpers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1861`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1901`
 
 **Signature**
 
@@ -3188,11 +3339,11 @@ def normalize_logic_expr(col_name: str) -> pl.Expr:
         )
     ```
 
-### `compare_question_presence` {#fn-compare-question-presence-1876}
+### `compare_question_presence` {#fn-compare-question-presence-1916}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1876`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1916`
 
 **Signature**
 
@@ -3220,21 +3371,21 @@ def compare_question_presence(current, reference):
         added = (
             current.select([key])
             .join(reference.select([key]), on=key, how="anti")
-            .with_columns(pl.col(key).str.starts_with("o_").alias("is_optional"))
+            .with_columns(_custom_qname_expr(key).alias("is_optional"))
         )
         removed = (
             reference.select([key])
             .join(current.select([key]), on=key, how="anti")
-            .with_columns(pl.col(key).str.starts_with("o_").alias("is_optional"))
+            .with_columns(_custom_qname_expr(key).alias("is_optional"))
         )
         return added, removed
     ```
 
-### `compare_mandatory_kobo` {#fn-compare-mandatory-kobo-1892}
+### `compare_mandatory_kobo` {#fn-compare-mandatory-kobo-1932}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1892`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1932`
 
 **Signature**
 
@@ -3283,11 +3434,11 @@ def compare_mandatory_kobo(current, reference):
         )
     ```
 
-### `validate_mandatory_category_unrecognized` {#fn-validate-mandatory-category-unrecognized-1929}
+### `validate_mandatory_category_unrecognized` {#fn-validate-mandatory-category-unrecognized-1969}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1929`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1969`
 
 **Signature**
 
@@ -3338,11 +3489,11 @@ def validate_mandatory_category_unrecognized(survey: pl.DataFrame) -> pl.DataFra
         return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
     ```
 
-### `compare_list_name_changes` {#fn-compare-list-name-changes-1959}
+### `compare_list_name_changes` {#fn-compare-list-name-changes-1999}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1959`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1999`
 
 **Signature**
 
@@ -3394,11 +3545,11 @@ def compare_list_name_changes(current, reference):
         return result if result.height > 0 else pl.DataFrame(schema=EMPTY)
     ```
 
-### `compare_question_labels` {#fn-compare-question-labels-1989}
+### `compare_question_labels` {#fn-compare-question-labels-2029}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:1989`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2029`
 
 **Signature**
 
@@ -3584,11 +3735,11 @@ def compare_question_labels(current_vanilla, reference, current_orig=None, langu
         )
     ```
 
-### `compare_constraint_changes` {#fn-compare-constraint-changes-2151}
+### `compare_constraint_changes` {#fn-compare-constraint-changes-2191}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2151`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2191`
 
 **Signature**
 
@@ -3668,11 +3819,11 @@ def compare_constraint_changes(current_vanilla, reference, current_orig=None):
         )
     ```
 
-### `validate_constraint_removed_for_mandatory` {#fn-validate-constraint-removed-for-mandatory-2208}
+### `validate_constraint_removed_for_mandatory` {#fn-validate-constraint-removed-for-mandatory-2248}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2208`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2248`
 
 **Signature**
 
@@ -3749,11 +3900,11 @@ def validate_constraint_removed_for_mandatory(current_vanilla: pl.DataFrame, ref
         )
     ```
 
-### `compare_required_changes` {#fn-compare-required-changes-2263}
+### `compare_required_changes` {#fn-compare-required-changes-2303}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2263`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2303`
 
 **Signature**
 
@@ -3812,11 +3963,11 @@ def compare_required_changes(current, reference):
         )
     ```
 
-### `compare_choice_filter_changes` {#fn-compare-choice-filter-changes-2300}
+### `compare_choice_filter_changes` {#fn-compare-choice-filter-changes-2340}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2300`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2340`
 
 **Signature**
 
@@ -3875,11 +4026,11 @@ def compare_choice_filter_changes(current, reference):
         )
     ```
 
-### `compare_appearance_changes` {#fn-compare-appearance-changes-2337}
+### `compare_appearance_changes` {#fn-compare-appearance-changes-2377}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2337`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2377`
 
 **Signature**
 
@@ -3938,11 +4089,11 @@ def compare_appearance_changes(current, reference):
         )
     ```
 
-### `compare_calculation_changes` {#fn-compare-calculation-changes-2374}
+### `compare_calculation_changes` {#fn-compare-calculation-changes-2414}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2374`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2414`
 
 **Signature**
 
@@ -4001,11 +4152,11 @@ def compare_calculation_changes(current, reference):
         )
     ```
 
-### `_normalize_qtype_value_kobo` {#fn--normalize-qtype-value-kobo-2412}
+### `_normalize_qtype_value_kobo` {#fn--normalize-qtype-value-kobo-2452}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2412`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2452`
 
 **Signature**
 
@@ -4040,11 +4191,11 @@ def _normalize_qtype_value_kobo(value: str) -> str:
         return s
     ```
 
-### `_qtype_mode_kobo` {#fn--qtype-mode-kobo-2426}
+### `_qtype_mode_kobo` {#fn--qtype-mode-kobo-2466}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2426`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2466`
 
 **Signature**
 
@@ -4081,11 +4232,11 @@ def _qtype_mode_kobo(value: str) -> str:
         return "non_option"
     ```
 
-### `_is_known_qtype_value_kobo` {#fn--is-known-qtype-value-kobo-2462}
+### `_is_known_qtype_value_kobo` {#fn--is-known-qtype-value-kobo-2502}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2462`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2502`
 
 **Signature**
 
@@ -4117,11 +4268,11 @@ def _is_known_qtype_value_kobo(value: str) -> bool:
         return False
     ```
 
-### `_qtype_change_severity_kobo` {#fn--qtype-change-severity-kobo-2473}
+### `_qtype_change_severity_kobo` {#fn--qtype-change-severity-kobo-2513}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2473`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2513`
 
 **Signature**
 
@@ -4204,11 +4355,11 @@ def _qtype_change_severity_kobo(curr_mode: str, ref_mode: str, curr_option_count
         return "medium"
     ```
 
-### `compare_type_changes` {#fn-compare-type-changes-2528}
+### `compare_type_changes` {#fn-compare-type-changes-2568}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2528`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2568`
 
 **Signature**
 
@@ -4311,11 +4462,11 @@ def compare_type_changes(current, reference, current_options: pl.DataFrame | Non
         return result if result.height > 0 else pl.DataFrame(schema=EMPTY)
     ```
 
-### `_canonical_option_key_expr` {#fn--canonical-option-key-expr-2606}
+### `_canonical_option_key_expr` {#fn--canonical-option-key-expr-2646}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2606`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2646`
 
 **Signature**
 
@@ -4341,11 +4492,11 @@ def _canonical_option_key_expr(col_name: str) -> pl.Expr:
         return pl.col(col_name).map_elements(_canonical_option_name_token, return_dtype=pl.Utf8)
     ```
 
-### `compare_option_labels_single` {#fn-compare-option-labels-single-2611}
+### `compare_option_labels_single` {#fn-compare-option-labels-single-2651}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2611`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2651`
 
 **Signature**
 
@@ -4405,11 +4556,11 @@ def compare_option_labels_single(current_opts, reference_opts, lang_scope='EN'):
         )
     ```
 
-### `compare_option_presence_single` {#fn-compare-option-presence-single-2648}
+### `compare_option_presence_single` {#fn-compare-option-presence-single-2688}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2648`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2688`
 
 **Signature**
 
@@ -4476,11 +4627,11 @@ def compare_option_presence_single(current_opts, reference_opts, lang_scope='EN'
         return added, removed
     ```
 
-### `compare_option_name_renumber_single` {#fn-compare-option-name-renumber-single-2692}
+### `compare_option_name_renumber_single` {#fn-compare-option-name-renumber-single-2732}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2692`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2732`
 
 **Signature**
 
@@ -4586,11 +4737,11 @@ def compare_option_name_renumber_single(current_opts, reference_opts, lang_scope
         )
     ```
 
-### `compare_hint_changes` {#fn-compare-hint-changes-2775}
+### `compare_hint_changes` {#fn-compare-hint-changes-2815}
 
 **Pipeline stage:** `Step 6 -- Comparison functions`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2775`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2815`
 
 **Signature**
 
@@ -4642,11 +4793,11 @@ def compare_hint_changes(current: pl.DataFrame, reference: pl.DataFrame) -> pl.D
         )
     ```
 
-### `_has_broken_hash_placeholder_token` {#fn--has-broken-hash-placeholder-token-2818}
+### `_has_broken_hash_placeholder_token` {#fn--has-broken-hash-placeholder-token-2858}
 
 **Pipeline stage:** `Step 7 -- Relevant validation (KoBO skip logic)`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2818`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2858`
 
 **Signature**
 
@@ -4688,11 +4839,11 @@ def _has_broken_hash_placeholder_token(text: str) -> bool:
         return "#" in stripped
     ```
 
-### `_has_malformed_kobo_ref_token` {#fn--has-malformed-kobo-ref-token-2839}
+### `_has_malformed_kobo_ref_token` {#fn--has-malformed-kobo-ref-token-2879}
 
 **Pipeline stage:** `Step 7 -- Relevant validation (KoBO skip logic)`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2839`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2879`
 
 **Signature**
 
@@ -4728,11 +4879,11 @@ def _has_malformed_kobo_ref_token(text: str) -> bool:
         return "${" in stripped
     ```
 
-### `validate_relevant` {#fn-validate-relevant-2854}
+### `validate_relevant` {#fn-validate-relevant-2894}
 
 **Pipeline stage:** `Step 7 -- Relevant validation (KoBO skip logic)`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2854`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2894`
 
 **Signature**
 
@@ -4772,9 +4923,9 @@ def validate_relevant(current_survey: pl.DataFrame, reference_survey: pl.DataFra
 
         curr_qnames = set(current_survey["Q Name"].to_list())
 
-        # Build lookup: stripped core name -> o_name for all optional-prefixed questions
+        # Build lookup: stripped core name -> custom name for all custom-prefixed questions
         _optional_by_core: dict[str, str] = {
-            qn[2:]: qn for qn in curr_qnames if qn.startswith("o_")
+            re.sub(_CUSTOM_QNAME_RE, "", qn): qn for qn in curr_qnames if qn.startswith(CUSTOM_QNAME_PREFIXES)
         }
 
         cur_rows = {r["Q Name"]: r for r in
@@ -4836,11 +4987,11 @@ def validate_relevant(current_survey: pl.DataFrame, reference_survey: pl.DataFra
         )
     ```
 
-### `validate_choice_label_language_completeness` {#fn-validate-choice-label-language-completeness-2936}
+### `validate_choice_label_language_completeness` {#fn-validate-choice-label-language-completeness-2976}
 
 **Pipeline stage:** `Step 7 -- Relevant validation (KoBO skip logic)`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2936`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2976`
 
 **Signature**
 
@@ -4923,11 +5074,11 @@ def validate_choice_label_language_completeness(path: str, target_language: str)
             wb.close()
     ```
 
-### `validate_questionnaire_structure` {#fn-validate-questionnaire-structure-2997}
+### `validate_questionnaire_structure` {#fn-validate-questionnaire-structure-3037}
 
 **Pipeline stage:** `Step 7 -- Relevant validation (KoBO skip logic)`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:2997`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3037`
 
 **Signature**
 
@@ -5166,11 +5317,11 @@ def validate_questionnaire_structure(current_survey: pl.DataFrame, current_choic
         )
     ```
 
-### `_module_rows_from_survey` {#fn--module-rows-from-survey-3211}
+### `_module_rows_from_survey` {#fn--module-rows-from-survey-3251}
 
 **Pipeline stage:** `Step 7 -- Relevant validation (KoBO skip logic)`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3211`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3251`
 
 **Signature**
 
@@ -5246,11 +5397,11 @@ def _module_rows_from_survey(survey_df: pl.DataFrame) -> pl.DataFrame:
         return result
     ```
 
-### `validate_module_presence` {#fn-validate-module-presence-3266}
+### `validate_module_presence` {#fn-validate-module-presence-3306}
 
 **Pipeline stage:** `Step 7 -- Relevant validation (KoBO skip logic)`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3266`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3306`
 
 **Signature**
 
@@ -5343,11 +5494,11 @@ def validate_module_presence(current_survey: pl.DataFrame, reference_survey: pl.
         return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)
     ```
 
-### `_attach_module_column_to_issues` {#fn--attach-module-column-to-issues-3336}
+### `_attach_module_column_to_issues` {#fn--attach-module-column-to-issues-3376}
 
 **Pipeline stage:** `Step 7 -- Relevant validation (KoBO skip logic)`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3336`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3376`
 
 **Signature**
 
@@ -5465,11 +5616,11 @@ def _attach_module_column_to_issues(issues_df: pl.DataFrame, current_survey: pl.
         return out
     ```
 
-### `_attach_module_column_to_issues._lookup_part` {#fn--lookup-part-3353}
+### `_attach_module_column_to_issues._lookup_part` {#fn--lookup-part-3393}
 
 **Pipeline stage:** `Step 7 -- Relevant validation (KoBO skip logic)`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3353`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3393`
 
 **Signature**
 
@@ -5507,11 +5658,11 @@ def _lookup_part(df: pl.DataFrame, priority: int) -> pl.DataFrame:
             )
     ```
 
-### `_attach_module_column_to_issues._lookup_part_en` {#fn--lookup-part-en-3368}
+### `_attach_module_column_to_issues._lookup_part_en` {#fn--lookup-part-en-3408}
 
 **Pipeline stage:** `Step 7 -- Relevant validation (KoBO skip logic)`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3368`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3408`
 
 **Signature**
 
@@ -5549,11 +5700,11 @@ def _lookup_part_en(df: pl.DataFrame, priority: int) -> pl.DataFrame:
             )
     ```
 
-### `validate_critical_sets` {#fn-validate-critical-sets-3449}
+### `validate_critical_sets` {#fn-validate-critical-sets-3489}
 
 **Pipeline stage:** `Step 8 -- Critical sets`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3449`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3489`
 
 **Signature**
 
@@ -5599,11 +5750,9 @@ def validate_critical_sets(questions_df, exact_sets):
 
         present_qnames = set(questions_df["Q Name"].to_list())
 
-        def _wealth_optional_variant(q_name: str) -> str:
+        def _wealth_optional_variants(q_name: str) -> list[str]:
             q = str(q_name or "").strip()
-            if q.startswith("hh_wealth_"):
-                return "o_hh_wealth_" + q[len("hh_wealth_"):]
-            return ""
+            return _custom_variants(q) if q.startswith("hh_wealth_") else []
 
         issues = []
         for set_name, set_rules in exact_sets.items():
@@ -5611,8 +5760,9 @@ def validate_critical_sets(questions_df, exact_sets):
                 q_name   = rule["q_name"]
                 expected = rule.get("expected_mandatory", "")
                 required = rule.get("required", True)
-                alt_q_name = _wealth_optional_variant(q_name)
-                matched_q_name = q_name if q_name in present_qnames else (alt_q_name if alt_q_name in present_qnames else "")
+                alt_q_names = _wealth_optional_variants(q_name)
+                alt_q_name = " / ".join(alt_q_names)
+                matched_q_name = q_name if q_name in present_qnames else next((a for a in alt_q_names if a in present_qnames), "")
                 if not matched_q_name:
                     issues.append({
                         "issue_type": "missing_critical_question" if required else "advisory_question",
@@ -5647,19 +5797,19 @@ def validate_critical_sets(questions_df, exact_sets):
         return pl.DataFrame(issues)
     ```
 
-### `validate_critical_sets._wealth_optional_variant` {#fn--wealth-optional-variant-3473}
+### `validate_critical_sets._wealth_optional_variants` {#fn--wealth-optional-variants-3513}
 
 **Pipeline stage:** `Step 8 -- Critical sets`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3473`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3513`
 
 **Signature**
 
 ```python
-def _wealth_optional_variant(q_name: str) -> str:
+def _wealth_optional_variants(q_name: str) -> list[str]:
 ```
 
-**Returns:** `str`
+**Returns:** `list[str]`
 
 **What it does:** Implements logic in the `Step 8 -- Critical sets` phase.
 
@@ -5672,18 +5822,16 @@ def _wealth_optional_variant(q_name: str) -> str:
 ??? note "Function source"
 
     ```python
-    def _wealth_optional_variant(q_name: str) -> str:
+    def _wealth_optional_variants(q_name: str) -> list[str]:
             q = str(q_name or "").strip()
-            if q.startswith("hh_wealth_"):
-                return "o_hh_wealth_" + q[len("hh_wealth_"):]
-            return ""
+            return _custom_variants(q) if q.startswith("hh_wealth_") else []
     ```
 
-### `validate_prefix_counts` {#fn-validate-prefix-counts-3521}
+### `validate_prefix_counts` {#fn-validate-prefix-counts-3560}
 
 **Pipeline stage:** `Step 8 -- Critical sets`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3521`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3560`
 
 **Signature**
 
@@ -5719,10 +5867,10 @@ def validate_prefix_counts(questions_df, min_count_sets):
             prefix    = rule.get("prefix", "")
             min_count = rule.get("min_count", 1)
             desc      = rule.get("description", f"At least {min_count} '{prefix}*' questions required")
-            prefix_alt = "o_hh_wealth_" if str(prefix) == "hh_wealth_" or str(set_name).upper() == "WEALTH" else ""
+            prefix_alts = tuple(_custom_variants(prefix)) if str(prefix) == "hh_wealth_" or str(set_name).upper() == "WEALTH" else ()
             matched = sorted(
                 q for q in all_qnames
-                if (prefix and q.startswith(prefix)) or (prefix_alt and q.startswith(prefix_alt))
+                if (prefix and q.startswith(prefix)) or (prefix_alts and q.startswith(prefix_alts))
             )
             if len(matched) < min_count:
                 found_str = f"{len(matched)} found" + (f": {', '.join(matched)}" if matched else " (none)")
@@ -5736,11 +5884,11 @@ def validate_prefix_counts(questions_df, min_count_sets):
         return pl.DataFrame(issues)
     ```
 
-### `validate_crop_harvest` {#fn-validate-crop-harvest-3552}
+### `validate_crop_harvest` {#fn-validate-crop-harvest-3591}
 
 **Pipeline stage:** `Step 8 -- Critical sets`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3552`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3591`
 
 **Signature**
 
@@ -5810,11 +5958,655 @@ def validate_crop_harvest(survey: pl.DataFrame, crop_harvest_cfg: dict) -> pl.Da
         }], schema=EMPTY)
     ```
 
-### `make_presence_issues` {#fn-make-presence-issues-3604}
+### `_rule_issues_df` {#fn--rule-issues-df-3646}
+
+**Pipeline stage:** `Step 8 -- Critical sets`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3646`
+
+**Signature**
+
+```python
+def _rule_issues_df(rows: list[dict]) -> pl.DataFrame:
+```
+
+**Returns:** `pl.DataFrame`
+
+**What it does:** Implements logic in the `Step 8 -- Critical sets` phase.
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `rows` | positional_or_keyword | Yes | `-` | `list[dict]` | Input used by the `Step 8 -- Critical sets` stage. |
+
+??? note "Function source"
+
+    ```python
+    def _rule_issues_df(rows: list[dict]) -> pl.DataFrame:
+        return pl.DataFrame(rows, schema=_RULE_ISSUE_SCHEMA) if rows else pl.DataFrame(schema=_RULE_ISSUE_SCHEMA)
+    ```
+
+### `_indicator_present` {#fn--indicator-present-3650}
+
+**Pipeline stage:** `Step 8 -- Critical sets`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3650`
+
+**Signature**
+
+```python
+def _indicator_present(qnames: set[str], indicator_cfg: dict) -> bool:
+```
+
+**Returns:** `bool`
+
+**What it does:** Returns True if the indicator has at least one question in the questionnaire.
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `qnames` | positional_or_keyword | Yes | `-` | `set[str]` | Input used by the `Step 8 -- Critical sets` stage. |
+| `indicator_cfg` | positional_or_keyword | Yes | `-` | `dict` | Input used by the `Step 8 -- Critical sets` stage. |
+
+??? note "Function source"
+
+    ```python
+    def _indicator_present(qnames: set[str], indicator_cfg: dict) -> bool:
+        """Returns True if the indicator has at least one question in the questionnaire."""
+        prefix = indicator_cfg.get("anchor_prefix")
+        qname  = indicator_cfg.get("anchor_qname")
+        if prefix and any(q.startswith(prefix) for q in qnames):
+            return True
+        if qname and qname in qnames:
+            return True
+        return False
+    ```
+
+### `validate_fs_indicators` {#fn-validate-fs-indicators-3661}
+
+**Pipeline stage:** `Step 8 -- Critical sets`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3661`
+
+**Signature**
+
+```python
+def validate_fs_indicators(current_questions: pl.DataFrame, rules: dict, modality: str='capi') -> pl.DataFrame:
+```
+
+**Returns:** `pl.DataFrame`
+
+**What it does:** Food Security indicator presence and CAPI ceiling (fs_indicators block in
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `current_questions` | positional_or_keyword | Yes | `-` | `pl.DataFrame` | Questionnaire structure table used by comparison and checks. |
+| `rules` | positional_or_keyword | Yes | `-` | `dict` | Input used by the `Step 8 -- Critical sets` stage. |
+| `modality` | positional_or_keyword | No | `'capi'` | `str` | Input used by the `Step 8 -- Critical sets` stage. |
+
+??? note "Function source"
+
+    ```python
+    def validate_fs_indicators(
+        current_questions: pl.DataFrame,
+        rules: dict,
+        modality: str = "capi",
+    ) -> pl.DataFrame:
+        """
+        Food Security indicator presence and CAPI ceiling (fs_indicators block in
+        critical_sets.yaml), same rule as the GeoPoll validator:
+          - each mandatory indicator (FIES, FCS, LCSI) needs at least one question
+          - when modality='capi', mandatory + optional indicators found must not
+            exceed capi_max
+        """
+        fs_rules = rules.get("fs_indicators", {})
+        if not fs_rules:
+            return _rule_issues_df([])
+
+        qnames: set[str] = set(current_questions["Q Name"].to_list())
+        capi_max = int(fs_rules.get("capi_max", 4))
+        rows: list[dict] = []
+
+        found_mandatory: list[str] = []
+        for name, ind_cfg in fs_rules.get("mandatory", {}).items():
+            if _indicator_present(qnames, ind_cfg):
+                found_mandatory.append(name)
+            else:
+                rows.append({
+                    "issue_type": "fs_indicator_missing",
+                    "set_name": "FS_INDICATORS", "Q Name": "",
+                    "field": name, "current": "not found",
+                    "reference": f"mandatory indicator -- expected prefix/qname: "
+                                 f"{ind_cfg.get('anchor_prefix') or ind_cfg.get('anchor_qname')}",
+                    "severity": "high", "excel_row": None,
+                })
+        found_optional = [
+            name for name, ind_cfg in fs_rules.get("optional", {}).items()
+            if _indicator_present(qnames, ind_cfg)
+        ]
+
+        if modality == "capi":
+            total = len(found_mandatory) + len(found_optional)
+            if total > capi_max:
+                rows.append({
+                    "issue_type": "fs_indicator_capi_excess",
+                    "set_name": "FS_INDICATORS", "Q Name": "",
+                    "field": "indicator count",
+                    "current": f"{total} indicators present: {', '.join(found_mandatory + found_optional)}",
+                    "reference": f"max {capi_max} for CAPI modality",
+                    "severity": "high", "excel_row": None,
+                })
+        return _rule_issues_df(rows)
+    ```
+
+### `_agri_signal_patterns_kobo` {#fn--agri-signal-patterns-kobo-3713}
+
+**Pipeline stage:** `Step 8 -- Critical sets`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3713`
+
+**Signature**
+
+```python
+def _agri_signal_patterns_kobo(agri_signals: list[dict]) -> list[re.Pattern]:
+```
+
+**Returns:** `list[re.Pattern]`
+
+**What it does:** Regexes matching an agri signal in KoBo `relevant` syntax:
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `agri_signals` | positional_or_keyword | Yes | `-` | `list[dict]` | Input used by the `Step 8 -- Critical sets` stage. |
+
+??? note "Function source"
+
+    ```python
+    def _agri_signal_patterns_kobo(agri_signals: list[dict]) -> list[re.Pattern]:
+        """
+        Regexes matching an agri signal in KoBo `relevant` syntax:
+        ${var} = 'v' / ${var}='v' / selected(${var}, 'v'). Matches both
+        `kobo_values` (current KoBo choice names, e.g. hh_agricactivity =
+        crp/ls/fish) and `values` (numeric codes used by earlier KoBo templates).
+        """
+        patterns: list[re.Pattern] = []
+        for sig in agri_signals:
+            var = re.escape(str(sig.get("variable", "")))
+            vals = list(sig.get("kobo_values") or []) + list(sig.get("values") or [])
+            val_pat = "|".join(re.escape(str(v)) for v in vals)
+            if not var or not val_pat:
+                continue
+            patterns.append(re.compile(
+                rf"\$\{{{var}\}}\s*=\s*['\"]?(?:{val_pat})['\"]?(?![\w])"
+                rf"|selected\(\s*\$\{{{var}\}}\s*,\s*['\"](?:{val_pat})['\"]\s*\)",
+                re.IGNORECASE,
+            ))
+        return patterns
+    ```
+
+### `validate_agri_cs_count` {#fn-validate-agri-cs-count-3735}
+
+**Pipeline stage:** `Step 8 -- Critical sets`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3735`
+
+**Signature**
+
+```python
+def validate_agri_cs_count(current_questions: pl.DataFrame, rules: dict) -> pl.DataFrame:
+```
+
+**Returns:** `pl.DataFrame`
+
+**What it does:** Counts coping strategy questions (cs_prefixes) whose `relevant` references
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `current_questions` | positional_or_keyword | Yes | `-` | `pl.DataFrame` | Questionnaire structure table used by comparison and checks. |
+| `rules` | positional_or_keyword | Yes | `-` | `dict` | Input used by the `Step 8 -- Critical sets` stage. |
+
+??? note "Function source"
+
+    ```python
+    def validate_agri_cs_count(
+        current_questions: pl.DataFrame,
+        rules: dict,
+    ) -> pl.DataFrame:
+        """
+        Counts coping strategy questions (cs_prefixes) whose `relevant` references
+        an agricultural signal (agri_cs_check in critical_sets.yaml). Fewer than
+        min_agri_cs raises a high-severity issue. KoBo counterpart of the GeoPoll
+        check, which reads the Conditional column instead.
+        """
+        agri_cfg = rules.get("agri_cs_check", {})
+        if not agri_cfg or "relevant" not in current_questions.columns:
+            return _rule_issues_df([])
+
+        cs_prefixes = list(agri_cfg.get("cs_prefixes", []))
+        min_agri_cs = int(agri_cfg.get("min_agri_cs", 4))
+        patterns = _agri_signal_patterns_kobo(agri_cfg.get("agri_signals", []))
+        if not cs_prefixes or not patterns:
+            return _rule_issues_df([])
+
+        cs_df = current_questions.filter(
+            pl.any_horizontal([_core_qname_expr("Q Name").str.starts_with(p) for p in cs_prefixes])
+        ).select(["Q Name", pl.col("relevant").cast(pl.Utf8).fill_null("")])
+
+        agri_cs = sorted(
+            q for q, rel in cs_df.iter_rows()
+            if any(pat.search(rel) for pat in patterns)
+        )
+        if len(agri_cs) >= min_agri_cs:
+            return _rule_issues_df([])
+        return _rule_issues_df([{
+            "issue_type": "agri_cs_count_insufficient",
+            "set_name": "AGRI_CS", "Q Name": "",
+            "field": "agri-related CS count",
+            "current": f"{len(agri_cs)} found" + (f": {', '.join(agri_cs)}" if agri_cs else ""),
+            "reference": f"minimum {min_agri_cs} agriculture-related CS required",
+            "severity": "high", "excel_row": None,
+        }])
+    ```
+
+### `validate_variable_pairs` {#fn-validate-variable-pairs-3775}
+
+**Pipeline stage:** `Step 8 -- Critical sets`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3775`
+
+**Signature**
+
+```python
+def validate_variable_pairs(current_questions: pl.DataFrame, rules: dict) -> pl.DataFrame:
+```
+
+**Returns:** `pl.DataFrame`
+
+**What it does:** If either question of a pair (variable_pairs in critical_sets.yaml) is present, both must be.
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `current_questions` | positional_or_keyword | Yes | `-` | `pl.DataFrame` | Questionnaire structure table used by comparison and checks. |
+| `rules` | positional_or_keyword | Yes | `-` | `dict` | Input used by the `Step 8 -- Critical sets` stage. |
+
+??? note "Function source"
+
+    ```python
+    def validate_variable_pairs(
+        current_questions: pl.DataFrame,
+        rules: dict,
+    ) -> pl.DataFrame:
+        """If either question of a pair (variable_pairs in critical_sets.yaml) is present, both must be."""
+        pairs_cfg: list[dict] = rules.get("variable_pairs", [])
+        if not pairs_cfg:
+            return _rule_issues_df([])
+
+        qnames: set[str] = set(current_questions["Q Name"].to_list())
+        rows: list[dict] = []
+        for pair in pairs_cfg:
+            a, b, label = pair.get("a", ""), pair.get("b", ""), pair.get("label", "")
+            a_present, b_present = a in qnames, b in qnames
+            if a_present == b_present:
+                continue
+            present, missing = (a, b) if a_present else (b, a)
+            rows.append({
+                "issue_type": "variable_pair_incomplete",
+                "set_name": "VAR_PAIRS", "Q Name": present,
+                "field": label,
+                "current": f"'{present}' present but '{missing}' absent",
+                "reference": "both variables required when either is included",
+                "severity": "medium", "excel_row": None,
+            })
+        return _rule_issues_df(rows)
+    ```
+
+### `_code_sort_key` {#fn--code-sort-key-3803}
+
+**Pipeline stage:** `Step 8 -- Critical sets`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3803`
+
+**Signature**
+
+```python
+def _code_sort_key(value: str) -> tuple:
+```
+
+**Returns:** `tuple`
+
+**What it does:** Implements logic in the `Step 8 -- Critical sets` phase.
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `value` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 8 -- Critical sets` stage. |
+
+??? note "Function source"
+
+    ```python
+    def _code_sort_key(value: str) -> tuple:
+        return (0, int(value), value) if value.lstrip("-").isdigit() else (1, 0, value)
+    ```
+
+### `validate_fixed_option_codes` {#fn-validate-fixed-option-codes-3807}
+
+**Pipeline stage:** `Step 8 -- Critical sets`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3807`
+
+**Signature**
+
+```python
+def validate_fixed_option_codes(current_options: pl.DataFrame | None, rules: dict) -> pl.DataFrame:
+```
+
+**Returns:** `pl.DataFrame`
+
+**What it does:** Questions whose choice names must be exactly a fixed code set
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `current_options` | positional_or_keyword | Yes | `-` | `pl.DataFrame | None` | Questionnaire structure table used by comparison and checks. |
+| `rules` | positional_or_keyword | Yes | `-` | `dict` | Input used by the `Step 8 -- Critical sets` stage. |
+
+??? note "Function source"
+
+    ```python
+    def validate_fixed_option_codes(
+        current_options: pl.DataFrame | None,
+        rules: dict,
+    ) -> pl.DataFrame:
+        """
+        Questions whose choice names must be exactly a fixed code set
+        (fixed_option_codes in critical_sets.yaml; `kobo_codes` when given, else
+        `codes`), e.g. ls_main_confirm = the 8 livestock types.
+        Questions absent from the questionnaire are skipped.
+        """
+        rules_cfg: list[dict] = rules.get("fixed_option_codes") or []
+        if not rules_cfg or current_options is None or current_options.height == 0:
+            return _rule_issues_df([])
+
+        codes_by_q = {
+            row["Q Name"]: {str(c).strip() for c in row["codes"] if c is not None and str(c).strip()}
+            for row in (
+                current_options
+                .group_by("Q Name")
+                .agg(pl.col("option_name").cast(pl.Utf8).alias("codes"))
+                .iter_rows(named=True)
+            )
+        }
+        rows: list[dict] = []
+        for rule in rules_cfg:
+            q = str(rule.get("q_name") or "").strip()
+            expected = {str(c).strip() for c in (rule.get("kobo_codes") or rule.get("codes") or [])}
+            if not q or not expected or q not in codes_by_q:
+                continue
+            found = codes_by_q[q]
+            if found == expected:
+                continue
+            missing = sorted(expected - found, key=_code_sort_key)
+            extra = sorted(found - expected, key=_code_sort_key)
+            rows.append({
+                "issue_type": "fixed_codes_mismatch",
+                "set_name": "FIXED_CODES", "Q Name": q,
+                "field": str(rule.get("description") or "fixed answer codes"),
+                "current": f"codes {sorted(found, key=_code_sort_key)}; missing {missing or '-'}; unexpected {extra or '-'}",
+                "reference": f"codes must be exactly {sorted(expected, key=_code_sort_key)}",
+                "severity": str(rule.get("severity") or "high"), "excel_row": None,
+            })
+        return _rule_issues_df(rows)
+    ```
+
+### `read_tlu_weights` {#fn-read-tlu-weights-3852}
+
+**Pipeline stage:** `Step 8 -- Critical sets`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3852`
+
+**Signature**
+
+```python
+def read_tlu_weights(path: str, section_marker: str) -> pl.DataFrame | None:
+```
+
+**Returns:** `pl.DataFrame | None`
+
+**What it does:** Tropical Livestock Unit weights from the Additional information sheet
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `path` | positional_or_keyword | Yes | `-` | `str` | Filesystem path used for reading inputs or writing outputs. |
+| `section_marker` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 8 -- Critical sets` stage. |
+
+??? note "Function source"
+
+    ```python
+    def read_tlu_weights(path: str, section_marker: str) -> pl.DataFrame | None:
+        """
+        Tropical Livestock Unit weights from the Additional information sheet
+        (20261007 template on). The section banner sits left of the 'Original'
+        column on the first row of the section; every following row belongs to
+        it until the next banner. Returns species + one 'Replacement (xx)' column
+        per language, or None when the sheet is absent.
+        """
+        try:
+            wb = openpyxl.load_workbook(path, data_only=True, read_only=True)
+            if "Additional information" not in wb.sheetnames:
+                wb.close()
+                return None
+            rows = list(wb["Additional information"].iter_rows(values_only=True))
+            wb.close()
+        except Exception:
+            return None
+        if len(rows) < 2 or not section_marker:
+            return pl.DataFrame(schema={"species": pl.Utf8})
+
+        headers = [str(h).strip() if h is not None else "" for h in rows[1]]
+        orig_idx = next((i for i, h in enumerate(headers) if _normalize_additional_info_header(h).startswith("original")), None)
+        if orig_idx is None:
+            return pl.DataFrame(schema={"species": pl.Utf8})
+        weight_idx = {headers[i]: i for i in _additional_info_replacement_indexes(headers).values() if i is not None}
+
+        records: list[dict] = []
+        section = ""
+        for row in rows[2:]:
+            banner = next((str(c).strip() for c in row[:orig_idx] if c is not None and str(c).strip()), "")
+            if banner:
+                section = banner
+            species = str(row[orig_idx]).strip() if orig_idx < len(row) and row[orig_idx] is not None else ""
+            if not species or section_marker.upper() not in section.upper():
+                continue
+            rec = {"species": species}
+            for col, i in weight_idx.items():
+                v = row[i] if i < len(row) else None
+                rec[col] = "" if v is None else str(v).strip()
+            records.append(rec)
+        schema = {"species": pl.Utf8, **{c: pl.Utf8 for c in weight_idx}}
+        return pl.DataFrame(records, schema=schema) if records else pl.DataFrame(schema=schema)
+    ```
+
+### `validate_tlu_weights` {#fn-validate-tlu-weights-3896}
+
+**Pipeline stage:** `Step 8 -- Critical sets`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3896`
+
+**Signature**
+
+```python
+def validate_tlu_weights(tlu_df: pl.DataFrame | None, rules: dict) -> pl.DataFrame:
+```
+
+**Returns:** `pl.DataFrame`
+
+**What it does:** Every species in tlu_weights (critical_sets.yaml) needs a numeric weight
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `tlu_df` | positional_or_keyword | Yes | `-` | `pl.DataFrame | None` | Input used by the `Step 8 -- Critical sets` stage. |
+| `rules` | positional_or_keyword | Yes | `-` | `dict` | Input used by the `Step 8 -- Critical sets` stage. |
+
+??? note "Function source"
+
+    ```python
+    def validate_tlu_weights(tlu_df: pl.DataFrame | None, rules: dict) -> pl.DataFrame:
+        """
+        Every species in tlu_weights (critical_sets.yaml) needs a numeric weight
+        > 0, identical in every filled language column. Skipped when the
+        Additional information sheet is absent (tlu_df is None).
+          - tlu_weight_missing (high), tlu_weight_invalid (high),
+            tlu_weight_inconsistent (medium)
+        """
+        cfg = rules.get("tlu_weights") or {}
+        species_cfg = [str(x).strip() for x in (cfg.get("species") or []) if str(x or "").strip()]
+        if not species_cfg or tlu_df is None:
+            return _rule_issues_df([])
+
+        weight_cols = [c for c in tlu_df.columns if c != "species"]
+        by_species: dict[str, dict] = {}
+        for row in tlu_df.iter_rows(named=True):
+            by_species.setdefault(str(row["species"]).strip().lower(), row)
+
+        def _issue(issue_type, species, current, reference, severity):
+            return {
+                "issue_type": issue_type, "set_name": "TLU", "Q Name": "",
+                "field": f"TLU weight: {species}", "current": current,
+                "reference": reference, "severity": severity, "excel_row": None,
+            }
+
+        rows: list[dict] = []
+        for species in species_cfg:
+            row = by_species.get(species.lower())
+            filled = {c: str(row.get(c) or "").strip() for c in weight_cols} if row else {}
+            filled = {c: v for c, v in filled.items() if v}
+            if not filled:
+                rows.append(_issue("tlu_weight_missing", species, "blank / row missing",
+                                   "weight required in Additional information (TLU section)", "high"))
+                continue
+            parsed: dict[str, float | None] = {}
+            for c, v in filled.items():
+                try:
+                    parsed[c] = float(v.replace(",", "."))
+                except ValueError:
+                    parsed[c] = None
+            bad = {c: filled[c] for c, v in parsed.items() if v is None or v <= 0}
+            if bad:
+                rows.append(_issue("tlu_weight_invalid", species,
+                                   "; ".join(f"{c}={v}" for c, v in bad.items()),
+                                   "weight must be a number > 0", "high"))
+                continue
+            if len({round(v, 6) for v in parsed.values()}) > 1:
+                rows.append(_issue("tlu_weight_inconsistent", species,
+                                   "; ".join(f"{c}={v}" for c, v in filled.items()),
+                                   "same weight expected in every language column", "medium"))
+        return _rule_issues_df(rows)
+    ```
+
+### `validate_tlu_weights._issue` {#fn--issue-3914}
+
+**Pipeline stage:** `Step 8 -- Critical sets`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3914`
+
+**Signature**
+
+```python
+def _issue(issue_type, species, current, reference, severity):
+```
+
+**Returns:** `None or implicit return`
+
+**What it does:** Implements logic in the `Step 8 -- Critical sets` phase.
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `issue_type` | positional_or_keyword | Yes | `-` | `-` | Input used by the `Step 8 -- Critical sets` stage. |
+| `species` | positional_or_keyword | Yes | `-` | `-` | Input used by the `Step 8 -- Critical sets` stage. |
+| `current` | positional_or_keyword | Yes | `-` | `-` | Input used by the `Step 8 -- Critical sets` stage. |
+| `reference` | positional_or_keyword | Yes | `-` | `-` | Input used by the `Step 8 -- Critical sets` stage. |
+| `severity` | positional_or_keyword | Yes | `-` | `-` | Severity label used for final issue classification. |
+
+??? note "Function source"
+
+    ```python
+    def _issue(issue_type, species, current, reference, severity):
+            return {
+                "issue_type": issue_type, "set_name": "TLU", "Q Name": "",
+                "field": f"TLU weight: {species}", "current": current,
+                "reference": reference, "severity": severity, "excel_row": None,
+            }
+    ```
+
+### `validate_qname_length` {#fn-validate-qname-length-3949}
+
+**Pipeline stage:** `Step 8 -- Critical sets`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3949`
+
+**Signature**
+
+```python
+def validate_qname_length(current_questions: pl.DataFrame, max_qname_length: int) -> pl.DataFrame:
+```
+
+**Returns:** `pl.DataFrame`
+
+**What it does:** Question names longer than max_qname_length (kobo_options) -> medium.
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `current_questions` | positional_or_keyword | Yes | `-` | `pl.DataFrame` | Questionnaire structure table used by comparison and checks. |
+| `max_qname_length` | positional_or_keyword | Yes | `-` | `int` | Input used by the `Step 8 -- Critical sets` stage. |
+
+??? note "Function source"
+
+    ```python
+    def validate_qname_length(current_questions: pl.DataFrame, max_qname_length: int) -> pl.DataFrame:
+        """Question names longer than max_qname_length (kobo_options) -> medium."""
+        if max_qname_length <= 0:
+            return _rule_issues_df([])
+        cols = ["Q Name"] + (["excel_row"] if "excel_row" in current_questions.columns else [])
+        long_q = (
+            current_questions.select(cols)
+            .filter(pl.col("Q Name").cast(pl.Utf8).str.len_chars() > max_qname_length)
+        )
+        return _rule_issues_df([
+            {
+                "issue_type": "qname_too_long", "set_name": "", "Q Name": r["Q Name"],
+                "field": "Q Name", "current": f"{len(r['Q Name'])} characters",
+                "reference": f"max {max_qname_length} characters",
+                "severity": "medium", "excel_row": r.get("excel_row"),
+            }
+            for r in long_q.iter_rows(named=True)
+        ])
+    ```
+
+### `make_presence_issues` {#fn-make-presence-issues-3973}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3604`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3973`
 
 **Signature**
 
@@ -5840,19 +6632,15 @@ def make_presence_issues(added, removed, reference_survey=None):
     def make_presence_issues(added, removed, reference_survey=None):
         added_base = added
 
-        # Build optional counterpart lookup from added questions: core -> o_<core>
-        # Example: removed "confl_yn" + added "o_confl_yn" => mandatory_to_optional
+        # Build optional counterpart lookup from added questions: core -> c_<core> / o_<core>
+        # Example: removed "confl_yn" + added "c_confl_yn" => mandatory_to_optional
         added_opt_lookup = (
             added
             .with_columns([
                 pl.col("Q Name").cast(pl.Utf8).str.strip_chars().alias("_q"),
-                pl.when(pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.starts_with("o_"))
-                .then(pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.slice(2))
-                .otherwise(pl.col("Q Name").cast(pl.Utf8).str.strip_chars())
-                .str.to_lowercase()
-                .alias("_core"),
+                _core_qname_expr("Q Name").alias("_core"),
             ])
-            .filter(pl.col("_q").str.starts_with("o_"))
+            .filter(_custom_qname_expr("_q"))
             .select(["_core", pl.col("Q Name").alias("_optional_qname")])
             .unique(subset=["_core"], keep="first")
         )
@@ -5865,11 +6653,7 @@ def make_presence_issues(added, removed, reference_survey=None):
                     on="Q Name", how="left"
                 )
                 .with_columns(
-                    pl.when(pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.starts_with("o_"))
-                    .then(pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.slice(2))
-                    .otherwise(pl.col("Q Name").cast(pl.Utf8).str.strip_chars())
-                    .str.to_lowercase()
-                    .alias("_core")
+                    _core_qname_expr("Q Name").alias("_core")
                 )
             )
             severity_expr = (
@@ -5887,11 +6671,7 @@ def make_presence_issues(added, removed, reference_survey=None):
         else:
             removed_aug = removed.with_columns([
                 pl.lit("").alias("mandatory_category"),
-                pl.when(pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.starts_with("o_"))
-                .then(pl.col("Q Name").cast(pl.Utf8).str.strip_chars().str.slice(2))
-                .otherwise(pl.col("Q Name").cast(pl.Utf8).str.strip_chars())
-                .str.to_lowercase()
-                .alias("_core"),
+                _core_qname_expr("Q Name").alias("_core"),
             ])
             severity_expr = (
                 pl.when(pl.col("is_optional")).then(pl.lit("info")).otherwise(pl.lit("high"))
@@ -5950,11 +6730,11 @@ def make_presence_issues(added, removed, reference_survey=None):
         return pl.concat([added_i, removed_i, moved_i], how="vertical")
     ```
 
-### `make_mandatory_issues` {#fn-make-mandatory-issues-3717}
+### `make_mandatory_issues` {#fn-make-mandatory-issues-4074}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3717`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4074`
 
 **Signature**
 
@@ -5988,11 +6768,11 @@ def make_mandatory_issues(mandatory_diff):
         )
     ```
 
-### `make_option_issues` {#fn-make-option-issues-3730}
+### `make_option_issues` {#fn-make-option-issues-4087}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3730`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4087`
 
 **Signature**
 
@@ -6026,11 +6806,11 @@ def make_option_issues(option_diff):
         )
     ```
 
-### `make_option_presence_issues` {#fn-make-option-presence-issues-3743}
+### `make_option_presence_issues` {#fn-make-option-presence-issues-4100}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3743`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4100`
 
 **Signature**
 
@@ -6072,11 +6852,11 @@ def make_option_presence_issues(added_opts, removed_opts):
         return pl.concat([added_i, removed_i], how="vertical")
     ```
 
-### `make_option_name_renumber_issues` {#fn-make-option-name-renumber-issues-3763}
+### `make_option_name_renumber_issues` {#fn-make-option-name-renumber-issues-4120}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3763`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4120`
 
 **Signature**
 
@@ -6111,11 +6891,11 @@ def make_option_name_renumber_issues(renumbered_opts):
         )
     ```
 
-### `merge_option_issue_views_en_target` {#fn-merge-option-issue-views-en-target-3777}
+### `merge_option_issue_views_en_target` {#fn-merge-option-issue-views-en-target-4134}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3777`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4134`
 
 **Signature**
 
@@ -6196,11 +6976,11 @@ def merge_option_issue_views_en_target(en_df: pl.DataFrame, tgt_df: pl.DataFrame
         )
     ```
 
-### `classify_choice_name_root_causes` {#fn-classify-choice-name-root-causes-3835}
+### `classify_choice_name_root_causes` {#fn-classify-choice-name-root-causes-4192}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3835`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4192`
 
 **Signature**
 
@@ -6653,11 +7433,11 @@ def classify_choice_name_root_causes(current_opts: pl.DataFrame, reference_opts:
         return presence_clean, renumber_clean, pl.DataFrame(root_rows, schema=issue_schema)
     ```
 
-### `classify_choice_name_root_causes._is_numeric_name` {#fn--is-numeric-name-3958}
+### `classify_choice_name_root_causes._is_numeric_name` {#fn--is-numeric-name-4315}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3958`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4315`
 
 **Signature**
 
@@ -6682,11 +7462,11 @@ def _is_numeric_name(token) -> bool:
             return bool(re.fullmatch(r"\d+(?:\.0+)?", str(token or "").strip()))
     ```
 
-### `classify_choice_name_root_causes._name_sort_key` {#fn--name-sort-key-3961}
+### `classify_choice_name_root_causes._name_sort_key` {#fn--name-sort-key-4318}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3961`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4318`
 
 **Signature**
 
@@ -6714,11 +7494,11 @@ def _name_sort_key(token: str):
             return (1, txt.lower())
     ```
 
-### `classify_choice_name_root_causes._uniq` {#fn--uniq-3967}
+### `classify_choice_name_root_causes._uniq` {#fn--uniq-4324}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3967`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4324`
 
 **Signature**
 
@@ -6751,11 +7531,11 @@ def _uniq(seq):
             return out
     ```
 
-### `classify_choice_name_root_causes._join_limited` {#fn--join-limited-3978}
+### `classify_choice_name_root_causes._join_limited` {#fn--join-limited-4335}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3978`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4335`
 
 **Signature**
 
@@ -6786,11 +7566,11 @@ def _join_limited(items, limit=12):
             return ", ".join(vals[:limit]) + f", ... (+{len(vals) - limit} more)"
     ```
 
-### `classify_choice_name_root_causes._join_names` {#fn--join-names-3986}
+### `classify_choice_name_root_causes._join_names` {#fn--join-names-4343}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3986`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4343`
 
 **Signature**
 
@@ -6822,11 +7602,11 @@ def _join_names(items, limit=12):
             return ", ".join(vals[:limit]) + f", ... (+{len(vals) - limit} more)"
     ```
 
-### `classify_choice_name_root_causes._format_choice_list` {#fn--format-choice-list-3995}
+### `classify_choice_name_root_causes._format_choice_list` {#fn--format-choice-list-4352}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:3995`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4352`
 
 **Signature**
 
@@ -6859,11 +7639,11 @@ def _format_choice_list(rows: list[dict]) -> str:
             return "\n".join(lines) if lines else "(none)"
     ```
 
-### `classify_mandatory_choice_set_replaced` {#fn-classify-mandatory-choice-set-replaced-4261}
+### `classify_mandatory_choice_set_replaced` {#fn-classify-mandatory-choice-set-replaced-4618}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4261`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4618`
 
 **Signature**
 
@@ -7145,11 +7925,11 @@ def classify_mandatory_choice_set_replaced(current_opts: pl.DataFrame, reference
         )
     ```
 
-### `classify_mandatory_choice_set_replaced._name_sort_key` {#fn--name-sort-key-4392}
+### `classify_mandatory_choice_set_replaced._name_sort_key` {#fn--name-sort-key-4749}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4392`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4749`
 
 **Signature**
 
@@ -7177,11 +7957,11 @@ def _name_sort_key(token: str):
             return (1, txt.lower())
     ```
 
-### `classify_mandatory_choice_set_replaced._uniq` {#fn--uniq-4398}
+### `classify_mandatory_choice_set_replaced._uniq` {#fn--uniq-4755}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4398`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4755`
 
 **Signature**
 
@@ -7214,11 +7994,11 @@ def _uniq(seq):
             return out
     ```
 
-### `classify_mandatory_choice_set_replaced._join_names` {#fn--join-names-4409}
+### `classify_mandatory_choice_set_replaced._join_names` {#fn--join-names-4766}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4409`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4766`
 
 **Signature**
 
@@ -7250,11 +8030,11 @@ def _join_names(items, limit=12):
             return ", ".join(vals[:limit]) + f", ... (+{len(vals) - limit} more)"
     ```
 
-### `classify_mandatory_choice_set_replaced._format_choice_list` {#fn--format-choice-list-4418}
+### `classify_mandatory_choice_set_replaced._format_choice_list` {#fn--format-choice-list-4775}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4418`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4775`
 
 **Signature**
 
@@ -7287,11 +8067,11 @@ def _format_choice_list(rows: list[dict]) -> str:
             return "\n".join(lines) if lines else "(none)"
     ```
 
-### `collapse_cluster_ea_option_changes` {#fn-collapse-cluster-ea-option-changes-4512}
+### `collapse_cluster_ea_option_changes` {#fn-collapse-cluster-ea-option-changes-4869}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4512`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4869`
 
 **Signature**
 
@@ -7363,11 +8143,11 @@ def collapse_cluster_ea_option_changes(option_label_issues: pl.DataFrame, option
         return option_label_clean, option_presence_clean, option_renumber_clean, summary_row
     ```
 
-### `_join_tokens_limited` {#fn--join-tokens-limited-4561}
+### `_join_tokens_limited` {#fn--join-tokens-limited-4918}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4561`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4918`
 
 **Signature**
 
@@ -7405,11 +8185,11 @@ def _join_tokens_limited(tokens: list[str], limit: int=16) -> str:
         return ", ".join(vals[:limit]) + f", ... (+{len(vals) - limit} more)"
     ```
 
-### `_format_collapsed_choice_side` {#fn--format-collapsed-choice-side-4577}
+### `_format_collapsed_choice_side` {#fn--format-collapsed-choice-side-4934}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4577`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4934`
 
 **Signature**
 
@@ -7448,11 +8228,11 @@ def _format_collapsed_choice_side(rows: list[dict], value_key: str, header: str,
         return _format_choice_entries(entries, header, empty_label=empty_label)
     ```
 
-### `_format_choice_entries` {#fn--format-choice-entries-4592}
+### `_format_choice_entries` {#fn--format-choice-entries-4949}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4592`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4949`
 
 **Signature**
 
@@ -7505,11 +8285,11 @@ def _format_choice_entries(entries: list[tuple[str, str]], header: str, empty_la
         return f"{header}:\n" + "\n".join(out_lines)
     ```
 
-### `_build_choice_lookup` {#fn--build-choice-lookup-4622}
+### `_build_choice_lookup` {#fn--build-choice-lookup-4979}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4622`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4979`
 
 **Signature**
 
@@ -7559,11 +8339,11 @@ def _build_choice_lookup(options_df: pl.DataFrame | None) -> dict[tuple[str, str
         return out
     ```
 
-### `_collapsed_choice_detail` {#fn--collapsed-choice-detail-4651}
+### `_collapsed_choice_detail` {#fn--collapsed-choice-detail-5008}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4651`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5008`
 
 **Signature**
 
@@ -7605,11 +8385,11 @@ def _collapsed_choice_detail(issue_type: str, n_rows: int, current_total: int | 
         return f"{head}; grouped in one row for this question/list"
     ```
 
-### `_ordered_unique_names` {#fn--ordered-unique-names-4669}
+### `_ordered_unique_names` {#fn--ordered-unique-names-5026}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4669`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5026`
 
 **Signature**
 
@@ -7644,11 +8424,11 @@ def _ordered_unique_names(rows: list[dict], field_name: str='option_name') -> li
         return out
     ```
 
-### `_ordered_added_removed_names` {#fn--ordered-added-removed-names-4682}
+### `_ordered_added_removed_names` {#fn--ordered-added-removed-names-5039}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4682`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5039`
 
 **Signature**
 
@@ -7702,11 +8482,11 @@ def _ordered_added_removed_names(current_entries: list[tuple[str, str]], referen
         return added, removed
     ```
 
-### `merge_added_removed_choice_rows` {#fn-merge-added-removed-choice-rows-4714}
+### `merge_added_removed_choice_rows` {#fn-merge-added-removed-choice-rows-5071}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4714`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5071`
 
 **Signature**
 
@@ -7856,11 +8636,11 @@ def merge_added_removed_choice_rows(option_presence_issues: pl.DataFrame, curren
         return pl.concat([df_no_pairs, merged_df], how="vertical")
     ```
 
-### `collapse_choice_issue_rows_by_key` {#fn-collapse-choice-issue-rows-by-key-4839}
+### `collapse_choice_issue_rows_by_key` {#fn-collapse-choice-issue-rows-by-key-5196}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4839`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5196`
 
 **Signature**
 
@@ -8059,11 +8839,11 @@ def collapse_choice_issue_rows_by_key(df: pl.DataFrame, issue_types: list[str], 
         return pl.concat([keep_df, collapsed_df], how="vertical")
     ```
 
-### `collapse_choice_issue_rows_by_key._filter_choice_entries_by_names` {#fn--filter-choice-entries-by-names-4869}
+### `collapse_choice_issue_rows_by_key._filter_choice_entries_by_names` {#fn--filter-choice-entries-by-names-5226}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:4869`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5226`
 
 **Signature**
 
@@ -8102,11 +8882,11 @@ def _filter_choice_entries_by_names(entries: list[tuple[str, str]], names_keep: 
             return out
     ```
 
-### `suppress_enumerator_option_details` {#fn-suppress-enumerator-option-details-5012}
+### `suppress_enumerator_option_details` {#fn-suppress-enumerator-option-details-5369}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5012`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5369`
 
 **Signature**
 
@@ -8213,11 +8993,11 @@ def suppress_enumerator_option_details(option_label_issues: pl.DataFrame, option
         )
     ```
 
-### `suppress_enumerator_option_details._split` {#fn--split-5033}
+### `suppress_enumerator_option_details._split` {#fn--split-5390}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5033`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5390`
 
 **Signature**
 
@@ -8245,11 +9025,11 @@ def _split(df: pl.DataFrame) -> tuple[pl.DataFrame, int]:
             return df.filter(~enum_mask), n
     ```
 
-### `suppress_structural_choice_label_noise` {#fn-suppress-structural-choice-label-noise-5093}
+### `suppress_structural_choice_label_noise` {#fn-suppress-structural-choice-label-noise-5450}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5093`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5450`
 
 **Signature**
 
@@ -8391,11 +9171,11 @@ def suppress_structural_choice_label_noise(option_label_issues: pl.DataFrame, op
         return out.select(option_label_issues.columns)
     ```
 
-### `suppress_structural_choice_label_noise._norm_lbl` {#fn--norm-lbl-5141}
+### `suppress_structural_choice_label_noise._norm_lbl` {#fn--norm-lbl-5498}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5141`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5498`
 
 **Signature**
 
@@ -8420,11 +9200,11 @@ def _norm_lbl(x: str) -> str:
             return re.sub(r"\s+", " ", str(x or "").strip().lower())
     ```
 
-### `suppress_structural_choice_label_noise._name_to_label` {#fn--name-to-label-5144}
+### `suppress_structural_choice_label_noise._name_to_label` {#fn--name-to-label-5501}
 
 **Pipeline stage:** `Step 9 -- Issue unifiers`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5144`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5501`
 
 **Signature**
 
@@ -8455,11 +9235,11 @@ def _name_to_label(entries: list[tuple[str, str]]) -> dict[str, str]:
             return out
     ```
 
-### `_dedupe_questions_for_compare` {#fn--dedupe-questions-for-compare-5218}
+### `_dedupe_questions_for_compare` {#fn--dedupe-questions-for-compare-5575}
 
 **Pipeline stage:** `Step 10 -- Run pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5218`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5575`
 
 **Signature**
 
@@ -8492,11 +9272,11 @@ def _dedupe_questions_for_compare(df: pl.DataFrame) -> pl.DataFrame:
         return base.unique(subset=["Q Name"], keep="first")
     ```
 
-### `_with_choice_cols` {#fn--with-choice-cols-5571}
+### `_with_choice_cols` {#fn--with-choice-cols-5939}
 
 **Pipeline stage:** `Step 10 -- Run pipeline`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5571`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5939`
 
 **Signature**
 
@@ -8526,11 +9306,11 @@ def _with_choice_cols(df: pl.DataFrame) -> pl.DataFrame:
         return out
     ```
 
-### `_hdr` {#fn--hdr-5880}
+### `_hdr` {#fn--hdr-6263}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5880`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6263`
 
 **Signature**
 
@@ -8561,11 +9341,11 @@ def _hdr(ws, row, vals):
         ws.row_dimensions[row].height = 18
     ```
 
-### `_sect` {#fn--sect-5887}
+### `_sect` {#fn--sect-6270}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5887`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6270`
 
 **Signature**
 
@@ -8597,11 +9377,11 @@ def _sect(ws, row, title, n):
         ws.row_dimensions[row].height = 20
     ```
 
-### `_style_row` {#fn--style-row-5894}
+### `_style_row` {#fn--style-row-6277}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5894`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6277`
 
 **Signature**
 
@@ -8634,11 +9414,11 @@ def _style_row(ws, row, n, severity=''):
             if fill: cell.fill = fill
     ```
 
-### `_autofit` {#fn--autofit-5902}
+### `_autofit` {#fn--autofit-6285}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5902`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6285`
 
 **Signature**
 
@@ -8667,11 +9447,11 @@ def _autofit(ws, mn=12, mx=60):
             ws.column_dimensions[get_column_letter(col_cells[0].column)].width = min(max(w+2, mn), mx)
     ```
 
-### `_ensure_column_widths_from_header` {#fn--ensure-column-widths-from-header-5908}
+### `_ensure_column_widths_from_header` {#fn--ensure-column-widths-from-header-6291}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5908`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6291`
 
 **Signature**
 
@@ -8708,11 +9488,11 @@ def _ensure_column_widths_from_header(ws, header_row: int, min_widths: dict[str,
             ws.column_dimensions[col_letter].width = max(current_width, target_width)
     ```
 
-### `_action_for_issue_type` {#fn--action-for-issue-type-5975}
+### `_action_for_issue_type` {#fn--action-for-issue-type-6367}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:5975`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6367`
 
 **Signature**
 
@@ -8740,11 +9520,11 @@ def _action_for_issue_type(issue_type: str) -> str:
         return ISSUE_ACTION_MAP.get(key, "Review issue details")
     ```
 
-### `_col_map_with_field_header` {#fn--col-map-with-field-header-6007}
+### `_col_map_with_field_header` {#fn--col-map-with-field-header-6399}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6007`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6399`
 
 **Signature**
 
@@ -8769,11 +9549,11 @@ def _col_map_with_field_header(field_header: str) -> list[tuple[str, str]]:
         return [(src, field_header if src == "field" else disp) for src, disp in COL_MAP]
     ```
 
-### `_prepare_table_df` {#fn--prepare-table-df-6019}
+### `_prepare_table_df` {#fn--prepare-table-df-6411}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6019`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6411`
 
 **Signature**
 
@@ -8804,11 +9584,11 @@ def _prepare_table_df(df: pl.DataFrame) -> pl.DataFrame:
         return df
     ```
 
-### `_resolve_table_cols` {#fn--resolve-table-cols-6029}
+### `_resolve_table_cols` {#fn--resolve-table-cols-6421}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6029`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6421`
 
 **Signature**
 
@@ -8862,11 +9642,11 @@ def _resolve_table_cols(df: pl.DataFrame, col_map=None) -> list[tuple[str, str]]
         return cols
     ```
 
-### `_table` {#fn--table-6061}
+### `_table` {#fn--table-6453}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6061`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6453`
 
 **Signature**
 
@@ -8913,11 +9693,11 @@ def _table(ws, start_row, df, apply_view=True, col_map=None):
         return r + 1
     ```
 
-### `_tokenize_for_word_diff` {#fn--tokenize-for-word-diff-6083}
+### `_tokenize_for_word_diff` {#fn--tokenize-for-word-diff-6475}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6083`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6475`
 
 **Signature**
 
@@ -8951,11 +9731,11 @@ def _tokenize_for_word_diff(text: str):
         return out
     ```
 
-### `_coalesce_segments` {#fn--coalesce-segments-6096}
+### `_coalesce_segments` {#fn--coalesce-segments-6488}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6096`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6488`
 
 **Signature**
 
@@ -8988,11 +9768,11 @@ def _coalesce_segments(parts):
         return merged
     ```
 
-### `_build_diff_segments` {#fn--build-diff-segments-6108}
+### `_build_diff_segments` {#fn--build-diff-segments-6500}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6108`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6500`
 
 **Signature**
 
@@ -9033,11 +9813,11 @@ def _build_diff_segments(current_text: str, reference_text: str):
         return _coalesce_segments(current_parts), _coalesce_segments(reference_parts)
     ```
 
-### `_set_rich_text` {#fn--set-rich-text-6127}
+### `_set_rich_text` {#fn--set-rich-text-6519}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6127`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6519`
 
 **Signature**
 
@@ -9076,11 +9856,11 @@ def _set_rich_text(cell, full_text: str, parts):
         cell.value = CellRichText(*blocks)
     ```
 
-### `_set_rich_text_with_bold_tokens` {#fn--set-rich-text-with-bold-tokens-6143}
+### `_set_rich_text_with_bold_tokens` {#fn--set-rich-text-with-bold-tokens-6535}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6143`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6535`
 
 **Signature**
 
@@ -9141,11 +9921,11 @@ def _set_rich_text_with_bold_tokens(cell, full_text: str, tokens: list[str]):
         cell.value = CellRichText(*blocks) if blocks else full_text
     ```
 
-### `_apply_inline_diff_for_issue` {#fn--apply-inline-diff-for-issue-6181}
+### `_apply_inline_diff_for_issue` {#fn--apply-inline-diff-for-issue-6573}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6181`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6573`
 
 **Signature**
 
@@ -9211,11 +9991,11 @@ def _apply_inline_diff_for_issue(ws, start_row, df, cols, issue_types):
                     _set_rich_text(ws.cell(row=start_row + offset, column=ref_lang_col), ref_lang_txt, ref_lang_parts)
     ```
 
-### `_apply_inline_diff_for_issue._match_issue` {#fn--match-issue-6195}
+### `_apply_inline_diff_for_issue._match_issue` {#fn--match-issue-6587}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6195`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6587`
 
 **Signature**
 
@@ -9246,11 +10026,11 @@ def _match_issue(issue_val: str) -> bool:
             return False
     ```
 
-### `_apply_choice_detail_highlights` {#fn--apply-choice-detail-highlights-6222}
+### `_apply_choice_detail_highlights` {#fn--apply-choice-detail-highlights-6614}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6222`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6614`
 
 **Signature**
 
@@ -9326,11 +10106,11 @@ def _apply_choice_detail_highlights(ws, start_row, df, cols):
             )
     ```
 
-### `_with_lang_scope_tag` {#fn--with-lang-scope-tag-6274}
+### `_with_lang_scope_tag` {#fn--with-lang-scope-tag-6666}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6274`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6666`
 
 **Signature**
 
@@ -9386,11 +10166,11 @@ def _with_lang_scope_tag(df: pl.DataFrame, target_lang_label: str) -> pl.DataFra
         )
     ```
 
-### `_question_change_expr` {#fn--question-change-expr-6344}
+### `_question_change_expr` {#fn--question-change-expr-6740}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6344`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6740`
 
 **Signature**
 
@@ -9413,11 +10193,11 @@ No parameters.
         return pl.col("issue_type").is_in(list(QUESTION_CHANGE_TYPES))
     ```
 
-### `_ensure_question_field_detail` {#fn--ensure-question-field-detail-6348}
+### `_ensure_question_field_detail` {#fn--ensure-question-field-detail-6744}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6348`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6744`
 
 **Signature**
 
@@ -9472,11 +10252,11 @@ def _ensure_question_field_detail(df: pl.DataFrame) -> pl.DataFrame:
         )
     ```
 
-### `_normalise_qtype_for_summary` {#fn--normalise-qtype-for-summary-6382}
+### `_normalise_qtype_for_summary` {#fn--normalise-qtype-for-summary-6778}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6382`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6778`
 
 **Signature**
 
@@ -9520,17 +10300,17 @@ def _normalise_qtype_for_summary(df):
         )
         return df.with_columns(
             pl.when(_mand.is_in(_valid)).then(_mand)
-            .when(_qnm.str.starts_with("o_")).then(pl.lit("optional"))
+            .when(_qnm.str.contains(_CUSTOM_QNAME_RE)).then(pl.lit("optional"))
             .otherwise(pl.lit("non-mandatory"))
             .alias("mandatory_cat")
         )
     ```
 
-### `_grouped_table` {#fn--grouped-table-6411}
+### `_grouped_table` {#fn--grouped-table-6807}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6411`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6807`
 
 **Signature**
 
@@ -9591,11 +10371,11 @@ def _grouped_table(ws, r, df):
         return r + 1
     ```
 
-### `write_summary_sheet` {#fn-write-summary-sheet-6449}
+### `write_summary_sheet` {#fn-write-summary-sheet-6845}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6449`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6845`
 
 **Signature**
 
@@ -9739,6 +10519,21 @@ def write_summary_sheet(wb, all_issues, rules=None, critical_issues=None, count_
                          else "Crop harvest rule satisfied")
             _set_row(ws, r, "CRP_HARV", not _harv_fail, _harv_det); r += 1
 
+        # Rule-based sets shared with GeoPoll (fs_indicators, agri_cs_check, ...)
+        _rule_rows = [
+            ("fs_indicators", "FS_INDICATORS", "FIES / FCS / LCSI present"
+             + (" (CAPI ceiling respected)" if _cfg_modality == "capi" else "")),
+            ("agri_cs_check", "AGRI_CS", "Enough agriculture-related coping strategies"),
+            ("variable_pairs", "VAR_PAIRS", "All variable pairs complete"),
+            ("fixed_option_codes", "FIXED_CODES", "Fixed answer codes intact"),
+            ("tlu_weights", "TLU", "TLU weights filled and consistent"),
+        ]
+        for _key, _set, _ok_det in _rule_rows:
+            if not _rules.get(_key):
+                continue
+            _n = all_issues.filter(pl.col("set_name") == _set).height
+            _set_row(ws, r, _set, _n == 0, _ok_det if _n == 0 else f"{_n} issue(s) -- see Critical Sets"); r += 1
+
         if not _rules.get("exact_sets") and not _rules.get("min_count_sets"):
             ws.cell(row=r, column=1, value="No critical sets defined")
             _style_row(ws, r, 4, "info"); r += 1
@@ -9867,11 +10662,11 @@ def write_summary_sheet(wb, all_issues, rules=None, critical_issues=None, count_
                                ["removed_choice", "added_choice", "choice_changes_general", "choice_label_mismatch", "option_index_drift", "option_name_dictionary_replaced", "removed_option_causes_index_drift", "added_option_causes_index_drift", "mandatory_choice_set_replaced", "cluster_ea_choice_changes_summary", "enumerator_choice_changes_summary"])))
     ```
 
-### `write_summary_sheet._set_row` {#fn--set-row-6510}
+### `write_summary_sheet._set_row` {#fn--set-row-6906}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6510`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6906`
 
 **Signature**
 
@@ -9905,11 +10700,11 @@ def _set_row(ws, r, name, passed, details):
                                                   color="274E13" if passed else "CC0000")
     ```
 
-### `write_summary_sheet._check_row` {#fn--check-row-6576}
+### `write_summary_sheet._check_row` {#fn--check-row-6987}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6576`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6987`
 
 **Signature**
 
@@ -9943,11 +10738,11 @@ def _check_row(ws, r, name, passed, details):
                                                   color="274E13" if passed else "CC0000")
     ```
 
-### `write_critical_sets_sheet` {#fn-write-critical-sets-sheet-6694}
+### `write_critical_sets_sheet` {#fn-write-critical-sets-sheet-7105}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6694`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7105`
 
 **Signature**
 
@@ -9996,11 +10791,11 @@ def write_critical_sets_sheet(wb, all_issues, found_info=None):
         _autofit(ws)
     ```
 
-### `write_questionnaire_structure_sheet` {#fn-write-questionnaire-structure-sheet-6720}
+### `write_questionnaire_structure_sheet` {#fn-write-questionnaire-structure-sheet-7131}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6720`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7131`
 
 **Signature**
 
@@ -10080,11 +10875,11 @@ def write_questionnaire_structure_sheet(wb, all_issues):
         _ensure_column_widths_from_header(ws, _rel_start, relevant_widths)
     ```
 
-### `write_replacement_issues_sheet` {#fn-write-replacement-issues-sheet-6778}
+### `write_replacement_issues_sheet` {#fn-write-replacement-issues-sheet-7189}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6778`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7189`
 
 **Signature**
 
@@ -10137,11 +10932,11 @@ def write_replacement_issues_sheet(wb, all_issues):
         _autofit(ws)
     ```
 
-### `write_relevant_sheet` {#fn-write-relevant-sheet-6809}
+### `write_relevant_sheet` {#fn-write-relevant-sheet-7220}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6809`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7220`
 
 **Signature**
 
@@ -10173,11 +10968,11 @@ def write_relevant_sheet(wb, all_issues):
         _ensure_column_widths_from_header(ws, 2, {"Current value": 110, "Reference / rule": 110})
     ```
 
-### `write_question_changes_sheet` {#fn-write-question-changes-sheet-6819}
+### `write_question_changes_sheet` {#fn-write-question-changes-sheet-7230}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6819`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7230`
 
 **Signature**
 
@@ -10253,11 +11048,11 @@ def write_question_changes_sheet(wb, all_issues):
         _autofit(ws)
     ```
 
-### `write_option_changes_sheet` {#fn-write-option-changes-sheet-6873}
+### `write_option_changes_sheet` {#fn-write-option-changes-sheet-7284}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6873`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7284`
 
 **Signature**
 
@@ -10302,11 +11097,11 @@ def write_option_changes_sheet(wb, all_issues):
         _autofit(ws)
     ```
 
-### `export_report` {#fn-export-report-6896}
+### `export_report` {#fn-export-report-7307}
 
 **Pipeline stage:** `Step 11 -- Export`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6896`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7307`
 
 **Signature**
 
@@ -10351,11 +11146,11 @@ def export_report(all_issues, result_file, found_info=None, rules=None, critical
         print(f"Sheets: {wb.sheetnames}")
     ```
 
-### `_crop_label_idx` {#fn--crop-label-idx-6961}
+### `_crop_label_idx` {#fn--crop-label-idx-7372}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6961`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7372`
 
 **Signature**
 
@@ -10391,11 +11186,11 @@ def _crop_label_idx(headers: list[str], language: str) -> int | None:
         return None
     ```
 
-### `_read_crop_choices` {#fn--read-crop-choices-6975}
+### `_read_crop_choices` {#fn--read-crop-choices-7386}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:6975`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7386`
 
 **Signature**
 
@@ -10501,11 +11296,11 @@ def _read_crop_choices(src_path: str, language: str, strict_language: bool=False
         return ({name: combined + specials for name, specials in _CROP_SPECIALS.items()}, status)
     ```
 
-### `_merge_crop_rows_for_multilang` {#fn--merge-crop-rows-for-multilang-7058}
+### `_merge_crop_rows_for_multilang` {#fn--merge-crop-rows-for-multilang-7469}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7058`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7469`
 
 **Signature**
 
@@ -10592,11 +11387,11 @@ def _merge_crop_rows_for_multilang(crop_rows_en: dict[str, list[tuple]], crop_ro
         return out
     ```
 
-### `_fetch_admin_choices` {#fn--fetch-admin-choices-7122}
+### `_fetch_admin_choices` {#fn--fetch-admin-choices-7533}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7122`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7533`
 
 **Signature**
 
@@ -10648,11 +11443,11 @@ def _fetch_admin_choices(iso3: str) -> dict[str, list[tuple]]:
         return {"admin1": adm1, "admin2": adm2}
     ```
 
-### `_fetch_admin_choices._get` {#fn--get-7132}
+### `_fetch_admin_choices._get` {#fn--get-7543}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7132`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7543`
 
 **Signature**
 
@@ -10682,11 +11477,11 @@ def _get(layer, fields):
                 return _json.loads(r.read().decode())["features"]
     ```
 
-### `_fetch_admin3_choices` {#fn--fetch-admin3-choices-7153}
+### `_fetch_admin3_choices` {#fn--fetch-admin3-choices-7564}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7153`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7564`
 
 **Signature**
 
@@ -10730,11 +11525,11 @@ def _fetch_admin3_choices(iso3: str) -> list[tuple]:
         return adm3
     ```
 
-### `_rebuild_choices_sheet` {#fn--rebuild-choices-sheet-7176}
+### `_rebuild_choices_sheet` {#fn--rebuild-choices-sheet-7587}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7176`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7587`
 
 **Signature**
 
@@ -11022,11 +11817,11 @@ def _rebuild_choices_sheet(wb, country_rows: dict[str, list[tuple]], target_lang
         }
     ```
 
-### `_rebuild_choices_sheet._row_values` {#fn--row-values-7204}
+### `_rebuild_choices_sheet._row_values` {#fn--row-values-7615}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7204`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7615`
 
 **Signature**
 
@@ -11054,11 +11849,11 @@ def _row_values(cells):
             return vals[:src_n_cols]
     ```
 
-### `_rebuild_choices_sheet._row_styles` {#fn--row-styles-7210}
+### `_rebuild_choices_sheet._row_styles` {#fn--row-styles-7621}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7210`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7621`
 
 **Signature**
 
@@ -11089,11 +11884,11 @@ def _row_styles(cells):
             return styles
     ```
 
-### `_rebuild_choices_sheet._norm_key` {#fn--norm-key-7247}
+### `_rebuild_choices_sheet._norm_key` {#fn--norm-key-7658}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7247`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7658`
 
 **Signature**
 
@@ -11118,11 +11913,11 @@ def _norm_key(v):
             return str(v).strip().lower() if v is not None else ""
     ```
 
-### `_rebuild_choices_sheet._is_empty` {#fn--is-empty-7250}
+### `_rebuild_choices_sheet._is_empty` {#fn--is-empty-7661}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7250`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7661`
 
 **Signature**
 
@@ -11147,11 +11942,11 @@ def _is_empty(v):
             return v is None or str(v).strip() == ""
     ```
 
-### `_rebuild_choices_sheet._remember_sample` {#fn--remember-sample-7257}
+### `_rebuild_choices_sheet._remember_sample` {#fn--remember-sample-7668}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7257`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7668`
 
 **Signature**
 
@@ -11192,11 +11987,11 @@ def _remember_sample(list_name, code_val, label_val, parent_val, sample_val):
                 preserved_sample_by_label_parent.setdefault((list_key, label_key, parent_key), sample_val)
     ```
 
-### `_rebuild_choices_sheet._is_blank` {#fn--is-blank-7272}
+### `_rebuild_choices_sheet._is_blank` {#fn--is-blank-7683}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7272`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7683`
 
 **Signature**
 
@@ -11221,11 +12016,11 @@ def _is_blank(values):
             return all(v is None or str(v).strip() == "" for v in values)
     ```
 
-### `_strip_skipped_module_blocks_from_survey_sheet` {#fn--strip-skipped-module-blocks-from-survey-sheet-7440}
+### `_strip_skipped_module_blocks_from_survey_sheet` {#fn--strip-skipped-module-blocks-from-survey-sheet-7851}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7440`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7851`
 
 **Signature**
 
@@ -11346,11 +12141,11 @@ def _strip_skipped_module_blocks_from_survey_sheet(wb, skip_module_keys: set[str
         return stats
     ```
 
-### `_strip_skipped_module_blocks_from_survey_sheet._cell` {#fn--cell-7481}
+### `_strip_skipped_module_blocks_from_survey_sheet._cell` {#fn--cell-7892}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7481`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7892`
 
 **Signature**
 
@@ -11378,11 +12173,11 @@ def _cell(row, idx):
             return row[idx]
     ```
 
-### `_remove_choices_lists_rows` {#fn--remove-choices-lists-rows-7538}
+### `_remove_choices_lists_rows` {#fn--remove-choices-lists-rows-7949}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7538`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7949`
 
 **Signature**
 
@@ -11450,11 +12245,11 @@ def _remove_choices_lists_rows(wb, list_names: set[str]) -> int:
         return removed
     ```
 
-### `_remove_choices_lists_rows._cell` {#fn--cell-7560}
+### `_remove_choices_lists_rows._cell` {#fn--cell-7971}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7560`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7971`
 
 **Signature**
 
@@ -11482,11 +12277,11 @@ def _cell(row, idx):
             return row[idx]
     ```
 
-### `_detect_kobo_header_language` {#fn--detect-kobo-header-language-7584}
+### `_detect_kobo_header_language` {#fn--detect-kobo-header-language-7995}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7584`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7995`
 
 **Signature**
 
@@ -11531,11 +12326,11 @@ def _detect_kobo_header_language(header_value: object) -> str | None:
         return None
     ```
 
-### `_apply_replacements_to_wb` {#fn--apply-replacements-to-wb-7608}
+### `_apply_replacements_to_wb` {#fn--apply-replacements-to-wb-8019}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7608`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8019`
 
 **Signature**
 
@@ -11597,11 +12392,11 @@ def _apply_replacements_to_wb(wb, replacement_pairs: dict, replacement_pairs_by_
                         cell.value = v
     ```
 
-### `_restore_placeholder_tokens_from_template` {#fn--restore-placeholder-tokens-from-template-7646}
+### `_restore_placeholder_tokens_from_template` {#fn--restore-placeholder-tokens-from-template-8057}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7646`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8057`
 
 **Signature**
 
@@ -11796,11 +12591,11 @@ def _restore_placeholder_tokens_from_template(wb, template_path: str, replacemen
         return stats
     ```
 
-### `_restore_placeholder_tokens_from_template._norm_txt` {#fn--norm-txt-7673}
+### `_restore_placeholder_tokens_from_template._norm_txt` {#fn--norm-txt-8084}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7673`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8084`
 
 **Signature**
 
@@ -11825,11 +12620,11 @@ def _norm_txt(v) -> str:
             return str(v or "").strip()
     ```
 
-### `_restore_placeholder_tokens_from_template._can_restore_template_value` {#fn--can-restore-template-value-7682}
+### `_restore_placeholder_tokens_from_template._can_restore_template_value` {#fn--can-restore-template-value-8093}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7682`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8093`
 
 **Signature**
 
@@ -11865,11 +12660,11 @@ def _can_restore_template_value(v: str) -> bool:
             return True
     ```
 
-### `_count_choices_list_rows` {#fn--count-choices-list-rows-7818}
+### `_count_choices_list_rows` {#fn--count-choices-list-rows-8229}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7818`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8229`
 
 **Signature**
 
@@ -11903,11 +12698,11 @@ def _count_choices_list_rows(wb, list_name: str) -> int:
         )
     ```
 
-### `_choices_header_index_map` {#fn--choices-header-index-map-7830}
+### `_choices_header_index_map` {#fn--choices-header-index-map-8241}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7830`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8241`
 
 **Signature**
 
@@ -11939,11 +12734,11 @@ def _choices_header_index_map(wb) -> dict[str, int]:
         return {h: i for i, h in enumerate(headers) if h}
     ```
 
-### `_count_blank_labels_for_lists` {#fn--count-blank-labels-for-lists-7841}
+### `_count_blank_labels_for_lists` {#fn--count-blank-labels-for-lists-8252}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7841`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8252`
 
 **Signature**
 
@@ -11989,11 +12784,11 @@ def _count_blank_labels_for_lists(wb, list_names: list[str], label_col: str) -> 
         return total, blank
     ```
 
-### `_validate_admin_parent_links_in_choices_sheet` {#fn--validate-admin-parent-links-in-choices-sheet-7864}
+### `_validate_admin_parent_links_in_choices_sheet` {#fn--validate-admin-parent-links-in-choices-sheet-8275}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7864`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8275`
 
 **Signature**
 
@@ -12099,11 +12894,11 @@ def _validate_admin_parent_links_in_choices_sheet(wb) -> dict:
         return stats
     ```
 
-### `_highlight_admin_parent_issue_rows_in_choices_sheet` {#fn--highlight-admin-parent-issue-rows-in-choices-sheet-7949}
+### `_highlight_admin_parent_issue_rows_in_choices_sheet` {#fn--highlight-admin-parent-issue-rows-in-choices-sheet-8360}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7949`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8360`
 
 **Signature**
 
@@ -12159,11 +12954,11 @@ def _highlight_admin_parent_issue_rows_in_choices_sheet(wb, issues: list[dict], 
         return len(rows_to_highlight)
     ```
 
-### `_write_admin_parent_mismatch_text_report` {#fn--write-admin-parent-mismatch-text-report-7982}
+### `_write_admin_parent_mismatch_text_report` {#fn--write-admin-parent-mismatch-text-report-8393}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:7982`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8393`
 
 **Signature**
 
@@ -12224,11 +13019,11 @@ def _write_admin_parent_mismatch_text_report(out_file: Path, issues: list[dict],
         return out_file
     ```
 
-### `_choices_has_language_col` {#fn--choices-has-language-col-8020}
+### `_choices_has_language_col` {#fn--choices-has-language-col-8431}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8020`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8431`
 
 **Signature**
 
@@ -12268,11 +13063,11 @@ def _choices_has_language_col(path: str, language: str) -> bool:
             wb.close()
     ```
 
-### `_crop_list_has_language_col` {#fn--crop-list-has-language-col-8038}
+### `_crop_list_has_language_col` {#fn--crop-list-has-language-col-8449}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8038`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8449`
 
 **Signature**
 
@@ -12311,11 +13106,11 @@ def _crop_list_has_language_col(path: str, language: str) -> bool:
             wb.close()
     ```
 
-### `_normalize_choice_text_token` {#fn--normalize-choice-text-token-8055}
+### `_normalize_choice_text_token` {#fn--normalize-choice-text-token-8466}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8055`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8466`
 
 **Signature**
 
@@ -12343,11 +13138,11 @@ def _normalize_choice_text_token(value) -> str:
         return txt
     ```
 
-### `_choice_pair_set_by_list` {#fn--choice-pair-set-by-list-8062}
+### `_choice_pair_set_by_list` {#fn--choice-pair-set-by-list-8473}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8062`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8473`
 
 **Signature**
 
@@ -12385,11 +13180,11 @@ def _choice_pair_set_by_list(df: pl.DataFrame, list_names: list[str]) -> dict[st
         return out
     ```
 
-### `_choice_pair_set_from_rows` {#fn--choice-pair-set-from-rows-8078}
+### `_choice_pair_set_from_rows` {#fn--choice-pair-set-from-rows-8489}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8078`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8489`
 
 **Signature**
 
@@ -12425,11 +13220,11 @@ def _choice_pair_set_from_rows(rows_by_list: dict[str, list[tuple]], list_names:
         return out
     ```
 
-### `_choice_code_set_by_list` {#fn--choice-code-set-by-list-8092}
+### `_choice_code_set_by_list` {#fn--choice-code-set-by-list-8503}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8092`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8503`
 
 **Signature**
 
@@ -12465,11 +13260,11 @@ def _choice_code_set_by_list(df: pl.DataFrame, list_names: list[str]) -> dict[st
         return out
     ```
 
-### `_choice_code_set_from_rows` {#fn--choice-code-set-from-rows-8106}
+### `_choice_code_set_from_rows` {#fn--choice-code-set-from-rows-8517}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8106`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8517`
 
 **Signature**
 
@@ -12503,11 +13298,11 @@ def _choice_code_set_from_rows(rows_by_list: dict[str, list[tuple]], list_names:
         return out
     ```
 
-### `_fmt_choice_pairs` {#fn--fmt-choice-pairs-8118}
+### `_fmt_choice_pairs` {#fn--fmt-choice-pairs-8529}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8118`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8529`
 
 **Signature**
 
@@ -12545,11 +13340,11 @@ def _fmt_choice_pairs(items: set[tuple[str, str]], limit: int=12) -> str:
         return ", ".join(txts[:limit]) + f", ... (+{len(txts) - limit} more)"
     ```
 
-### `_fmt_choice_pairs._sort_key` {#fn--sort-key-8119}
+### `_fmt_choice_pairs._sort_key` {#fn--sort-key-8530}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8119`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8530`
 
 **Signature**
 
@@ -12577,11 +13372,11 @@ def _sort_key(code: str):
             return (1, t.lower())
     ```
 
-### `_fmt_choice_codes` {#fn--fmt-choice-codes-8134}
+### `_fmt_choice_codes` {#fn--fmt-choice-codes-8545}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8134`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8545`
 
 **Signature**
 
@@ -12612,21 +13407,267 @@ def _fmt_choice_codes(items: set[str], limit: int=12) -> str:
         return ", ".join(vals[:limit]) + f", ... (+{len(vals) - limit} more)"
     ```
 
-### `_scan_unresolved_placeholders` {#fn--scan-unresolved-placeholders-8145}
+### `_column_language` {#fn--column-language-8559}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8145`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8559`
 
 **Signature**
 
 ```python
-def _scan_unresolved_placeholders(wb, sheet_name: str, limit: int=5) -> tuple[int, list[str]]:
+def _column_language(header: str) -> str:
+```
+
+**Returns:** `str`
+
+**What it does:** Language code of a 'label::French (fr)'-style header, '' for non-language columns.
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `header` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 12 -- Validated questionnaire output` stage. |
+
+??? note "Function source"
+
+    ```python
+    def _column_language(header: str) -> str:
+        """Language code of a 'label::French (fr)'-style header, '' for non-language columns."""
+        h = str(header or "").strip()
+        if "::" not in h:
+            return ""
+        m = _COLUMN_LANG_RE.search(h)
+        return m.group(1).lower() if m else ""
+    ```
+
+### `_column_in_scope` {#fn--column-in-scope-8568}
+
+**Pipeline stage:** `Step 12 -- Validated questionnaire output`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8568`
+
+**Signature**
+
+```python
+def _column_in_scope(header: str, languages_in_scope: list[str] | None) -> bool:
+```
+
+**Returns:** `bool`
+
+**What it does:** False only for a language column whose language is not in languages_in_scope (empty = all).
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `header` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 12 -- Validated questionnaire output` stage. |
+| `languages_in_scope` | positional_or_keyword | Yes | `-` | `list[str] | None` | Language selector used for language-specific text columns. |
+
+??? note "Function source"
+
+    ```python
+    def _column_in_scope(header: str, languages_in_scope: list[str] | None) -> bool:
+        """False only for a language column whose language is not in languages_in_scope (empty = all)."""
+        if not languages_in_scope:
+            return True
+        lang = _column_language(header)
+        return not lang or lang in languages_in_scope
+    ```
+
+### `_sheet_scope_mask` {#fn--sheet-scope-mask-8576}
+
+**Pipeline stage:** `Step 12 -- Validated questionnaire output`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8576`
+
+**Signature**
+
+```python
+def _sheet_scope_mask(ws, languages_in_scope: list[str] | None) -> list[bool]:
+```
+
+**Returns:** `list[bool]`
+
+**What it does:** Implements logic in the `Step 12 -- Validated questionnaire output` phase.
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `ws` | positional_or_keyword | Yes | `-` | `-` | Excel workbook/sheet handle used for report writing. |
+| `languages_in_scope` | positional_or_keyword | Yes | `-` | `list[str] | None` | Language selector used for language-specific text columns. |
+
+??? note "Function source"
+
+    ```python
+    def _sheet_scope_mask(ws, languages_in_scope: list[str] | None) -> list[bool]:
+        hdr_row = next(ws.iter_rows(min_row=1, max_row=1, values_only=True), None)
+        return [_column_in_scope(h, languages_in_scope) for h in (hdr_row or [])]
+    ```
+
+### `read_additional_info_keys` {#fn-read-additional-info-keys-8581}
+
+**Pipeline stage:** `Step 12 -- Validated questionnaire output`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8581`
+
+**Signature**
+
+```python
+def read_additional_info_keys(country_path: str) -> set[str]:
+```
+
+**Returns:** `set[str]`
+
+**What it does:** Every 'Original' key in the Additional information sheet, lowercased -- including rows with blank replacements.
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `country_path` | positional_or_keyword | Yes | `-` | `str` | Filesystem path used for reading inputs or writing outputs. |
+
+??? note "Function source"
+
+    ```python
+    def read_additional_info_keys(country_path: str) -> set[str]:
+        """Every 'Original' key in the Additional information sheet, lowercased -- including rows with blank replacements."""
+        try:
+            wb = openpyxl.load_workbook(country_path, data_only=True, read_only=True)
+            if "Additional information" not in wb.sheetnames:
+                wb.close()
+                return set()
+            rows = list(wb["Additional information"].iter_rows(values_only=True))
+            wb.close()
+        except Exception:
+            return set()
+        if len(rows) < 2:
+            return set()
+        headers = [str(h).strip() if h is not None else "" for h in rows[1]]
+        orig_idx = next((i for i, h in enumerate(headers) if _normalize_additional_info_header(h).startswith("original")), None)
+        if orig_idx is None:
+            return set()
+        return {
+            alias.lower()
+            for row in rows[2:]
+            if orig_idx < len(row) and row[orig_idx] is not None and str(row[orig_idx]).strip()
+            for alias in _placeholder_aliases(str(row[orig_idx]).strip())
+        }
+    ```
+
+### `build_unresolved_placeholder_issues` {#fn-build-unresolved-placeholder-issues-8606}
+
+**Pipeline stage:** `Step 12 -- Validated questionnaire output`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8606`
+
+**Signature**
+
+```python
+def build_unresolved_placeholder_issues(unresolved_rows: list[dict], additional_info_keys: set[str], pairs_by_language: dict[str, dict[str, str]], severity: str='high') -> list[dict]:
+```
+
+**Returns:** `list[dict]`
+
+**What it does:** One issue per (placeholder token, cause) instead of one per cell, listing
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `unresolved_rows` | positional_or_keyword | Yes | `-` | `list[dict]` | Input used by the `Step 12 -- Validated questionnaire output` stage. |
+| `additional_info_keys` | positional_or_keyword | Yes | `-` | `set[str]` | Input used by the `Step 12 -- Validated questionnaire output` stage. |
+| `pairs_by_language` | positional_or_keyword | Yes | `-` | `dict[str, dict[str, str]]` | Language selector used for language-specific text columns. |
+| `severity` | positional_or_keyword | No | `'high'` | `str` | Severity label used for final issue classification. |
+
+??? note "Function source"
+
+    ```python
+    def build_unresolved_placeholder_issues(
+        unresolved_rows: list[dict],
+        additional_info_keys: set[str],
+        pairs_by_language: dict[str, dict[str, str]],
+        severity: str = "high",
+    ) -> list[dict]:
+        """
+        One issue per (placeholder token, cause) instead of one per cell, listing
+        the questions and columns affected. Cause, per cell language:
+          - not_in_additional_info: no Original row matches the token
+          - language_not_filled: the whole Replacement column of that language is empty (medium)
+          - blank_replacement: the row exists but its Replacement for that language is blank
+          - not_applied: a value exists but the token was not replaced (spelling/case variant)
+        """
+        tok_re = _re.compile(r"#[^#\n]+#")
+        filled_langs = {lang for lang, pairs in (pairs_by_language or {}).items() if pairs}
+        groups: dict[tuple[str, str], dict] = {}
+        for rr in unresolved_rows:
+            lang = rr.get("language", "")
+            for token in dict.fromkeys(tok_re.findall(str(rr.get("full_text") or rr.get("token_text") or ""))):
+                core = token.strip("#").strip()
+                in_ai = bool(_placeholder_aliases(core) & {k for k in additional_info_keys}) or core.lower() in additional_info_keys
+                if not in_ai:
+                    cause = "not_in_additional_info"
+                elif lang and lang not in filled_langs:
+                    cause = "language_not_filled"
+                elif lang and token in (pairs_by_language or {}).get(lang, {}):
+                    cause = "not_applied"
+                else:
+                    cause = "blank_replacement"
+                g = groups.setdefault((token, cause), {"qnames": [], "cells": [], "columns": [], "langs": [], "row": rr})
+                label = (
+                    f"{rr.get('list_name')}/{rr.get('option_name')}" if rr.get("sheet") == "choices" and rr.get("list_name")
+                    else rr.get("q_name", "")
+                )
+                if label and label not in g["qnames"]:
+                    g["qnames"].append(label)
+                g["cells"].append(f"{rr.get('sheet')}!{rr.get('cell')}")
+                col = str(rr.get("column") or "")
+                if col and col not in g["columns"]:
+                    g["columns"].append(col)
+                if lang and lang not in g["langs"]:
+                    g["langs"].append(lang)
+
+        _reason = {
+            "not_in_additional_info": "No matching 'Original' row in Additional information -- add the row, or align the token spelling with an existing key",
+            "language_not_filled": "Replacement column for {langs} is empty for every key -- fill it, or leave the language out of languages_in_scope if it is not deployed",
+            "blank_replacement": "Additional information row exists but its Replacement is blank for {langs} -- fill it (or drop the question/option using it)",
+            "not_applied": "A replacement exists for {langs} but was not applied -- check spelling/case of the token vs the Original key",
+        }
+        out: list[dict] = []
+        for (token, cause), g in sorted(groups.items(), key=lambda kv: (kv[0][1] == "language_not_filled", kv[0][0])):
+            langs = ", ".join(l.upper() for l in g["langs"]) or "all languages"
+            n_q = len(g["qnames"])
+            out.append({
+                "issue_type": "replacement_unresolved_placeholder",
+                "q_name": ", ".join(g["qnames"]),
+                "field": token,
+                "current": (
+                    f"{len(g['cells'])} cell(s) in {n_q} question/option(s); columns: {', '.join(g['columns']) or '-'}; "
+                    f"cells: {', '.join(g['cells'][:12])}{' ...' if len(g['cells']) > 12 else ''}"
+                ),
+                "reference": _reason[cause].format(langs=langs),
+                "severity": "medium" if cause == "language_not_filled" else severity,
+                "excel_row": g["row"].get("excel_row") if len(g["cells"]) == 1 else None,
+            })
+        return out
+    ```
+
+### `_scan_unresolved_placeholders` {#fn--scan-unresolved-placeholders-8675}
+
+**Pipeline stage:** `Step 12 -- Validated questionnaire output`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8675`
+
+**Signature**
+
+```python
+def _scan_unresolved_placeholders(wb, sheet_name: str, limit: int=5, languages_in_scope: list[str] | None=None) -> tuple[int, list[str]]:
 ```
 
 **Returns:** `tuple[int, list[str]]`
 
-**What it does:** Return (count, examples) of remaining #placeholder# tokens in a sheet.
+**What it does:** Return (count, examples) of remaining #placeholder# tokens in a sheet (in-scope columns only).
 
 **Parameters**
 
@@ -12635,20 +13676,26 @@ def _scan_unresolved_placeholders(wb, sheet_name: str, limit: int=5) -> tuple[in
 | `wb` | positional_or_keyword | Yes | `-` | `-` | Excel workbook/sheet handle used for report writing. |
 | `sheet_name` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 12 -- Validated questionnaire output` stage. |
 | `limit` | positional_or_keyword | No | `5` | `int` | Input used by the `Step 12 -- Validated questionnaire output` stage. |
+| `languages_in_scope` | positional_or_keyword | No | `None` | `list[str] | None` | Language selector used for language-specific text columns. |
 
 ??? note "Function source"
 
     ```python
-    def _scan_unresolved_placeholders(wb, sheet_name: str, limit: int = 5) -> tuple[int, list[str]]:
-        """Return (count, examples) of remaining #placeholder# tokens in a sheet."""
+    def _scan_unresolved_placeholders(
+        wb, sheet_name: str, limit: int = 5, languages_in_scope: list[str] | None = None,
+    ) -> tuple[int, list[str]]:
+        """Return (count, examples) of remaining #placeholder# tokens in a sheet (in-scope columns only)."""
         if sheet_name not in wb.sheetnames:
             return 0, []
         patt = _re.compile(r"#[^#]+#")
         ws = wb[sheet_name]
+        scope = _sheet_scope_mask(ws, languages_in_scope)
         count = 0
         examples: list[str] = []
         for row in ws.iter_rows():
-            for cell in row:
+            for i, cell in enumerate(row):
+                if i < len(scope) and not scope[i]:
+                    continue
                 v = cell.value
                 if isinstance(v, str) and patt.search(v):
                     count += 1
@@ -12657,35 +13704,38 @@ def _scan_unresolved_placeholders(wb, sheet_name: str, limit: int=5) -> tuple[in
         return count, examples
     ```
 
-### `_collect_unresolved_placeholder_cells` {#fn--collect-unresolved-placeholder-cells-8163}
+### `_collect_unresolved_placeholder_cells` {#fn--collect-unresolved-placeholder-cells-8698}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8163`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8698`
 
 **Signature**
 
 ```python
-def _collect_unresolved_placeholder_cells(wb) -> list[dict]:
+def _collect_unresolved_placeholder_cells(wb, languages_in_scope: list[str] | None=None) -> list[dict]:
 ```
 
 **Returns:** `list[dict]`
 
-**What it does:** Collect every unresolved #placeholder# cell from survey/choices with row context.
+**What it does:** Collect every unresolved #placeholder# cell from survey/choices with row context,
 
 **Parameters**
 
 | Parameter | Kind | Required | Default | Annotation | Description |
 |---|---|---|---|---|---|
 | `wb` | positional_or_keyword | Yes | `-` | `-` | Excel workbook/sheet handle used for report writing. |
+| `languages_in_scope` | positional_or_keyword | No | `None` | `list[str] | None` | Language selector used for language-specific text columns. |
 
 ??? note "Function source"
 
     ```python
-    def _collect_unresolved_placeholder_cells(wb) -> list[dict]:
+    def _collect_unresolved_placeholder_cells(wb, languages_in_scope: list[str] | None = None) -> list[dict]:
         """
-        Collect every unresolved #placeholder# cell from survey/choices with row context.
-        Returns rows with keys: sheet, cell, token_text, q_name, list_name, option_name, excel_row.
+        Collect every unresolved #placeholder# cell from survey/choices with row context,
+        skipping language columns outside languages_in_scope (empty = all).
+        Returns rows with keys: sheet, cell, column, language, token_text, full_text,
+        q_name, list_name, option_name, excel_row.
         """
         patt = _re.compile(r"#[^#]+#")
         out: list[dict] = []
@@ -12705,13 +13755,19 @@ def _collect_unresolved_placeholder_cells(wb) -> list[dict]:
                 q_name = str(vals[q_col]).strip() if q_col is not None and q_col < len(vals) and vals[q_col] is not None else ""
                 list_name = str(vals[list_col]).strip() if list_col is not None and list_col < len(vals) and vals[list_col] is not None else ""
                 opt_name = str(vals[opt_col]).strip() if opt_col is not None and opt_col < len(vals) and vals[opt_col] is not None else ""
-                for cell in row:
+                for i, cell in enumerate(row):
                     v = cell.value
+                    header = headers[i] if i < len(headers) else ""
+                    if not _column_in_scope(header, languages_in_scope):
+                        continue
                     if isinstance(v, str) and patt.search(v):
                         out.append({
                             "sheet": sheet_name,
                             "cell": cell.coordinate,
+                            "column": header,
+                            "language": _column_language(header),
                             "token_text": v[:220],
+                            "full_text": v,
                             "q_name": q_name,
                             "list_name": list_name,
                             "option_name": opt_name,
@@ -12720,16 +13776,16 @@ def _collect_unresolved_placeholder_cells(wb) -> list[dict]:
         return out
     ```
 
-### `_scan_malformed_placeholder_syntax` {#fn--scan-malformed-placeholder-syntax-8201}
+### `_scan_malformed_placeholder_syntax` {#fn--scan-malformed-placeholder-syntax-8744}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8201`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8744`
 
 **Signature**
 
 ```python
-def _scan_malformed_placeholder_syntax(wb, sheet_name: str, limit: int=5) -> tuple[int, list[str]]:
+def _scan_malformed_placeholder_syntax(wb, sheet_name: str, limit: int=5, languages_in_scope: list[str] | None=None) -> tuple[int, list[str]]:
 ```
 
 **Returns:** `tuple[int, list[str]]`
@@ -12743,11 +13799,14 @@ def _scan_malformed_placeholder_syntax(wb, sheet_name: str, limit: int=5) -> tup
 | `wb` | positional_or_keyword | Yes | `-` | `-` | Excel workbook/sheet handle used for report writing. |
 | `sheet_name` | positional_or_keyword | Yes | `-` | `str` | Input used by the `Step 12 -- Validated questionnaire output` stage. |
 | `limit` | positional_or_keyword | No | `5` | `int` | Input used by the `Step 12 -- Validated questionnaire output` stage. |
+| `languages_in_scope` | positional_or_keyword | No | `None` | `list[str] | None` | Language selector used for language-specific text columns. |
 
 ??? note "Function source"
 
     ```python
-    def _scan_malformed_placeholder_syntax(wb, sheet_name: str, limit: int = 5) -> tuple[int, list[str]]:
+    def _scan_malformed_placeholder_syntax(
+        wb, sheet_name: str, limit: int = 5, languages_in_scope: list[str] | None = None,
+    ) -> tuple[int, list[str]]:
         """
         Return (count, examples) of malformed placeholder/reference syntax in a sheet:
           - malformed #...# tokens
@@ -12756,10 +13815,13 @@ def _scan_malformed_placeholder_syntax(wb, sheet_name: str, limit: int=5) -> tup
         if sheet_name not in wb.sheetnames:
             return 0, []
         ws = wb[sheet_name]
+        scope = _sheet_scope_mask(ws, languages_in_scope)
         count = 0
         examples: list[str] = []
         for row in ws.iter_rows():
-            for cell in row:
+            for i, cell in enumerate(row):
+                if i < len(scope) and not scope[i]:
+                    continue
                 v = cell.value
                 if not isinstance(v, str):
                     continue
@@ -12770,11 +13832,11 @@ def _scan_malformed_placeholder_syntax(wb, sheet_name: str, limit: int=5) -> tup
         return count, examples
     ```
 
-### `produce_validated_questionnaire` {#fn-produce-validated-questionnaire-8224}
+### `produce_validated_questionnaire` {#fn-produce-validated-questionnaire-8772}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8224`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8772`
 
 **Signature**
 
@@ -12824,6 +13886,7 @@ def produce_validated_questionnaire(cfg: dict, reference_survey: pl.DataFrame, r
         replacement_status = {"rows": [], "notes": []}
         replacement_issue_rows: list[dict] = []
         _kobo_opt_local = cfg.get("kobo_options", {}) or {}
+        _languages_in_scope = _normalize_languages_in_scope(cfg.get("languages_in_scope"))
         _include_admin3 = _as_bool(_kobo_opt_local.get("include_admin3", False), False)
         _skip_restore_and_replacement = _as_bool(_kobo_opt_local.get("skip_restore_and_replacement", False), False)
         _require_additional_info = _as_bool(_kobo_opt_local.get("require_additional_info", True), True)
@@ -13319,10 +14382,8 @@ def produce_validated_questionnaire(cfg: dict, reference_survey: pl.DataFrame, r
                     )
 
                     if (_miss_s + _miss_c) > 0:
-                        _sev = "high"
-                        _st = "FAIL"
-                        _det += "; missing rows cannot be restored by replacement pairs"
-                    elif (_skp_s + _skp_c) > 0:
+                        _det += "; template rows absent from the questionnaire (removed by the country) need no restore"
+                    if (_skp_s + _skp_c) > 0:
                         _sev = "medium"
                         _st = "WARN"
                     else:
@@ -13335,31 +14396,28 @@ def produce_validated_questionnaire(cfg: dict, reference_survey: pl.DataFrame, r
                         _sev,
                     )
 
-                    if (_miss_s + _miss_c) > 0:
-                        _iss_sev = "high"
-                        for _qn in (_restore_stats.get("survey_missing_qnames") or []):
-                            _add_issue_row(
-                                "replacement_restore_missing_target_row",
-                                "template survey name",
-                                str(_qn),
-                                "Template has placeholder cells but survey row is missing in current output",
-                                severity=_iss_sev,
-                                q_name=str(_qn),
-                            )
-                        for _key in (_restore_stats.get("choices_missing_keys") or []):
-                            _ln, _nm = "", ""
-                            _parts = str(_key).split("/", 1)
-                            if len(_parts) == 2:
-                                _ln, _nm = _parts[0], _parts[1]
-                            _add_issue_row(
-                                "replacement_restore_missing_target_row",
-                                "template choice key",
-                                str(_key),
-                                "Template has placeholder cells but choices row is missing in current output",
-                                severity=_iss_sev,
-                                list_name=_ln,
-                                option_name=_nm,
-                            )
+                    # Template rows carrying placeholders that the country dropped: nothing
+                    # to restore. One info row per sheet; core removals are already
+                    # reported in Question Changes.
+                    _miss_q = [str(q) for q in (_restore_stats.get("survey_missing_qnames") or [])]
+                    _miss_k = [str(k) for k in (_restore_stats.get("choices_missing_keys") or [])]
+                    if _miss_q:
+                        _add_issue_row(
+                            "replacement_restore_missing_target_row",
+                            "template survey rows",
+                            f"{len(_miss_q)} template question(s) with placeholders are not in this questionnaire",
+                            "Nothing to restore (question removed by the country); core removals are listed in Question Changes",
+                            severity="info",
+                            q_name=", ".join(_miss_q),
+                        )
+                    if _miss_k:
+                        _add_issue_row(
+                            "replacement_restore_missing_target_row",
+                            "template choice rows",
+                            f"{len(_miss_k)} template choice(s) with placeholders are not in this questionnaire: {', '.join(_miss_k)}",
+                            "Nothing to restore (choice removed by the country)",
+                            severity="info",
+                        )
             else:
                 _add_row(
                     "Placeholder vanilla restore",
@@ -13398,7 +14456,7 @@ def produce_validated_questionnaire(cfg: dict, reference_survey: pl.DataFrame, r
             )
 
         # Explicit choices-level replacement integrity check
-        _ch_unresolved, _ch_examples = _scan_unresolved_placeholders(wb, "choices")
+        _ch_unresolved, _ch_examples = _scan_unresolved_placeholders(wb, "choices", languages_in_scope=_languages_in_scope)
         if _ch_unresolved == 0:
             _add_row(
                 "Placeholder replacement in choices",
@@ -13415,27 +14473,30 @@ def produce_validated_questionnaire(cfg: dict, reference_survey: pl.DataFrame, r
             else:
                 _add_row("Placeholder replacement in choices", "FAIL", _det, "high")
 
-        _unresolved_rows = _collect_unresolved_placeholder_cells(wb)
+        _unresolved_rows = _collect_unresolved_placeholder_cells(wb, languages_in_scope=_languages_in_scope)
         if _unresolved_rows:
             _sev = "medium" if _skip_restore_and_replacement else "high"
-            for rr in _unresolved_rows:
+            for _iss in build_unresolved_placeholder_issues(
+                _unresolved_rows,
+                read_additional_info_keys(src),
+                globals().get("replacement_pairs_by_language") or {},
+                severity=_sev,
+            ):
                 _add_issue_row(
-                    "replacement_unresolved_placeholder",
-                    f"{rr.get('sheet', '')}!{rr.get('cell', '')}",
-                    rr.get("token_text", ""),
-                    "Resolve with Additional information replacements or correct token",
-                    severity=_sev,
-                    q_name=rr.get("q_name", ""),
-                    list_name=rr.get("list_name", ""),
-                    option_name=rr.get("option_name", ""),
-                    excel_row=rr.get("excel_row"),
+                    _iss["issue_type"],
+                    _iss["field"],
+                    _iss["current"],
+                    _iss["reference"],
+                    severity=_iss["severity"],
+                    q_name=_iss["q_name"],
+                    excel_row=_iss["excel_row"],
                 )
 
         # Malformed placeholder/reference syntax check on final workbook text.
         _malformed_total = 0
         _malformed_examples: list[str] = []
         for _sheet_name in ("survey", "choices"):
-            _cnt, _ex = _scan_malformed_placeholder_syntax(wb, _sheet_name, limit=3)
+            _cnt, _ex = _scan_malformed_placeholder_syntax(wb, _sheet_name, limit=3, languages_in_scope=_languages_in_scope)
             _malformed_total += _cnt
             if _ex:
                 _malformed_examples.extend(_ex)
@@ -13650,11 +14711,11 @@ def produce_validated_questionnaire(cfg: dict, reference_survey: pl.DataFrame, r
         return dest, replacement_status, _replacement_issues_df
     ```
 
-### `produce_validated_questionnaire._add_row` {#fn--add-row-8255}
+### `produce_validated_questionnaire._add_row` {#fn--add-row-8804}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8255`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8804`
 
 **Signature**
 
@@ -13687,11 +14748,11 @@ def _add_row(check: str, status: str, details: str, severity: str):
             })
     ```
 
-### `produce_validated_questionnaire._add_issue` {#fn--add-issue-8263}
+### `produce_validated_questionnaire._add_issue` {#fn--add-issue-8812}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8263`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8812`
 
 **Signature**
 
@@ -13730,11 +14791,11 @@ def _add_issue(list_name: str, current: str, reference: str, severity: str='high
             })
     ```
 
-### `produce_validated_questionnaire._add_issue_row` {#fn--add-issue-row-8277}
+### `produce_validated_questionnaire._add_issue_row` {#fn--add-issue-row-8826}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8277`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8826`
 
 **Signature**
 

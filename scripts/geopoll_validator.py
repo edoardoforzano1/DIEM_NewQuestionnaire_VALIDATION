@@ -2439,6 +2439,12 @@ else:
 _geopoll_opt = (_y.get("geopoll_options", {}) or {}) if isinstance(_y, dict) else {}
 _max_qname_length: int = int(_geopoll_opt.get("max_qname_length", 28))
 _modality: str = str(_geopoll_opt.get("modality", "cati")).strip().lower()
+# Languages checked in placeholder/replacement scans; other language columns
+# stay in the file but are not reported. Empty = every filled language.
+_languages_in_scope_raw = (_y.get("languages_in_scope") or []) if isinstance(_y, dict) else []
+if isinstance(_languages_in_scope_raw, str):
+    _languages_in_scope_raw = _languages_in_scope_raw.split(",")
+_languages_in_scope: list[str] = [str(v).strip().upper() for v in _languages_in_scope_raw if str(v).strip()]
 _ignore_module_raw = (
     _y.get("ignore_modules_from_comparison")
     if isinstance(_y, dict) and "ignore_modules_from_comparison" in _y
@@ -9125,7 +9131,15 @@ def _build_replacement_issue_rows(
     reference_questions: pl.DataFrame | None = None,
     additional_info_diag: dict | None = None,
     replacements_by_language: dict[str, dict[str, str]] | None = None,
+    languages_in_scope: list[str] | None = None,
 ) -> pl.DataFrame:
+    """
+    Replacement issues for the validated output. Text columns of languages
+    outside languages_in_scope (uppercase codes, empty = all) are skipped.
+    Placeholder rows are grouped per (issue type, token, cause) by
+    _group_placeholder_issue_rows, so one missing key used in 15 questions is
+    one row listing the 15 questions.
+    """
     schema = {
         "issue_type": pl.Utf8,
         "set_name": pl.Utf8,
@@ -9137,6 +9151,11 @@ def _build_replacement_issue_rows(
         "excel_row": pl.Int64,
     }
     rows = []
+    _scope = {str(l).upper() for l in (languages_in_scope or [])}
+
+    def _col_in_scope(col_name: str) -> bool:
+        lang = _language_code_for_text_column(col_name)
+        return not _scope or not lang or lang in _scope
 
     selected_count, total_candidates, crop_mode = _count_selected_crops(crop_df, language)
     if crop_mode == "missing_select_column":
@@ -9197,7 +9216,7 @@ def _build_replacement_issue_rows(
         reference_questions = reference_questions.filter(
             pl.col("Q Name").is_in(validated_questions["Q Name"].to_list())
         )
-        ref_cols = _placeholder_scan_columns(reference_questions)
+        ref_cols = [c for c in _placeholder_scan_columns(reference_questions) if _col_in_scope(c)]
         for row in reference_questions.select(["Q Name", "excel_row"] + ref_cols).iter_rows(named=True):
             qname = str(row.get("Q Name") or "")
             excel_row = row.get("excel_row")
@@ -9256,7 +9275,7 @@ def _build_replacement_issue_rows(
                         "excel_row": excel_row,
                     })
 
-    cols = _placeholder_scan_columns(validated_questions)
+    cols = [c for c in _placeholder_scan_columns(validated_questions) if _col_in_scope(c)]
     for row in validated_questions.select(["Q Name", "excel_row"] + cols).iter_rows(named=True):
         qname = str(row.get("Q Name") or "")
         excel_row = row.get("excel_row")
@@ -9322,7 +9341,76 @@ def _build_replacement_issue_rows(
 
     if not rows:
         return pl.DataFrame(schema=schema)
-    return pl.DataFrame(rows, schema=schema)
+    return _group_placeholder_issue_rows(pl.DataFrame(rows, schema=schema), replacements_by_language)
+
+
+def _group_placeholder_issue_rows(
+    df: pl.DataFrame,
+    replacements_by_language: dict[str, dict[str, str]] | None = None,
+) -> pl.DataFrame:
+    """
+    Collapse per-cell placeholder rows (replacement_missing_key /
+    _unresolved_placeholder / _malformed_placeholder) into one row per
+    (issue type, token, reference). Q Name lists the questions, field the
+    columns, current says how many cells. A missing key in a language whose
+    whole Replacement column is empty is reworded and downgraded to medium:
+    that is a language not filled, not a missing key. Other rows pass through.
+    """
+    grouped_types = ["replacement_missing_key", "replacement_unresolved_placeholder", "replacement_malformed_placeholder"]
+    filled_langs = [l for l, pairs in (replacements_by_language or {}).items() if pairs]
+    lang_expr = pl.col("field").map_elements(lambda c: _language_code_for_text_column(c) or "", return_dtype=pl.Utf8)
+    cand = df.filter(pl.col("issue_type").is_in(grouped_types))
+    if cand.height == 0:
+        return df
+    cand = (
+        cand
+        .with_columns(lang_expr.alias("_lang"))
+        .with_columns(
+            pl.when(
+                (pl.col("issue_type") == "replacement_missing_key")
+                & (pl.col("_lang") != "")
+                & ~pl.col("_lang").is_in(filled_langs)
+            )
+            .then(pl.lit("Replacement column for this language is empty for every key -- fill it, or leave the language out of languages_in_scope if it is not deployed"))
+            .otherwise(pl.col("reference"))
+            .alias("reference"),
+            pl.when(
+                (pl.col("issue_type") == "replacement_missing_key")
+                & (pl.col("_lang") != "")
+                & ~pl.col("_lang").is_in(filled_langs)
+            )
+            .then(pl.lit("medium"))
+            .otherwise(pl.col("severity"))
+            .alias("severity"),
+        )
+    )
+    grouped = (
+        cand
+        .group_by(["issue_type", "current", "reference", "severity"], maintain_order=True)
+        .agg(
+            pl.col("set_name").first(),
+            pl.col("Q Name").unique(maintain_order=True).alias("_qnames"),
+            pl.col("field").unique(maintain_order=True).alias("_fields"),
+            pl.col("_lang").filter(pl.col("_lang") != "").unique(maintain_order=True).alias("_langs"),
+            pl.len().alias("_n"),
+            pl.col("excel_row").min().alias("excel_row"),
+        )
+        .with_columns(
+            pl.col("_qnames").list.join(", ").alias("Q Name"),
+            pl.col("current").alias("field"),
+            pl.format(
+                "{} cell(s) in {} question(s); columns: {}",
+                pl.col("_n"), pl.col("_qnames").list.len(), pl.col("_fields").list.join(", "),
+            ).alias("current"),
+            pl.when(pl.col("_langs").list.len() > 0)
+            .then(pl.format("{} [{}]", pl.col("reference"), pl.col("_langs").list.join(", ")))
+            .otherwise(pl.col("reference"))
+            .alias("reference"),
+            pl.when(pl.col("_qnames").list.len() == 1).then(pl.col("excel_row")).otherwise(pl.lit(None, dtype=pl.Int64)).alias("excel_row"),
+        )
+        .select(df.columns)
+    )
+    return pl.concat([df.filter(~pl.col("issue_type").is_in(grouped_types)), grouped], how="vertical")
 
 
 def _fetch_admin_reference(admin_level: str, iso3: str) -> tuple[list[dict], str]:
@@ -9711,6 +9799,7 @@ _replacement_issues = _build_replacement_issue_rows(
     reference_questions = reference_questions,
     additional_info_diag = _additional_info_diag,
     replacements_by_language = current_text_replacements_by_language,
+    languages_in_scope = _languages_in_scope,
 )
 if _replacement_issues.height > 0:
     all_issues = pl.concat([all_issues, _replacement_issues], how="diagonal")

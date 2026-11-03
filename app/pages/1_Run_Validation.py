@@ -184,6 +184,14 @@ with st.form("run_validation_form"):
                     "exclude_qnames_from_option_compare (comma-separated)",
                     value=_list_to_csv(kobo_opts.get("exclude_qnames_from_option_compare")),
                 )
+                kobo_max_qname_length = st.number_input(
+                    "max_qname_length", min_value=1, value=int(kobo_opts.get("max_qname_length", 32))
+                )
+                kobo_modality = st.selectbox(
+                    "modality",
+                    MODALITIES,
+                    index=MODALITIES.index(kobo_opts.get("modality")) if kobo_opts.get("modality") in MODALITIES else 0,
+                )
     else:
         with st.expander("GeoPoll options (advanced)", expanded=False):
             g1, g2 = st.columns(2)
@@ -244,6 +252,8 @@ if prepare_clicked:
                 "kobo_options.require_crop_list": require_crop_list,
                 "kobo_options.country_specific_list_names": _csv_to_list(country_specific_list_names),
                 "kobo_options.exclude_qnames_from_option_compare": _csv_to_list(exclude_qnames_from_option_compare),
+                "kobo_options.max_qname_length": int(kobo_max_qname_length),
+                "kobo_options.modality": kobo_modality,
             }
         )
     else:

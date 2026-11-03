@@ -88,6 +88,8 @@ WRITABLE_KEYS: tuple[str, ...] = (
     "kobo_options.require_crop_list",
     "kobo_options.country_specific_list_names",
     "kobo_options.exclude_qnames_from_option_compare",
+    "kobo_options.max_qname_length",
+    "kobo_options.modality",
     "geopoll_options.max_qname_length",
     "geopoll_options.modality",
     "validation_number",

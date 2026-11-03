@@ -27,6 +27,12 @@ questionnaire_file: "diem_household_questionnaire_geopoll_yemen_20261022.xlsx"
 # Language code: en | fr | ar | es
 language: "ar"
 
+# Languages checked in placeholder/replacement scans (KoBo + GeoPoll). Columns of other
+# languages stay in the file untouched but are not reported, e.g. Arabic
+# columns left over from the template in a FR/EN country. Empty = every
+# filled language.  Example: ["en", "fr"]
+languages_in_scope: []
+
 # ISO3 country code
 iso3: "YEM"
 
@@ -131,6 +137,15 @@ kobo_options:
   exclude_qnames_from_option_compare:
     - "enumerator"
     - "enum_team"
+
+  # Maximum allowed length for variable names (name column). Names exceeding
+  # this are flagged as medium issues. 32 = Stata variable-name limit (the
+  # 20261007 template's longest name is 29 characters).
+  max_qname_length: 32
+
+  # Survey modality: capi | cati
+  # Controls whether the FS indicator ceiling check (capi_max in critical_sets.yaml) applies.
+  modality: "capi"
 
 # =============================================================================
 #  GEOPOLL-SPECIFIC OPTIONS  (only read by the geopoll notebook)

@@ -99,6 +99,8 @@ KoBo produces a validated output questionnaire in addition to the report. The pi
 
 **`configuration/validation_config.yaml`** — main config for the validators. The `config_profile` key can point to a YAML file (filename only, resolved under `output_dir/config_profiles/`, or absolute path) whose keys override the base config. This lets you switch country/language/round without editing the base file.
 
+`languages_in_scope` (top level, both validators) limits the placeholder/replacement scans to the listed languages; other language columns stay in the file untouched and are not reported. Empty = every filled language. Replacement Issues rows are grouped per placeholder and cause (`build_unresolved_placeholder_issues` in KoBo, `_group_placeholder_issue_rows` in GeoPoll), so Q Name there can hold a comma-separated list.
+
 **`configuration/admin_tools_config.yaml`** — config for the two admin tools. Falls back to `validation_config.yaml` for `tool`, `language`, `iso3` when those keys are absent. The `source:` and `sync:` blocks are admin-tool-specific.
 
 **`configuration/critical_sets.yaml`** — GeoPoll only. Defines `exact_sets`, `min_count_sets`, and `crop_harvest` validation rules. Edit this file when the questionnaire structure changes; no code changes needed.
@@ -192,16 +194,16 @@ The validators are large, tightly coupled scripts where a change in one place ca
 - `c_` prefix marks **custom questions** — questions the country team added or modified beyond the template. Option and code changes on `c_` questions are downgraded to `info` severity (expected customisation). This prefix replaced the legacy `o_` prefix; `o_` is still recognised for backward compatibility when validating against previous-round files.
 - No prefix: standard mandatory or non-mandatory template question. All changes flagged at full severity.
 
-### New validation checks (GeoPoll only)
+### Rule-based validation checks (GeoPoll and KoBo)
 
-These checks are config-driven via `configuration/critical_sets.yaml` and appear in the **Critical Sets** and **Summary** sheets of the report.
+These checks are config-driven via `configuration/critical_sets.yaml` and appear in the **Critical Sets** and **Summary** sheets of the report. Both validators implement them separately: KoBo reads `relevant` instead of Conditional for `agri_cs_check`, uses `kobo_values` / `kobo_codes` where KoBo choice names differ from GeoPoll codes, and takes `max_qname_length` / `modality` from `kobo_options`. Both also check `fixed_option_codes` and `tlu_weights`. KoBo recognises the `c_` custom prefix alongside the legacy `o_` (`CUSTOM_QNAME_PREFIXES`).
 
 | Rule type | Config key | What it checks |
 |---|---|---|
 | `fs_indicators` | `critical_sets.yaml` → `fs_indicators` | Mandatory FS indicators (FIES, FCS, LCSI) must be present. CAPI ceiling applied when `modality=capi` in `validation_config.yaml`. |
 | `agri_cs_check` | `critical_sets.yaml` → `agri_cs_check` | At least N CS questions must reference `hh_agricactivity` or `income_main/sec/third` with agri values in the Conditional column. |
 | `variable_pairs` | `critical_sets.yaml` → `variable_pairs` | If one variable of a pair is present, both must be (e.g. `crp_harv_vol` + `crp_harv_unit`). |
-| `qname_too_long` | `geopoll_options.max_qname_length` in `validation_config.yaml` | Variable names exceeding the limit (default 28 chars) are flagged as medium. |
+| `qname_too_long` | `geopoll_options.max_qname_length` / `kobo_options.max_qname_length` in `validation_config.yaml` | Variable names exceeding the limit (default 28 GeoPoll, 32 KoBo) are flagged as medium. |
 
 HDDS is no longer a `critical_set` — it is treated as a regular template question and checked via the standard question presence / mandatory comparison.
 

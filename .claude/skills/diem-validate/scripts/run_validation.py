@@ -51,6 +51,8 @@ def main() -> int:
     ap.add_argument("--reference-mode", default="latest_template", choices=["latest_template", "previous_round"])
     ap.add_argument("--previous-round", default="", help="previous-round file (copied to staging too)")
     ap.add_argument("--python", default=sys.executable, help="interpreter of the validation env")
+    ap.add_argument("--languages", default="", help="comma-separated languages in scope (e.g. en,fr); "
+                    "other language columns stay in the file but are not checked")
     ap.add_argument("--extra", default="{}", help="JSON dict of extra top-level config overrides")
     ap.add_argument("--toolbox-dir", default="", help="official template folder to compare against templates_dir "
                     "(default: templates_source_dir from validation_config.yaml, which validate.py syncs from)")
@@ -85,6 +87,8 @@ def main() -> int:
             prev = Path(base.get("working_dir") or ".") / prev
         shutil.copy2(prev, staging / prev.name)
         profile["previous_round_file"] = prev.name
+    if args.languages:
+        profile["languages_in_scope"] = [l.strip().lower() for l in args.languages.split(",") if l.strip()]
     profile.update(json.loads(args.extra or "{}"))
 
     profiles_dir = output_dir / "config_profiles"

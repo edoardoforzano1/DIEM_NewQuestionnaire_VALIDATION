@@ -25,8 +25,8 @@ from __future__ import annotations
 # (LANGUAGES), the reference_mode branch in kobo_validator.py /
 # geopoll_validator.py (REFERENCE_MODES), source.mode handling in
 # resolve_source_workbook (SOURCE_MODES), sync.mode handling in
-# tool_admin_sync.py (SYNC_MODES), and geopoll_options.modality
-# (MODALITIES).
+# tool_admin_sync.py (SYNC_MODES), and geopoll_options.modality /
+# kobo_options.modality (MODALITIES).
 
 TOOLS = ["kobo", "geopoll"]
 LANGUAGES = ["en", "fr", "ar", "es"]
