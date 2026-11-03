@@ -1963,6 +1963,7 @@ _KNOWN_MANDATORY_VALUES = {
     "no - but recommended in applicable contexts",
     "no - but recommended if of interest",
     "spiel",
+    "customized",
 }
 
 

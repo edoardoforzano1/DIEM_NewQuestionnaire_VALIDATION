@@ -79,7 +79,8 @@ Each `skipPattern_invalid_qname` row now says what happened to the missing targe
 | `removed_question` high | A core/spiel question removed | Restore, or get documented approval (RA + SMAR) |
 | `removed_question` info | Optional question removed | Nothing — allowed choice |
 | `mandatory_to_optional` | Core question now optional, often because it was renamed `c_<name>` | Keep the template name for core questions; `c_` is only for genuinely custom questions |
-| `added_question` info | New `c_` question | Check it has Universe, Skip pattern, Duration; country must document processing specs |
+| `added_question` info | New `c_` question | Check it has Universe, Skip pattern, Duration; country must document processing specs. Country-added questions take `c_` in the name and Mandatory = `customized` (confirmed by SMAR) |
+| `mandatory_category_unrecognized` medium | Mandatory value not in the template categories (`customized` counts as valid) | Usually a typo; for a country-added question set `customized` |
 | `question_label_mismatch` medium | Text differs from template (after normalisation; Arabic orthography is folded) | Confirm wording change is intended / translation approved |
 | `universe_changed` | Audience text changed; info when the template cell was blank | Confirm |
 | `module_removed` | Info when the module had only optional questions; high if it contained core questions | Restore core modules |
