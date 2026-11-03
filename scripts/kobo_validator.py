@@ -1350,6 +1350,124 @@ def read_additional_info(country_path: str, language: str = "en") -> dict[str, s
     return pairs
 
 
+# Template tokens that are not a plain #<Original># key but derive from one.
+# TLU weight tokens in the tlu_* calculations <- TLU rows of Additional information.
+_TLU_WEIGHT_TOKEN_BY_KEY = {
+    "cattle": "CATTLE",
+    "goat": "GOAT",
+    "sheep": "SHEEP",
+    "swine": "SWINE",
+    "equine": "EQUINE",
+    "small domesticated mammals": "SMALLMAMMALS",
+    "poultry": "POULTRY",
+    "camelid": "CAMELID",
+}
+# Translated spellings of a key used in a language column (e.g. FR constraint_message).
+_TRANSLATED_KEY_ALIASES = {
+    "fr": {"numéro de téléphone": "phone number"},
+}
+# Word inserted for #expected or nothing# when crop questions are in the present tense.
+_EXPECTED_WORD_BY_LANG = {"en": "expected", "fr": "attendue", "es": "esperada", "ar": "المتوقعة"}
+_VERB_TENSE_KEY = "crop production verb tense"
+# "#past form [present form]#" tokens, e.g. #did [do]#, #a-t-il rencontré [rencontre-t-il]#.
+_TENSE_BRACKET_TOKEN_RE = re.compile(r"#([^#\[\]\n]+?)\s*\[\s*([^#\[\]\n]+?)\s*\]#")
+
+
+def detect_verb_tense_mode(raw_value: str) -> str:
+    """Return 'past', 'present' or 'both' from the 'crop production verb tense' value ('' if blank)."""
+    v = str(raw_value or "").lower().strip()
+    if not v:
+        return ""
+    if any(s in v for s in ("both", "les deux", "les 2", "كلا", "كلاهما")):
+        return "both"
+    has_present = any(s in v for s in ("present", "présent", "ongoing", "cours", "upcoming", "futur", "future", "الحاضر", "المضارع"))
+    has_past = any(s in v for s in ("past", "passé", "passe", "last", "finished", "harvest", "récolte", "الماضي"))
+    if has_present and has_past:
+        return "both"
+    return "present" if has_present else "past"
+
+
+def resolve_tense_tokens(text: str, tense_mode: str) -> str:
+    """Resolve #past [present]# tokens: past -> past form, present -> present form, both -> 'past [present]'."""
+    if not tense_mode or "[" not in text:
+        return text
+
+    def _pick(m):
+        past, present = m.group(1).strip(), m.group(2).strip()
+        if tense_mode == "past":
+            return past
+        if tense_mode == "present":
+            return present
+        return f"{past} [{present}]"
+
+    return _TENSE_BRACKET_TOKEN_RE.sub(_pick, text)
+
+
+def build_derived_placeholder_pairs(
+    pairs_by_language: dict[str, dict[str, str]],
+    country_name: str = "",
+) -> tuple[dict[str, dict[str, str]], str]:
+    """
+    Add the template tokens that derive from Additional information rows to each
+    language's pairs, and return (pairs_by_language, tense_mode):
+      - #<key> <LANG># for every #<key># of that language (e.g. #season FR#)
+      - #TLU_WEIGHT_<ANIMAL># from the TLU rows
+      - #number of digits# from the phone number; translated key aliases (#numéro de téléphone#)
+      - #expected or nothing# / #expected or nothing <LANG># from the verb tense
+      - #ADMIN0# from the country name
+    """
+    out = {lang: dict(pairs or {}) for lang, pairs in (pairs_by_language or {}).items()}
+
+    def _value(pairs: dict[str, str], key: str) -> str:
+        return str(pairs.get(f"#{key}#") or "").strip()
+
+    tense_raw = _value(out.get("en", {}), _VERB_TENSE_KEY) or next(
+        (_value(p, _VERB_TENSE_KEY) for p in out.values() if _value(p, _VERB_TENSE_KEY)), ""
+    )
+    tense_mode = detect_verb_tense_mode(tense_raw)
+
+    for lang, pairs in out.items():
+        if not pairs:
+            continue
+        derived: dict[str, str] = {}
+        for key, translated in _TRANSLATED_KEY_ALIASES.get(lang, {}).items():
+            if _value(pairs, translated):
+                derived[f"#{key}#"] = _value(pairs, translated)
+        for key, suffix in _TLU_WEIGHT_TOKEN_BY_KEY.items():
+            if _value(pairs, key):
+                derived[f"#TLU_WEIGHT_{suffix}#"] = _value(pairs, key)
+        phone_digits = re.sub(r"\D", "", _value(pairs, "phone number"))
+        if phone_digits:
+            derived["#number of digits#"] = str(len(phone_digits))
+        if tense_mode:
+            derived["#expected or nothing#"] = "" if tense_mode == "past" else _EXPECTED_WORD_BY_LANG.get(lang, "expected")
+        if country_name:
+            derived["#ADMIN0#"] = country_name
+        merged = {**derived, **pairs}
+        suffix = lang.upper()
+        for key, val in list(merged.items()):
+            merged.setdefault(f"{key[:-1]} {suffix}#", val)
+        out[lang] = merged
+    return out, tense_mode
+
+
+def fetch_agol_country_name(iso3: str) -> str:
+    """Country name (adm0_name) from the AGOL admin1 layer; '' when unreachable."""
+    try:
+        import urllib.request as _urlreq
+        import json as _json
+        url = ("https://services5.arcgis.com/sjP4Ugu5s0dZWLjd/arcgis/rest/services"
+               "/Administrative_Boundaries_Reference_(view_layer)/FeatureServer/1/query"
+               f"?where=adm0_ISO3+%3D+%27{iso3}%27&outFields=adm0_name"
+               "&returnGeometry=false&resultRecordCount=1&f=json")
+        with _urlreq.urlopen(url, timeout=30) as r:
+            features = _json.loads(r.read().decode()).get("features", [])
+        return str(features[0]["attributes"].get("adm0_name") or "").strip() if features else ""
+    except Exception as e:
+        print(f"Warning: country name fetch failed ({e}); #ADMIN0# left as is")
+        return ""
+
+
 def restore_to_vanilla(
     current_df  : pl.DataFrame,
     reference_df: pl.DataFrame,
@@ -1635,6 +1753,7 @@ def _count_hash_placeholders_in_text_df(df: pl.DataFrame, cols: list[str]) -> in
 if _cfg_skip_restore_and_replacement:
     replacement_pairs = {}
     replacement_pairs_by_language = {lang: {} for lang in ("en", "fr", "ar", "es")}
+    replacement_tense_mode = ""
     _additional_info_status = {
         "sheet_found": False,
         "headers_found": False,
@@ -1666,6 +1785,15 @@ else:
         run["questionnaire_path"],
         run["language"],
     )
+    # Tokens derived from Additional information rows (#season FR#, #TLU_WEIGHT_CATTLE#,
+    # #number of digits#, #expected or nothing#, #ADMIN0#) and the verb tense mode.
+    replacement_pairs_by_language, replacement_tense_mode = build_derived_placeholder_pairs(
+        replacement_pairs_by_language,
+        country_name=fetch_agol_country_name(run["iso3"]) if any(replacement_pairs_by_language.values()) else "",
+    )
+    _target_lang = str(run["language"] or "en").lower()
+    replacement_pairs = {**replacement_pairs_by_language.get(_target_lang, {}), **replacement_pairs}
+    print(f"Verb tense mode: {replacement_tense_mode or 'not set'}")
     print(f"Loaded {len(replacement_pairs)} placeholder pair(s) from Additional information sheet:")
     for k, v in replacement_pairs.items():
         print(f"  {k!r}  ->  {v!r}")
@@ -8022,10 +8150,20 @@ def _apply_replacements_to_wb(
     replacement_pairs: dict,
     replacement_pairs_by_language: dict[str, dict[str, str]] | None = None,
     target_language: str = "en",
+    tense_mode: str = "",
 ) -> None:
-    """Apply #placeholder# -> value to workbook text, respecting per-language columns."""
+    """Apply #placeholder# -> value to workbook text, respecting per-language columns,
+    then resolve #past [present]# tokens from the verb tense mode."""
     if not replacement_pairs and not any((replacement_pairs_by_language or {}).values()):
         return
+    if "settings" in wb.sheetnames:
+        ws = wb["settings"]
+        for row in ws.iter_rows(min_row=2):
+            for cell in row:
+                if isinstance(cell.value, str) and "#" in cell.value:
+                    for key, val in sorted(replacement_pairs.items(), key=lambda x: len(x[0]), reverse=True):
+                        if key in cell.value:
+                            cell.value = cell.value.replace(key, str(val))
     for sheet_name in ("survey", "choices"):
         if sheet_name not in wb.sheetnames:
             continue
@@ -8052,6 +8190,8 @@ def _apply_replacements_to_wb(
                     for key, val in sorted(active_pairs.items(), key=lambda x: len(x[0]), reverse=True):
                         if key in v:
                             v = v.replace(key, str(val))
+                    if row_idx > _hdr_row_1:
+                        v = resolve_tense_tokens(v, tense_mode)
                     cell.value = v
 
 
@@ -8625,6 +8765,7 @@ def build_unresolved_placeholder_issues(
         lang = rr.get("language", "")
         for token in dict.fromkeys(tok_re.findall(str(rr.get("full_text") or rr.get("token_text") or ""))):
             core = token.strip("#").strip()
+            core = _re.sub(r"\s+(EN|FR|AR|ES|PT)$", "", core)  # #season FR# belongs to the 'season' row
             in_ai = bool(_placeholder_aliases(core) & {k for k in additional_info_keys}) or core.lower() in additional_info_keys
             if not in_ai:
                 cause = "not_in_additional_info"
@@ -9343,6 +9484,7 @@ def produce_validated_questionnaire(
                 replacement_pairs,
                 replacement_pairs_by_language=replacement_pairs_by_language,
                 target_language=run.get("language", "en"),
+                tense_mode=globals().get("replacement_tense_mode", ""),
             )
             _add_row(
                 "Placeholder replacement",
