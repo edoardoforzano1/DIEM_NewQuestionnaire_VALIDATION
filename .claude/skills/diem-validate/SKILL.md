@@ -17,6 +17,7 @@ Bundled tools (run with the validation environment's Python):
 - `scripts/run_validation.py` — runs the validator on one file without permanently editing config
 - `scripts/summarize_report.py` — compact digest of the report
 - `scripts/check_validated_output.py` — deployability checks on the validated questionnaire
+- `scripts/make_fix_document.py` — builds the Word document for the country team from a JSON spec (step 7)
 - `references/issue-guide.md` — what each issue type means, typical fix, known noise. Read it before writing the fix list.
 
 **Never modify the original files on SharePoint/OneDrive** (templates under `templates_source_dir`, or country questionnaires shared from there) — no edit, rename, move, delete or re-save, for any reason. Read or copy only; always work on a local copy.
@@ -58,6 +59,16 @@ answer's header line.
 
 - **Python env**: CLAUDE.md says `diem-validation`. If `conda env list` doesn't have it, use an env that imports `polars`, `openpyxl`, `yaml`, `xlsxwriter`, and tell the user which one you used. Call that interpreter's `python.exe` directly (not `conda run`, which crashes on non-ASCII output on Windows).
 - **Template freshness**: the official templates live in the DIEM Toolbox folder on SharePoint (`templates_source_dir` in `validation_config.yaml`, e.g. `…/03. Toolbox/02. Questionnaires/`). `validate.py` copies any newer template from there into the local `templates_dir` before every run, so nothing to do normally. After the run, check `template_sync` in the runner output: if it shows a WARNING (SharePoint folder not reachable / OneDrive not synced), the run used whatever was already local — compare `reference` with `toolbox_templates` and tell the user if the reference is older, because an old template produces dozens of false issues. (Files are copied, not read in place, because OneDrive placeholder files can't be opened directly from Python.)
+
+## 2b. Forms without a template (KII, traders)
+
+The validator can't run on these. Check them directly instead:
+- convert with `pyxform` (`xls2xform_convert(..., validate=False)`) to catch XLSForm errors;
+- every `select_*` list exists in `choices`, every `${var}` exists, groups and repeats are balanced, each repeat has a `repeat_count`;
+- every code used in `relevant`, `constraint`, `choice_filter` and `calculation` (`${q} = 'x'`, `selected(${q}, 'x')`, `name != 'x'`) exists in that question's list, and `=` is not used on a `select_multiple`;
+- labels are filled for every language in scope and no `#…#` / `$…$` is left;
+- for every list or variable name shared with the household template: same codes, same labels, same type. Data that should be joined with the household survey must use the same codes and variable names. A correspondence sheet in the file, if there is one, says which variables are meant to match;
+- admin lists against AGOL (`fetch_agol_admin_rows`): the same pcode scheme as the household survey.
 
 ## 3. Run
 
@@ -131,3 +142,64 @@ Guidance for the list:
 - Mention the interview length and whether low-priority questions are justified under the 30-minute rule.
 
 Offer next steps: produce a corrected copy of the country file (only if asked — never overwrite the original), re-run after fixes, or draft the email to the country team. If the run exposed a validator false positive, say so and offer to fix the validator separately (following CLAUDE.md: plan first, confirm, then regenerate docs and run `smoke_test`).
+
+## 7. Word document for the country team (always)
+
+Every validation ends with a Word document the analyst can send to the
+country team, in addition to the answer in chat. Build it with the bundled
+script, so the style is always the same (Arial, blue headings, `Consolas`
+for variable names and formulas, grey formula blocks, shaded tables):
+
+```bash
+<python-with-python-docx> .claude/skills/diem-validate/scripts/make_fix_document.py spec.json "<output_dir>/<Country>_<round>_<tool>_points_to_review.docx"
+```
+
+The script's docstring describes `spec.json` (blocks `h1`, `h2` + `tag`, `p`,
+`bullet`, `action`, `code`, `table`, `summary`; inline `**bold**` and
+`` `code` ``). Save the document next to the report and never in the
+SharePoint folder. If Word has the file open, write a new version (`_v2`).
+Before sending it, render it to PDF (Word COM `ExportAsFixedFormat`, or
+LibreOffice when available) and look at the pages.
+
+**Structure**
+1. Title, the file reviewed, the reference it was compared with, and one line on
+   how to read the rows: they are rows of the country's file, and "template
+   row N" means a row of the reference.
+2. A summary table of every point: number, section, type, short name, rows.
+3. One `h1` section per part of the questionnaire, **in questionnaire order**
+   (e.g. Settings, Introduction and consent, Location / admin, Crop production,
+   Crop sales, Livestock, Fishing, Shocks, Food security, Needs and
+   assistance, Closing). Each point inside is an `h2` with a `tag`:
+   - `To fix`: a difference from the template that has to change.
+   - `Placeholder`: text the country must type in now.
+   - `To confirm`: a difference that may be intended. Ask, and say what to
+     copy from the template if it was not intended.
+   - `Optional`: cleanup that does not affect the data.
+   Only parts that have points get a section. Number the points across the
+   whole document, not per section.
+4. Last section, **Template side**: problems in the template itself (typos,
+   wrong labels, logic bugs) to raise with SMAR. Say clearly that the country
+   team has nothing to do on these. Leave the section out when there are none.
+
+**How to write each point**
+- Always say where the point is: the sheet, the row(s), the variable name and
+  **the column by its name** (`relevant`, `calculation`, `choice_filter`,
+  `constraint`, `label::French (fr)`, `name`, `list_name`…). Never use column
+  letters.
+- Say what the cell holds now and what the template holds. Show a formula in a
+  `code` block only when it is short enough to read.
+- The action tells the team to **copy the cells from the template rows**
+  ("copy the `relevant` cells of template rows 274–276 into your rows
+  216–218"). It never tells them to copy text from the document.
+- Say in one sentence why the point matters (what breaks in the form or in the
+  data). No jargon, and no validator check names or severities.
+- Plain, short sentences in the analyst's voice. Use "we" for DIEM and "you"
+  for the country team. No filler.
+- Keep out the decisions the analyst handles separately: admin list
+  explanations and mandatory-question counts are left for the final
+  validation email, unless the analyst asks for them.
+- Leave out points the analyst said to drop (e.g. a module the country does
+  not need).
+
+Offer a short cover email (plain text, no AI style) that presents the
+document's sections in one line each.
