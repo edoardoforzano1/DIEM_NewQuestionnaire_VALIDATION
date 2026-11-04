@@ -1,111 +1,81 @@
-# DIEM Questionnaire Validation v2
+# DIEM Questionnaire Validation
 
-Automated validation of DIEM household questionnaires for GeoPoll and KoBo.
+Checks a country's DIEM household questionnaire (KoBo XLSForm or GeoPoll Excel)
+against the latest template or the previous round. It produces:
 
-## Recommended Reading Path
+- an **Excel report** listing every difference by severity (high / medium / info);
+- a **validated questionnaire** ready to deploy, with crop list, admin lists
+  (from AGOL) and placeholders filled in.
 
-1. Read this `README.md` for setup and run commands.
-2. Launch the interactive documentation web view.
-3. Read detailed logic pages from the left menu under `Validation Workflow`.
+## Get it running
 
-## One-Time Environment Setup (Conda)
+**1. Install** [Git](https://git-scm.com/downloads) and
+[Miniconda or Anaconda](https://docs.conda.io/en/latest/miniconda.html).
 
-An `environment.yml` is included. Create and activate the environment with:
+**2. Clone the repository and create the environment** (in an Anaconda Prompt):
 
 ```powershell
+git clone https://github.com/edoardoforzano1/DIEM_NewQuestionnaire_VALIDATION.git
+cd DIEM_NewQuestionnaire_VALIDATION
 conda env create -f environment.yml
 conda activate diem-validation
 ```
 
-This installs everything needed to run the validator and view the documentation locally.
+To update an existing environment later, run `conda env update -f environment.yml --prune`.
 
-> **Note:** if you already have an older `diem-validation` environment, update it with:
-> ```powershell
-> conda env update -f environment.yml --prune
-> ```
+**3. Set your paths** in `configuration/validation_config.yaml`. This is needed once:
 
-## Launch Interactive Documentation (Recommended)
+| Key | What to put |
+|---|---|
+| `working_dir` | folder where you put the country questionnaire |
+| `templates_dir` | the `Template` folder of this repository |
+| `templates_source_dir` | your synced DIEM Toolbox folder (`…/03. Toolbox/02. Questionnaires`), so the latest templates are copied in automatically; leave it empty if you don't have access |
+| `output_dir` | where results go, e.g. `C:/Temp/DIEM_questionnaire_validation` |
 
-From the repository root:
+**4. Set up each run** in the same file:
 
-```powershell
-.\documentation
-```
+| Key | Value |
+|---|---|
+| `tool` | `kobo` or `geopoll` |
+| `questionnaire_file` | the country file name |
+| `language` | the deployment language |
+| `iso3` | the country code |
+| `reference_mode` | `latest_template` or `previous_round` |
 
-This starts the local docs site and opens `http://127.0.0.1:8000/`.
-
-### Optional: enable plain `documentation` command in this conda env
-
-Run once after activating the environment:
-
-```powershell
-.\install-documentation-command.cmd
-```
-
-Then you can launch docs from any folder with:
-
-```powershell
-documentation
-```
-
-## Run Validation
-
-1. Edit `configuration/validation_config.yaml`.
-2. From the repository root:
+**5. Run** from the repository root:
 
 ```powershell
 validate
 ```
 
-## Admin Standalone Tools
+The report and the validated questionnaire appear in `output_dir`, under
+`kobo_output/` or `geopoll_output/`.
 
-Three standalone admin utilities are available from the repository root:
+## Other commands
 
-```powershell
-tool_admin_check
-tool_admin_sync
-tool_admin_parent_remap
-```
+| Command | Does |
+|---|---|
+| `.\documentation` | opens the full documentation at http://127.0.0.1:8000/ |
+| `tool_admin_check` / `tool_admin_sync` | check or rebuild the admin lists against AGOL (`configuration/admin_tools_config.yaml`) |
+| `streamlit_ui` | optional browser interface over the same commands |
+| `smoke_test` | quick end-to-end check after changing the code |
 
-All three read options from `configuration/admin_tools_config.yaml`.
+## Documentation
 
-Source selection is controlled by:
-- `source.mode: standard` -> auto-use latest validated output
-- `source.mode: custom` -> use `source.file_name` (file name is enough; searched in `source.custom_dir`, validated/output/working dirs)
+Everything else is in the documentation: how each check works, severities,
+how to read the report, configuration keys, admin tools, and the standard
+validation procedure. Start it with `.\documentation`, or read the pages
+directly in [`docs/`](docs/).
 
-- `tool_admin_check`: compares current admin lists in the selected validated questionnaire against AGOL and exports mismatch reports.
-- `tool_admin_sync`: creates a new questionnaire file using one of the sync modes (`keep_previous`, `subset_from_agol`, `full_from_agol`).
-- `tool_admin_parent_remap`: repairs invalid `admin3` parents when old `admin2` codes were replaced by merged local codes.
+- **Getting Started**: setup and every configuration key.
+- **Validation Workflow**: the GeoPoll and KoBo logic, checks and severity.
+- **Report Output**: the report sheets, column by column.
+- **Working with the Agent**: running validations with Claude Code (the
+  `diem-validate` skill). This covers the round-by-round procedure, the Word
+  document for the country team and the final package.
 
-## Streamlit UI (optional)
+## Rules
 
-A browser front end over the commands above — configure and run validation with a form
-instead of hand-editing YAML, browse past reports, and run the admin tools, all with a
-live log. It never replaces the CLI: everything below still works exactly as documented.
-
-```powershell
-streamlit_ui
-```
-
-Opens at `http://localhost:8501/`. See `docs/tools/streamlit-ui.md` for details, including
-exactly what it writes to disk and what it never touches.
-
-## Output Retention
-
-Before each `validate` run, the optional `housekeeping` block in
-`configuration/validation_config.yaml` applies per-country/language/round
-retention limits to reports, validated questionnaires, and config snapshots.
-Excess files are archived by default. Set `housekeeping.dry_run: true` to
-preview actions without moving or deleting files.
-
-## Essential Workflow
-
-1. Select tool: `kobo` or `geopoll`.
-2. Select reference mode: `latest_template` or `previous_round`.
-3. Run validation.
-4. Review output reports in `batch_output/<run_name>/`.
-
-## Documentation Sources
-
-- Local docs source: `docs/`
-- MkDocs config: `mkdocs.yml`
+- The original files on SharePoint / OneDrive (Toolbox templates, country
+  questionnaires) are only read or copied, never edited.
+- `CLAUDE.md` describes the code structure and conventions for developers.
