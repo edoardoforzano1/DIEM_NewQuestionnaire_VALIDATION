@@ -183,7 +183,7 @@ dry_run: false      # Set to true to skip writing output files
 
 # Optional folder overrides. Leave blank to use the defaults from validation_config.yaml.
 validated_dir: ""
-output_dir: "C:/Temp/questionnaire_validation/admin_tools_output"
+output_dir: "C:/Temp/DIEM_questionnaire_validation/admin_tools_output"
 
 source:
   mode: standard    # "standard" or "custom" — see below

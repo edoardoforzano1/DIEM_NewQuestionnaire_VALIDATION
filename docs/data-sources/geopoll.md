@@ -19,9 +19,21 @@ The current template column names differ from the raw header names used internal
 | `Conditional` | `Conditional` | Inbound relevance gate — `variable = code(s)` referencing an *earlier* question, as opposed to `Skip Pattern`'s outbound routing. Checked for text changes plus (current-file only) broken variable references and invalid option codes. |
 | `Universe` | `Universe` | Who the question is asked to — read and compared, but not used for skip-routing checks. |
 | — | `To be asked to recent panelists (<6 months)?` | Read and carried through as data, but no longer cross-checked against `Mandatory`'s panel category — that check was removed (empirically the two columns are independent axes, not a consistency pair). |
-| `English` / `French` / ... | same | Question text plus numbered answer options (`1)label`, `2)label`, ...). |
+| `English` / `French` / `Arabic` / ... | same | Question text plus numbered answer options (`1)label`, `2)label`, ...). Placeholders are replaced in each language column with that language's `Replacement (xx)` value. |
+| `Local Language` | `Local Language` | Free column for an extra language or the country's own notes; placeholders are replaced there too. Not compared with the template. |
+| `Q Type` | `Q Type` | Includes `Matrix Table` (template 20261007): one answer scale (options in the text) asked for several rows, listed as sub-variables in `varname_new_multiple`. |
 
 Columns that existed in the older format but are absent from the current template (`Suggested Qname`, `Randomize`, `Programming Instructions`, `Core questions only`) are simply skipped — no error, but no comparison either.
+
+## Other sheets
+
+| Sheet | Used for |
+|---|---|
+| `Crop list` | the top-10 crops (`Select top 10 crops`), labels per language; expands the crop questions (`crp_all`, `crp_salesmain`…) with the selected crops first |
+| `Additional information` | placeholder values (`Original` → `Replacement (EN/FR/AR…)`), in sections: core (mandatory), **Tropical Livestock Unit weights** (mandatory, one row per species — read as a table, not as placeholders), optional |
+| `Admin 1 info`, `Admin 2 info` | admin lists; rebuilt from AGOL in the validated questionnaire |
+| `Admin 3 info` | kept as supplied |
+| `LoI estimation_weighted` | the template's own length estimate; the validator recomputes length from `Weighted duration` instead |
 
 ## GeoPoll Parsing Scope
 
@@ -35,4 +47,5 @@ Columns that existed in the older format but are absent from the current templat
 
 ## Critical Rule Inputs
 
-- `configuration/critical_sets.yaml` for exact sets, minimum counts, and crop-harvest logic.
+- `configuration/critical_sets.yaml`: exact sets, minimum counts, crop-harvest logic, FS indicators, agriculture-related coping strategies, variable pairs, fixed answer codes and TLU weights. See [GeoPoll Logic → Critical Sets](../workflow/geopoll-logic.md#2-critical-sets-sheet).
+- `configuration/validation_config.yaml` → `geopoll_options`: name length, modality, derived placeholders, crop-list closing options.

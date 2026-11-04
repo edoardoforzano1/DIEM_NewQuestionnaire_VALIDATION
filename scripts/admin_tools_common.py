@@ -50,7 +50,7 @@ def merge_runtime_config(repo_root: Path, explicit_cfg: Path | None = None) -> d
     base = read_validation_config(repo_root)
     tool_cfg = read_admin_tools_config(repo_root, cfg_path=explicit_cfg)
 
-    output_base = Path(str(base.get("output_dir") or base.get("working_dir") or "C:/Temp/questionnaire_validation"))
+    output_base = Path(str(base.get("output_dir") or base.get("working_dir") or "C:/Temp/DIEM_questionnaire_validation"))
     working_dir = Path(str(base.get("working_dir") or "C:/Temp"))
 
     source_cfg = dict(tool_cfg.get("source") or {})

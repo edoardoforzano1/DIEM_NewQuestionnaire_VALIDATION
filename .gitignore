@@ -9,3 +9,6 @@ tmp_*.py
 # Streamlit UI (app/) runtime artifacts
 .streamlit/
 configuration/.streamlit_backups/
+
+# local docs server log (diem-docs skill)
+site_serve.log

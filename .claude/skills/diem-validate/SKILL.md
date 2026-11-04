@@ -1,89 +1,182 @@
 ---
 name: diem-validate
-description: Run the DIEM household questionnaire validation (GeoPoll or KoBo) on a country questionnaire, read the Excel report, and turn it into a prioritized fix list for the country team, plus independent checks of the validated output questionnaire (unreplaced $placeholders$, Additional information values, crop list top-10 selection and sorting, TLU weights, admin lists, interview length). Use this whenever the user shares or mentions a country questionnaire file (e.g. diem_household_questionnaire_geopoll_<country>_*.xlsx), asks to "validate", "check", "review" a questionnaire, asks what a validation report means or what the country must fix, or asks whether a validated questionnaire is ready to send to GeoPoll / deploy — even if they don't say "skill" or name the validator.
+description: Run the standard DIEM household questionnaire validation (GeoPoll or KoBo) for an operator, round after round, until the questionnaire is validated - intake of the required inputs, validator run, report reading, checks of the validated output (placeholders, Additional information, crop list top-10 and sorting, TLU, admin lists, interview length), a summary message, a Word document and cover email for the country team, memory of open points across versions, operator decisions ("SMAR said it's fine"), and the final package (validated questionnaire, final report, final email). Use this whenever the user shares or mentions a country questionnaire file (e.g. diem_household_questionnaire_geopoll_<country>_*.xlsx), a new version of one, asks to "validate", "check", "review" a questionnaire, asks what a validation report means or what the country must fix, says a point is accepted or solved, or asks whether a questionnaire is ready to send to GeoPoll / deploy — even if they don't say "skill" or name the validator.
 ---
 
-# DIEM questionnaire validation
+# DIEM questionnaire validation — standard procedure
 
-Goal: give the user (a DIEM analyst) a trustworthy answer to "what does the
-country have to fix before this questionnaire can be deployed?" — not a dump
-of the report. The validator's report compares the country file against the
-template; the validated output is what GeoPoll will receive. Both matter, and
-the report alone has known blind spots, so always do both halves below.
+Goal: any operator gets the same, trustworthy answer to "what does the country
+have to fix before this questionnaire can be deployed?", round after round,
+until it is validated. The operator-facing description of this procedure is
+`docs/agent/standard-procedure.md`.
+
+**Documentation rule — every change is reflected in the docs.** Whenever you
+change this skill, its scripts or references, the validators, the
+configuration keys or the folder layout, update the documentation in the same
+piece of work, before saying the change is done:
+- procedure, messages, outputs, case folder → `docs/agent/` (`standard-procedure.md`, `case-folder.md`, `requests.md`, `maintaining.md`);
+- issue types, severities, checks → `docs/workflow/geopoll-logic.md` / `kobo-logic.md` and `checks-and-severity.md`;
+- config keys, output folders, housekeeping → `docs/getting-started.md`;
+- templates and sync → `docs/data-sources/template-and-previous-round.md`.
+Never edit `docs/function-reference/*` by hand (`python scripts/regenerate_function_docs.py`). Build the site (`<python> -m mkdocs build`) to check links when pages or the nav change, and list the pages you updated in your answer. The `diem-docs` skill covers answering from and opening the docs.
+
+The loop: **intake → run → read → check output → outputs (summary, Word
+document, cover email) → wait for the new version → re-validate against the
+open points → … → when nothing is open, ask, then build the final package.**
 
 Repo: the working directory (`validate.py`, `scripts/`, `configuration/`).
-Bundled tools (run with the validation environment's Python):
-- `scripts/inspect_questionnaire.py` — read-only facts about the file (tool, languages filled, settings, Additional information columns, modality hint) for the analyst check-in
+Bundled tools (run with the validation environment's Python; `python-docx`
+is needed for the Word files):
+- `scripts/inspect_questionnaire.py` — read-only facts about the file (tool, languages filled, settings, Additional information columns, modality hint)
 - `scripts/run_validation.py` — runs the validator on one file without permanently editing config
 - `scripts/summarize_report.py` — compact digest of the report
 - `scripts/check_validated_output.py` — deployability checks on the validated questionnaire
-- `scripts/make_fix_document.py` — builds the Word document for the country team from a JSON spec (step 7)
-- `references/issue-guide.md` — what each issue type means, typical fix, known noise. Read it before writing the fix list.
+- `scripts/validation_case.py` — the case file: inputs, iterations, points and their status across rounds
+- `scripts/questionnaire_profile.py` — questions by type, added/removed by type, admin levels, crops, interview length
+- `scripts/make_fix_document.py` — Word document in the house style from a JSON spec
+- `scripts/build_final_package.py` — final validated questionnaire + final report from a closed case
+- `references/issue-guide.md` — what each issue type means, typical fix, known noise. Read it before writing the points.
 
-**Never modify the original files on SharePoint/OneDrive** (templates under `templates_source_dir`, or country questionnaires shared from there) — no edit, rename, move, delete or re-save, for any reason. Read or copy only; always work on a local copy.
+**Never modify the original files on SharePoint/OneDrive** (templates under
+`templates_source_dir`, or country questionnaires shared from there) — no
+edit, rename, move, delete or re-save, for any reason. Read or copy only.
 
-## 1. Gather inputs
+## Where results go
 
-Infer what you can and confirm only what is ambiguous:
-- **Questionnaire path** — the country file.
-- **Tool** — `geopoll` / `kobo`, from the filename or sheets (GeoPoll survey has `varname_new`; KoBo has `type`/`name` + `choices`).
-- **ISO3** — from the filename or `Admin 1 info` sheet (`adm0_ISO3`). Confirm.
-- **Language** — the deployment language (`en`/`fr`/`ar`/…). The validator always checks the other filled language columns too, but the main comparison and output names follow this. If the country deploys in Arabic or French and the user didn't say, ask.
-- **Reference** — default `latest_template`. Use `previous_round` only when the user asks to compare with last round (needs that file).
+Everything is published under `output_dir` (`validation_config.yaml`), the
+DIEM questionnaire validation folder in Temp, split by tool:
 
-## 1b. Check in with the analyst (before running)
+```
+C:/Temp/DIEM_questionnaire_validation/
+  geopoll_output/                       reports + validated questionnaires (GeoPoll)
+    validation_cases/<ISO3>_<round>/    one folder per GeoPoll case: case.json, Word docs, FINAL files
+  kobo_output/                          the same for KoBo
+    validation_cases/<ISO3>_<round>/
+  configuration/                        config snapshot of each run
+  archive/<YYYY-MM>/                    older reports / validated files moved out by housekeeping
+  _agent_runs/                          scratch (staged copies, temp profiles, logs) — deleted after 7 days
+```
 
-Decisions the file can't settle on its own produce whole blocks of false
-issues when guessed wrong (e.g. Arabic columns left over from the template
-reported as dozens of unresolved placeholders). Settle them before the run,
-not by spotting them in the output. Work on a copy, then run:
+Housekeeping runs before every validation (`housekeeping:` block): it keeps
+the last 3 reports and validated questionnaires per tool/country/language/
+round and moves older ones to `archive/` (purged after 180 days), clears
+`_agent_runs/`, and never touches `validation_cases/`. Put every file you
+produce for a case (Word documents, email text, output checks, final files)
+in that case's folder, never elsewhere.
+
+## 0. Explain the procedure, then find the case
+
+**At the start of a new case, before asking for inputs, tell the operator in
+plain English what is going to happen** — short, no jargon, no script names.
+Use this, adapted to what they already gave you:
+
+> Here's how this works:
+> 1. **Inputs** — I need the file location, KoBo or GeoPoll, whether to compare with the latest template or the previous round, and the languages to check besides English. I'll ask for anything missing.
+> 2. **Validation** — I run the check and look at the questionnaire that would be sent to GeoPoll / deployed in KoBo.
+> 3. **Results** — you get a short summary saying whether it's ready, the points **to fix** and the points **to confirm**, a Word document for the country team and a cover email. I don't send anything myself.
+> 4. **Corrections** — when the country sends a new version, give it to me: I check it against the open points and tell you what's solved and what's still pending. If a point is settled outside the file (e.g. SMAR agrees), just tell me and I'll close it.
+> 5. **Final version** — when nothing is pending, I'll ask whether to prepare the validated questionnaire and the final report (questions added/removed, admin levels, accepted exceptions).
+>
+> Everything is saved in `C:\Temp\DIEM_questionnaire_validation\<geopoll|kobo>_output\validation_cases\<country>_<round>\`.
+
+Skip the explanation for a new version of an existing case, or when the
+operator says they know the procedure; a one-line reminder of where you are
+in it ("round 2 — checking the new version against 3 open points") is enough.
+
+A case is one country + tool + round, kept in
+`<output_dir>/<tool>_output/validation_cases/<ISO3>_<round>/case.json`.
+Look before asking anything:
+
+```bash
+<env-python> .claude/skills/diem-validate/scripts/validation_case.py find --root <output_dir> [--iso3 YEM]
+```
+
+**Always check the country's history** (earlier rounds, both tools) before
+the first run of a case:
+
+```bash
+<env-python> .claude/skills/diem-validate/scripts/validation_case.py history --root <output_dir> --iso3 YEM [--exclude-case <this case.json>]
+```
+
+It prints each earlier point once, with its final outcome and how it was
+solved (built from the earlier `case.json` files — nothing is duplicated).
+Read it yourself; tell the operator only what helps, in at most two lines
+(e.g. "R12 had 3 agreed exceptions — I'll flag them if they come back").
+`iterate` then returns `seen_before` for every issue of the run that was a
+point in an earlier round, with that round's outcome.
+
+- **Open case for this country/tool** and the operator brings a new version →
+  go to step 8 (re-validation). Take tool, reference, languages and
+  deployment language from the case; do not ask again.
+- The operator closes a point ("SMAR said …") → step 9.
+- Otherwise it is a new case → step 1.
+
+## 1. Intake (new case)
+
+The run needs these. **Ask for what is missing; never guess a value the file
+does not prove.** Ask everything open in **one** message (question tool,
+your proposal first).
+
+| Input | How to get it |
+|---|---|
+| Location of the file | from the message; must exist |
+| Tool: KoBo or GeoPoll | from the sheets (GeoPoll survey has `varname_new`; KoBo has `type`/`name` + `choices`); confirm if the file name disagrees |
+| Reference: latest template or previous round | ask unless said; previous round also needs that file |
+| Languages besides English | English is always checked. Ask which others; propose the ones filled in the survey and in `Replacement (xx)` (from `inspect_questionnaire.py`) |
+| Country, ISO3, round | propose from the file name / `Admin 1 info`; the round (R1, R12…) is the case key, so confirm it |
+| Deployment language | default: the non-English language in scope, or `settings.default_language` (KoBo); confirm when there are several |
+
+Then run the inspector on a copy and settle, in the same message, only the
+points still open:
 
 ```bash
 <env-python> .claude/skills/diem-validate/scripts/inspect_questionnaire.py "<copy of the file>"
 ```
 
-Show the analyst what you found and ask, in **one** message (use the
-question tool, recommended answer first), only the points that are open:
-- **Languages in scope** — list every language with filled `label`/`hint` cells and filled `Replacement (xx)` columns. A language filled in the survey but empty in Additional information is usually a template leftover. Ask which languages count; out-of-scope columns stay in the file and are simply not checked (`--languages en,fr`). Never delete a language column unless asked.
-- **Deployment language** — default from `settings.default_language` (KoBo) or the filename; confirm.
-- **Modality** — CAPI/CATI (KoBo `Sample` calculation, GeoPoll is normally CATI). Sets the FS-indicator ceiling and explains removed `cluster`/`gps_*`.
-- **Form type** — if `looks_like_kii` or the file is not a household questionnaire, there is no matching template: say so and agree on structural checks or a previous-round comparison instead of running against the household template.
-- **Reference** — latest template vs previous round, if the analyst hinted at a round comparison.
-- **Admin3** — whether admin3 should be rebuilt from AGOL (`include_admin3`), when the file has an admin3 list.
+- **Languages in scope**: a language filled in the survey but empty in Additional information is usually a template leftover; out-of-scope columns stay in the file and are not checked (`--languages en,fr`). Never delete a language column unless asked.
+- **Modality**: CAPI/CATI (KoBo `Sample` calculation; GeoPoll is normally CATI). Sets the FS-indicator ceiling and explains removed `cluster`/`gps_*`.
+- **Form type**: if `looks_like_kii` or not a household questionnaire, there is no matching template — see 2b.
+- **Admin3**: whether admin3 is rebuilt from AGOL (`include_admin3`) when the file has an admin3 list.
 
-Skip the check-in only when every point is already clear from the request.
-Record the answers and pass them to the runner; mention them in the final
-answer's header line.
+Create the case:
 
-## 2. Pre-flight (cheap, prevents misleading reports)
+```bash
+<env-python> .claude/skills/diem-validate/scripts/validation_case.py new --root <output_dir> \
+  --country Yemen --iso3 YEM --tool geopoll --round R1 --reference-mode latest_template \
+  --languages en,ar --deploy-language ar --source "<folder of the file>" [--previous-round <file>]
+```
 
-- **Python env**: CLAUDE.md says `diem-validation`. If `conda env list` doesn't have it, use an env that imports `polars`, `openpyxl`, `yaml`, `xlsxwriter`, and tell the user which one you used. Call that interpreter's `python.exe` directly (not `conda run`, which crashes on non-ASCII output on Windows).
-- **Template freshness**: the official templates live in the DIEM Toolbox folder on SharePoint (`templates_source_dir` in `validation_config.yaml`, e.g. `…/03. Toolbox/02. Questionnaires/`). `validate.py` copies any newer template from there into the local `templates_dir` before every run, so nothing to do normally. After the run, check `template_sync` in the runner output: if it shows a WARNING (SharePoint folder not reachable / OneDrive not synced), the run used whatever was already local — compare `reference` with `toolbox_templates` and tell the user if the reference is older, because an old template produces dozens of false issues. (Files are copied, not read in place, because OneDrive placeholder files can't be opened directly from Python.)
+## 2. Pre-flight
+
+- **Python env**: CLAUDE.md says `diem-validation`. If `conda env list` doesn't have it, use an env that imports `polars`, `openpyxl`, `yaml`, `xlsxwriter`, `docx`, and say which one you used. Call its `python.exe` directly (not `conda run`, which crashes on non-ASCII output on Windows).
+- **Template freshness**: `validate.py` copies newer templates from `templates_source_dir` (DIEM Toolbox) into `templates_dir` before every run. After the run check `template_sync` in the runner output; on a WARNING the run used what was already local — compare `reference` with `toolbox_templates` and tell the operator if it is older (an old template produces dozens of false issues). If a new template appeared since the last iteration, say so: some differences may come from the template, not the country.
 
 ## 2b. Forms without a template (KII, traders)
 
 The validator can't run on these. Check them directly instead:
 - convert with `pyxform` (`xls2xform_convert(..., validate=False)`) to catch XLSForm errors;
 - every `select_*` list exists in `choices`, every `${var}` exists, groups and repeats are balanced, each repeat has a `repeat_count`;
-- every code used in `relevant`, `constraint`, `choice_filter` and `calculation` (`${q} = 'x'`, `selected(${q}, 'x')`, `name != 'x'`) exists in that question's list, and `=` is not used on a `select_multiple`;
+- every code used in `relevant`, `constraint`, `choice_filter` and `calculation` exists in that question's list, and `=` is not used on a `select_multiple`;
 - labels are filled for every language in scope and no `#…#` / `$…$` is left;
-- for every list or variable name shared with the household template: same codes, same labels, same type. Data that should be joined with the household survey must use the same codes and variable names. A correspondence sheet in the file, if there is one, says which variables are meant to match;
+- for every list or variable name shared with the household template: same codes, labels and type;
 - admin lists against AGOL (`fetch_agol_admin_rows`): the same pcode scheme as the household survey.
 
 ## 3. Run
 
 ```bash
 <env-python> .claude/skills/diem-validate/scripts/run_validation.py --repo <repo> \
-  --questionnaire "<path>" --tool geopoll --language en --iso3 YEM \
-  --languages en,fr --python <env-python>
+  --questionnaire "<path>" --tool geopoll --language <deploy language> --iso3 YEM \
+  --languages en,ar --python <env-python>
 ```
 
-`--languages` sets `languages_in_scope` for the run (the languages agreed in
-1b); leave it out to check every filled language.
+It stages a copy (avoids OneDrive/Excel locks), points `config_profile` at a temporary profile, runs `validate.py`, and restores `validation_config.yaml` byte-for-byte. Never hand-edit `validation_config.yaml` for a run. Check `ok`, `config_restored: true`, `reference`, `counts`; on failure read `log_tail`. **Use the `report` and `validated` paths it returns**: when an older output is open in Excel the validator writes a time-suffixed name instead. The run hits AGOL live (internet needed) and applies output housekeeping — normal.
 
-It stages a copy of the file (avoids OneDrive/Excel locks), points `config_profile` at a temporary profile, runs `validate.py`, and restores `validation_config.yaml` byte-for-byte. Don't hand-edit `validation_config.yaml` for a run — CLAUDE.md requires confirmation for config edits, and the runner makes it unnecessary. Check in the JSON output: `ok`, `config_restored: true`, `reference` (which template was actually used — sanity-check its date against `templates_available`/`toolbox_templates`), and `counts`. On failure read `log_tail`.
+Then record the iteration (save the output check of step 5 first, see there):
 
-The run also hits AGOL live for admin lists (needs internet) and applies output housekeeping (old outputs in `output_dir` may be archived) — that's normal validator behaviour.
+```bash
+<env-python> .claude/skills/diem-validate/scripts/validation_case.py iterate --case <case.json> \
+  --file "<original file path>" --report "<report>" --validated "<validated>" --output-check "<check.md>"
+```
 
 ## 4. Read the report
 
@@ -91,115 +184,214 @@ The run also hits AGOL live for admin lists (needs internet) and applies output 
 <env-python> .claude/skills/diem-validate/scripts/summarize_report.py "<report.xlsx>"
 ```
 
-Read the digest, then `references/issue-guide.md`. Before you call anything a country error, spot-check suspicious items against the actual country file (open the row): the report can flag template rows the country removed, and some issues are template-side (listed in the guide). A finding you verified is worth more than ten you repeated.
+Read the digest and `references/issue-guide.md`. Spot-check suspicious items in the country file before calling them country errors: some are template-side (listed in the guide), some are noise. A verified finding is worth more than ten repeated ones. If the report shows a decision that changes the verdict and the operator can answer faster than the file (e.g. a removed core module that may be an approved exception), ask before writing the points; if the answer means a different run, re-run.
 
 ## 5. Check the validated output
 
 ```bash
-<env-python> .claude/skills/diem-validate/scripts/check_validated_output.py "<validated.xlsx>" --source "<country file>"
+<env-python> .claude/skills/diem-validate/scripts/check_validated_output.py "<validated.xlsx>" --source "<country file>" > "<case dir>/iter<N>_output_check.md"
 ```
 
-GeoPoll checks: no `$…$` left, no malformed `$…#`, runtime `#VAR#` inventory, repeated adjacent words (a replacement inserted next to the same word, e.g. "محافظة محافظة" — the country text already had the word), interview length (core+recommended ≤ 30 min), exactly 10 crops selected and selected crops listed first in every crop question, mandatory Additional information keys filled for each language in use, TLU weights, Admin 1/2(/3) sheets and parent codes.
+GeoPoll: no `$…$` left, no malformed `$…#`, runtime `#VAR#` inventory, repeated adjacent words, English words inside Arabic text, interview length, exactly 10 crops selected and selected crops first, mandatory Additional information keys per language, TLU weights, Admin 1/2(/3) sheets and parent codes. KoBo: check manually that `settings` `form_title` has `#ADMIN0#` replaced, no `#…#`/`$…$` left in `survey`/`choices`, crop and admin choice lists injected.
 
-For KoBo the script's survey checks don't apply as-is; check manually: `settings` `form_title` has `#ADMIN0#` replaced by the country name, no `#placeholder#`/`$…$` left in `survey`/`choices` labels, crop and admin choice lists injected.
+## 6. Points: what goes to the country
 
-## 5b. Second check-in (only if needed)
-
-If the report turns up a decision that changes the verdict and that the
-analyst can answer faster than the file can, ask it before writing the fix
-list, in one message: e.g. old vs new admin pcode scheme (deploy the
-country's own lists or rebuild from AGOL?), a core module removed that may be
-an approved exception (fish in a non-fishing country), a custom logic block
-replacing a template one. If the answer means a different run (other
-languages, admin3 on, other reference), re-run instead of explaining the
-noise away.
-
-## 6. Write the answer
-
-Lead with the verdict, then the fix list. Use this structure:
-
-```
-## <Country> GeoPoll questionnaire — validation <date>
-Verdict: Not ready / Ready after fixes / Ready.  (reference: <template file>, language <xx>)
-Counts: high N · medium N · info N   |   Output check: N fail, N warn
-
-### Must fix before deployment
-1. <what is wrong, where (variable / sheet / row)> → <concrete fix>
-...
-### Should fix / confirm with the country team
-...
-### Template-side issues (raise with SMAR, not the country)
-...
-### Checked and fine
-<one line: e.g. FS indicators, FIXED_CODES, TLU, admin lists, placeholders resolved>
-```
-
-Guidance for the list:
-- Group the same root cause into one item (e.g. three skip patterns pointing to `o_debt` → "rename `o_debt` to `c_debt` in income_main/sec/third skip patterns").
-- Give the exact replacement when you can (target variable, code range, which Additional information row/column).
-- Rank by consequence: broken routing, missing core blocks, fixed codes, TLU, unreplaced placeholders first; wording and info last.
-- Keep info-level items out of the list unless they explain something (e.g. 58 optional removals = normal module selection).
-- Mention the interview length and whether low-priority questions are justified under the 30-minute rule.
-
-Offer next steps: produce a corrected copy of the country file (only if asked — never overwrite the original), re-run after fixes, or draft the email to the country team. If the run exposed a validator false positive, say so and offer to fix the validator separately (following CLAUDE.md: plan first, confirm, then regenerate docs and run `smoke_test`).
-
-## 7. Word document for the country team (always)
-
-Every validation ends with a Word document the analyst can send to the
-country team, in addition to the answer in chat. Build it with the bundled
-script, so the style is always the same (Arial, blue headings, `Consolas`
-for variable names and formulas, grey formula blocks, shaded tables):
+Turn the findings into **points** and record them in the case. One point =
+one root cause (three skip patterns pointing to `o_debt` = one point). Each
+point has a section (part of the questionnaire, in questionnaire order), a
+type, a short title, and `keys` from the report so the next run can tell if
+it is still there:
 
 ```bash
-<python-with-python-docx> .claude/skills/diem-validate/scripts/make_fix_document.py spec.json "<output_dir>/<Country>_<round>_<tool>_points_to_review.docx"
+<env-python> .claude/skills/diem-validate/scripts/validation_case.py keys --report "<report>"
 ```
 
-The script's docstring describes `spec.json` (blocks `h1`, `h2` + `tag`, `p`,
-`bullet`, `action`, `code`, `table`, `summary`; inline `**bold**` and
-`` `code` ``). Save the document next to the report and never in the
-SharePoint folder. If Word has the file open, write a new version (`_v2`).
-Before sending it, render it to PDF (Word COM `ExportAsFixedFormat`, or
-LibreOffice when available) and look at the pages.
+`keys` are `issue_type|Q Name or Set` strings from that list; for an
+output-check finding use `output_match` with text of its WARN/FAIL line
+(e.g. `"Crop selection"`). Types: `To fix`, `To confirm`, `Placeholder`,
+`Optional`, `Template side`.
 
-**Structure**
-1. Title, the file reviewed, the reference it was compared with, and one line on
-   how to read the rows: they are rows of the country's file, and "template
-   row N" means a row of the reference.
-2. A summary table of every point: number, section, type, short name, rows.
-3. One `h1` section per part of the questionnaire, **in questionnaire order**
-   (e.g. Settings, Introduction and consent, Location / admin, Crop production,
-   Crop sales, Livestock, Fishing, Shocks, Food security, Needs and
-   assistance, Closing). Each point inside is an `h2` with a `tag`:
-   - `To fix`: a difference from the template that has to change.
-   - `Placeholder`: text the country must type in now.
-   - `To confirm`: a difference that may be intended. Ask, and say what to
-     copy from the template if it was not intended.
-   - `Optional`: cleanup that does not affect the data.
-   Only parts that have points get a section. Number the points across the
-   whole document, not per section.
-4. Last section, **Template side**: problems in the template itself (typos,
-   wrong labels, logic bugs) to raise with SMAR. Say clearly that the country
-   team has nothing to do on these. Leave the section out when there are none.
+- **Recurring issues** (`seen_before` from `iterate`): reuse what worked.
+  - Fixed last time → same point, and you may add one sentence to the
+    action: "Last round this was solved by …".
+  - Accepted last time (an agreed exception) → do not close it yourself; ask
+    the operator in one line whether the same exception still holds
+    ("R12: SMAR accepted 3 agri CS — same for this round?"), then record it
+    as accepted with the new `by`/`note`, or as open.
+  - Keep it light: at most a short "(also R12: …)" tag on the point in the
+    summary message. Never add history to the Excel report or a history
+    section to the Word document.
+- Differences the operator already explained or agreed (e.g. in an email
+  they paste) go in as `"status": "accepted"` with `note` and `by`, so they
+  are documented exceptions and do not come back as new.
+- Points the operator said to drop are not sent; record them as `dropped`
+  with a note.
+- Remaining high/medium report rows that are noise or template-side: say so
+  in the summary; record template problems as `Template side` points.
 
-**How to write each point**
-- Always say where the point is: the sheet, the row(s), the variable name and
-  **the column by its name** (`relevant`, `calculation`, `choice_filter`,
-  `constraint`, `label::French (fr)`, `name`, `list_name`…). Never use column
-  letters.
-- Say what the cell holds now and what the template holds. Show a formula in a
-  `code` block only when it is short enough to read.
-- The action tells the team to **copy the cells from the template rows**
-  ("copy the `relevant` cells of template rows 274–276 into your rows
-  216–218"). It never tells them to copy text from the document.
-- Say in one sentence why the point matters (what breaks in the form or in the
-  data). No jargon, and no validator check names or severities.
-- Plain, short sentences in the analyst's voice. Use "we" for DIEM and "you"
-  for the country team. No filler.
-- Keep out the decisions the analyst handles separately: admin list
-  explanations and mandatory-question counts are left for the final
-  validation email, unless the analyst asks for them.
-- Leave out points the analyst said to drop (e.g. a module the country does
-  not need).
+```bash
+<env-python> .claude/skills/diem-validate/scripts/validation_case.py add-points --case <case.json> --points points.json --iteration <N>
+```
 
-Offer a short cover email (plain text, no AI style) that presents the
-document's sections in one line each.
+## 7. Outputs of each round
+
+Produce all three, then stop.
+
+### 7a. Summary message (chat, always this shape)
+
+```
+## <Country> <round> <GeoPoll|KoBo> questionnaire — validation <date> (version <file date>)
+**<READY / NOT READY>** — <one line why>
+Reference: <template or previous-round file> · Languages: EN + <xx> · Deployment: <xx>
+Report: high N · medium N · info N | Output check: N fail · N warn | Interview: <m+r> min mandatory+recommended, <total> min total
+
+### Since the last version            (from the 2nd round on)
+Fixed: P01 …, P03 …   Accepted: P04 … (by …)   Still open: P02 …
+
+### To fix
+**<Section>**
+- P05 <what, where: sheet/row/variable/column> → <action>
+### To confirm
+**<Section>**
+- P06 …
+### Template side (SMAR — nothing for the country)
+- …
+### Checked and fine
+<one line>
+
+Files: <Word document> · <cover email> · <report> · <validated questionnaire>
+```
+
+READY only when no point is open. Mention the 30-minute rule when the
+interview is long (mandatory+recommended ≤ 30 min before low-priority
+questions; the template's LoI sheet warns above 30 min in total).
+
+### 7b. Word document for the country team
+
+Build it with `make_fix_document.py` (house style: Arial, blue headings,
+`Consolas` for names and formulas, shaded tables), **open points only**,
+saved in the case folder (`<output_dir>/<tool>_output/validation_cases/<ISO3>_<round>/`) as `<ISO3>_<round>_<tool>_points_to_review_v<N>.docx`
+(new name if Word has it open):
+
+```bash
+<env-python> .claude/skills/diem-validate/scripts/make_fix_document.py spec.json "<case dir>/<file>.docx"
+```
+
+The script's docstring describes `spec.json`. Render to PDF (Word COM
+`ExportAsFixedFormat`, or LibreOffice) and look at it before handing it over.
+
+Structure:
+1. Title, file reviewed, reference, one line on how to read rows ("rows" are
+   rows of the country's file; "template row N" a row of the reference).
+2. Summary table of every point: number (the case id, P01…), section, type,
+   short name, rows.
+3. One `h1` per part of the questionnaire, in questionnaire order; each point
+   an `h2` with its `tag`.
+4. **Template side** last, saying the country has nothing to do.
+
+How to write each point:
+- Where: sheet, row(s), variable, and **the column by its name** (`relevant`,
+  `calculation`, `Skip pattern`, `label::French (fr)`…), never column letters.
+- What the cell holds now and what the template holds; formulas in a `code`
+  block only when short.
+- The action tells the team to **copy the cells from the template rows**,
+  never to copy text from the document.
+- One sentence on why it matters. No validator check names or severities.
+- Plain, short sentences; "we" for DIEM, "you" for the country team. Do not
+  translate or judge wording in a language the operator cannot read: show
+  template vs current side by side and ask to confirm.
+- Admin explanations and question counts go in the final report, not here.
+
+### 7c. Cover email (plain text, short, no AI style)
+
+```
+Subject: <Country> <round> questionnaire – validation points
+
+Dear colleagues,
+
+Thank you for the questionnaire. We validated it against <reference>.
+<One sentence: what is fine.>
+
+The attached document lists <N> points: <n> to fix and <n> to confirm,
+by part of the questionnaire. Points marked as template issues come from the
+template itself; we will correct them there.
+If any of these were agreed with the SMAR team, just let us know.
+
+Once the file is updated, please send it back and we will check it again.
+
+Best regards,
+<operator name>
+```
+
+Then **stop and tell the operator**: "Send me the new version when the
+country replies, or tell me if a point is agreed (e.g. by SMAR)."
+
+## 8. New version of an open case
+
+1. `status` the case and show the open points in one short block.
+2. Run steps 3–5 with the case's inputs, then `iterate`.
+3. For each open point `iterate` proposes *still present* or *not found any
+   more -> fixed?*. Confirm by looking at the file, then
+   `set --status fixed --by agent --note "<how it was solved>"` — the note is
+   the solution future rounds will see ("country restored the template
+   Conditional"), so describe what changed in the file, not just "not found".
+   Points with no keys: check by hand.
+4. `new_issues_not_in_any_point`: new problems (or old ones never recorded)
+   become new points (step 6).
+5. Outputs as in step 7, with the "Since the last version" block; the Word
+   document and email cover only what is still open or new.
+
+## 9. Operator decisions
+
+When the operator says a point is solved outside the file ("SMAR said 3
+agriculture coping strategies are fine", "the country confirmed no
+incentive"), close it with who decided:
+
+```bash
+<env-python> .claude/skills/diem-validate/scripts/validation_case.py set --case <case.json> \
+  --id P04 --status accepted --by "SMAR (email 22 Oct)" --note "3 agri CS accepted for Yemen"
+```
+
+Use `accepted` for agreed exceptions, `dropped` for points that were not real
+problems. The note is what later rounds will read: say what was agreed and
+why, in one line. Confirm back in one line, then show what is still open. Do not
+close a point because the country *says* it fixed it: re-validate.
+
+## 10. Closing
+
+When `status` shows `ready_to_close: true` (no open point), **ask** the
+operator whether to produce the final package. Only on a yes:
+
+```bash
+<env-python> .claude/skills/diem-validate/scripts/build_final_package.py --case <case.json> --reference "<reference used in the last run>"
+```
+
+It refuses while points are open (`--force` only if the operator insists,
+and say it in the final report). It writes to the case folder:
+- `<ISO3>_<round>_<tool>_validated_questionnaire_FINAL.xlsx` — copy of the last validated questionnaire;
+- `<ISO3>_<round>_<tool>_final_validation_report.docx` — validation rounds, questions by type, added/removed by type, admin levels and units, crops, interview length, fixes by round, accepted exceptions with who agreed them, template issues sent to SMAR;
+- `final_report_spec.json` — to adjust wording and rebuild with `make_fix_document.py`.
+
+Render the report to PDF and look at it. Then write the final email:
+
+```
+Subject: <Country> <round> questionnaire – validated
+
+Dear colleagues,
+
+The <Country> <round> <GeoPoll|KoBo> questionnaire is validated. Attached:
+- the validated questionnaire (<file>), to <send to GeoPoll | deploy in KoBo>;
+- the final validation report: questions by type, questions added and removed,
+  admin levels (<a1> / <a2> / <a3> units), selected crops, interview length
+  (<m+r> min mandatory and recommended, <total> min in total), and the
+  exceptions agreed during the validation.
+
+Thank you for the quick follow-up.
+
+Best regards,
+<operator name>
+```
+
+If the run exposed a validator false positive, say so and offer to fix the
+validator separately (CLAUDE.md: plan first, confirm, regenerate docs, run
+`smoke_test`).

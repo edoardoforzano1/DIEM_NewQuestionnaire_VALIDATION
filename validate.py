@@ -71,6 +71,7 @@ def main() -> None:
             print(f"  Archived files  : {hk_result.get('archived_files', 0)}")
             print(f"  Deleted files   : {hk_result.get('deleted_files', 0)}")
             print(f"  Purged archives : {hk_result.get('archive_deleted_files', 0)}")
+            print(f"  Agent run files : {hk_result.get('agent_run_files_deleted', 0)} deleted")
         if hk_result.get("errors"):
             print(f"  Housekeeping warnings: {len(hk_result.get('errors'))}")
             for msg in (hk_result.get("errors") or [])[:5]:

@@ -49,7 +49,7 @@ flowchart TD
 Both GeoPoll and KoBo validators follow the same 7-step macro flow.
 
 **Step 1 — Load config**
-: Reads `validation_config.yaml`. If `config_profile` is set, merges the profile overlay on top. Before dispatch, `validate.py` also runs configured output housekeeping and reports the number of kept, archived, deleted, or planned files.
+: Reads `validation_config.yaml`. If `config_profile` is set, merges the profile overlay on top. Before dispatch, `validate.py` copies newer templates from the DIEM Toolbox (`templates_source_dir`) into `templates_dir`, then runs configured output housekeeping and reports the number of kept, archived, deleted, or planned files.
 
 **Step 2 — Resolve reference file**
 : Determines the baseline questionnaire for comparison. Mode `latest_template` uses the newest matching file in `templates_dir`; mode `previous_round` uses `previous_round_file` under `working_dir`. See [Reference Modes](reference-modes.md).
@@ -60,7 +60,7 @@ Both GeoPoll and KoBo validators follow the same 7-step macro flow.
 **Step 4 — Normalize**
 : Normalization is critical to avoid false positives from harmless formatting differences.
 
-- **Text normalization**: trims, lowercases, and standardizes comparison text.
+- **Text normalization**: trims, lowercases, and standardizes comparison text; Arabic spelling variants (hamza forms of alef, alef maqsura, ta marbuta, diacritics) compare equal.
 - **Logic normalization**: canonicalizes skip/relevant expressions where possible.
 - **Placeholder normalization**: resolves template markers using Additional Information sheet replacements.
 - **Option normalization**: aligns option structures before diffing labels and presence.
@@ -83,7 +83,8 @@ Both GeoPoll and KoBo validators follow the same 7-step macro flow.
     - Language-aware column resolution (EN / FR / AR / ES / PT).
     - Option extraction from numbered text (`1) Label` format) and code-token parsing.
     - Skip-pattern consistency and option-code reference validation.
-    - Crop/harvest structural completeness rule.
+    - Rule blocks from `critical_sets.yaml`: crop/harvest, FS indicators, agriculture-related coping strategies, variable pairs, fixed answer codes, TLU weights.
+    - `Matrix Table` questions (answer scale × rows) handled as one question with sub-variables.
     - Report sheets: **Summary · Critical Sets · Questionnaire Structure · Replacement Issues · Question Changes · Option Changes**.
 
 === "KoBo"
@@ -96,3 +97,6 @@ Both GeoPoll and KoBo validators follow the same 7-step macro flow.
     - Produces a validated questionnaire with crop/admin rebuilding and placeholder status checks.
     - Optional admin3 rebuilding is controlled by `kobo_options.include_admin3`.
     - Strict replacement input checks are controlled by `require_additional_info` and `require_crop_list`.
+
+!!! tip "With the agent"
+    The agent wraps this pipeline in the [standard procedure](../agent/standard-procedure.md): it runs the steps above for each new version of a country questionnaire, checks the validated output, writes the documents for the country team and keeps track of open points across rounds.

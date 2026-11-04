@@ -54,10 +54,14 @@ templates_dir: "c:/git/DIEM_NewQuestionnaire_VALIDATION/Template"
 # continues with the templates already in templates_dir (with a warning).
 templates_source_dir: "C:/Users/edoar/Food and Agriculture Organization/OER - 01. DIEM Monitoring/03. Toolbox/02. Questionnaires"
 
-# Base output folder. Each tool writes to its own subfolder automatically:
-#   kobo   -> output_dir/kobo_output/
-#   geopoll -> output_dir/geopoll_output/
-output_dir: "C:/Temp/questionnaire_validation"
+# Base output folder (DIEM questionnaire validation), split by tool:
+#   geopoll_output/                    reports + validated questionnaires (GeoPoll)
+#   geopoll_output/validation_cases/   one folder per country + round (agent)
+#   kobo_output/ , kobo_output/validation_cases/   same for KoBo
+#   configuration/                     config snapshot of each run
+#   archive/<YYYY-MM>/                 files moved out by housekeeping
+#   _agent_runs/                       agent scratch files (deleted after N days)
+output_dir: "C:/Temp/DIEM_questionnaire_validation"
 
 # Output housekeeping (runs before each validation execution).
 housekeeping:
@@ -88,6 +92,12 @@ housekeeping:
   archive_before_delete: true
   archive_dir: ""
   delete_archives_older_than_days: 180
+
+  # Working files of agent runs (staged copies of the questionnaire, temporary
+  # config profiles, run logs) in <output_dir>/_agent_runs/: deleted after this
+  # many days, never archived. 0 = keep. Validation cases
+  # (<tool>_output/validation_cases/) are records and are never touched.
+  delete_agent_run_files_after_days: 7
 
 # Module names to ignore in comparison (shared by KoBo and GeoPoll).
 # Differences inside these modules are excluded from issue reporting.

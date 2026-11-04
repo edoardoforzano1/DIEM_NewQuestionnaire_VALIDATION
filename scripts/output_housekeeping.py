@@ -8,12 +8,19 @@ import shutil
 from typing import Iterable
 
 
+# Optional _HHMMSS suffix: the validators add it when a file of the same name
+# is open in Excel (report_geopoll_ar_YEM_20261021_172244.xlsx).
 _REPORT_RE = re.compile(
-    r"^report_(kobo|geopoll)_([a-z]{2})_([A-Z]{3})(?:_(R\d{1,3}))?_(\d{8})\.xlsx$"
+    r"^report_(kobo|geopoll)_([a-z]{2})_([A-Z]{3})(?:_(R\d{1,3}))?_(\d{8})(?:_\d{6})?\.xlsx$"
 )
 _VALIDATED_RE = re.compile(
-    r"^validated_questionnaire_(kobo|geopoll)_([a-z]{2})_([A-Z]{3})(?:_(R\d{1,3}))?_(\d{8})\.xlsx$"
+    r"^validated_questionnaire_(kobo|geopoll)_([a-z]{2})_([A-Z]{3})(?:_(R\d{1,3}))?_(\d{8})(?:_\d{6})?\.xlsx$"
 )
+
+# Working files of agent runs (diem-validate skill: staged copies of the
+# questionnaire, temporary config profiles, run logs). Pure scratch: deleted
+# after housekeeping.delete_agent_run_files_after_days, never archived.
+AGENT_RUNS_DIRNAME = "_agent_runs"
 _CONFIG_RE = re.compile(
     r"^config_(kobo|geopoll)_([A-Za-z]{2})_([A-Za-z0-9]{3})_(\d{8}_\d{6})\.ya?ml$"
 )
@@ -148,6 +155,7 @@ def run_output_housekeeping(config: dict) -> dict:
         "errors": [],
         "actions": [],
         "archive_deleted_files": 0,
+        "agent_run_files_deleted": 0,
     }
     if not enabled:
         return result
@@ -159,7 +167,7 @@ def run_output_housekeeping(config: dict) -> dict:
     archive_before_delete = _as_bool(hk_cfg.get("archive_before_delete"), True)
     archive_purge_days = _as_int(hk_cfg.get("delete_archives_older_than_days", 180), 180, minimum=0)
 
-    output_base = Path(config.get("output_dir") or config.get("working_dir") or "C:/Temp/questionnaire_validation")
+    output_base = Path(config.get("output_dir") or config.get("working_dir") or "C:/Temp/DIEM_questionnaire_validation")
     output_base = _safe_resolve(output_base)
     result["base_output_dir"] = str(output_base)
 
@@ -253,6 +261,22 @@ def run_output_housekeeping(config: dict) -> dict:
                 result["actions"].append(f"delete: {src}")
         except Exception as exc:
             result["errors"].append(f"{src}: {exc}")
+
+    # Agent-run scratch files: delete by age (0 = keep).
+    agent_days = _as_int(hk_cfg.get("delete_agent_run_files_after_days", 7), 7, minimum=0)
+    agent_root = output_base / AGENT_RUNS_DIRNAME
+    if agent_days > 0 and agent_root.exists():
+        for fp in list(_iter_files(agent_root)):
+            if (now - _get_file_stamp(fp)).days < agent_days:
+                continue
+            if result["dry_run"]:
+                result["actions"].append(f"delete-agent-run: {fp}")
+                continue
+            try:
+                fp.unlink(missing_ok=True)
+                result["agent_run_files_deleted"] += 1
+            except Exception as exc:
+                result["errors"].append(f"{fp}: {exc}")
 
     if archive_before_delete and archive_purge_days > 0 and archive_root.exists():
         for ap in _iter_files(archive_root):

@@ -45,6 +45,12 @@ extra_javascript:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - Working with the Agent:
+      - Overview: agent/index.md
+      - Standard Procedure: agent/standard-procedure.md
+      - Example Requests: agent/requests.md
+      - Case Folder and Outputs: agent/case-folder.md
+      - Maintaining the Agent: agent/maintaining.md
   - Validation Workflow:
       - Process Overview: workflow/process-overview.md
       - Reference Modes: workflow/reference-modes.md

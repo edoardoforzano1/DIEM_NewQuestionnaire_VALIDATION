@@ -9,6 +9,8 @@ dependencies:
   - openpyxl>=3.1
   - pyyaml>=6.0
   - xlsxwriter>=3.0
+  # Word documents for country teams (diem-validate skill)
+  - python-docx>=1.1
   # Documentation — required to view the local docs site
   # Streamlit UI (app/) — optional front end over validate.py / tool_admin_*
   - ruamel.yaml>=0.18

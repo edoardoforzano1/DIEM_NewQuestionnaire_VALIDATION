@@ -144,7 +144,7 @@ def _check_report(cfg: dict) -> None:
     tool = str(cfg.get("tool") or "kobo").lower()
     language = str(cfg.get("language") or "").lower()
     iso3 = str(cfg.get("iso3") or "").upper()
-    output_base = Path(str(cfg.get("output_dir") or "C:/Temp/questionnaire_validation"))
+    output_base = Path(str(cfg.get("output_dir") or "C:/Temp/DIEM_questionnaire_validation"))
     out_dir = output_base / f"{tool}_output"
     today = time.strftime("%Y%m%d")
 
@@ -200,7 +200,7 @@ def _check_validated_questionnaire(cfg: dict) -> None:
     _section("Validated questionnaire (KoBo)")
     language = str(cfg.get("language") or "").lower()
     iso3 = str(cfg.get("iso3") or "").upper()
-    output_base = Path(str(cfg.get("output_dir") or "C:/Temp/questionnaire_validation"))
+    output_base = Path(str(cfg.get("output_dir") or "C:/Temp/DIEM_questionnaire_validation"))
     out_dir = output_base / "kobo_output"
     today = time.strftime("%Y%m%d")
 

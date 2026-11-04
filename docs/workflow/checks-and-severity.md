@@ -11,7 +11,7 @@ Every issue row produced by the validator carries one of four severity values. T
 | <span class="sev sev-info">INFO</span> | Blue | Informational delta  -  tracked for traceability | No action required, but review recommended |
 | <span class="sev sev-pass">PASS</span> | Green | Check passed | No action |
 
-**Round launch rule**: if any HIGH-severity issue appears in the report, the questionnaire should not be launched until every HIGH row is resolved or explicitly accepted with documented rationale.
+**Round launch rule**: if any HIGH-severity issue appears in the report, the questionnaire should not be launched until every HIGH row is resolved or explicitly accepted with documented rationale. With the agent, an accepted row is recorded as an *accepted* point with who agreed it, and listed in the final report (see [Standard procedure](../agent/standard-procedure.md)).
 
 ---
 
@@ -88,7 +88,43 @@ Incompatible transitions are those that change the fundamental response structur
 
 <div class="logic-box">
 <strong>HIGH</strong> when the question is <code>mandatory</code> or <code>mandatory-panel</code>  -  a changed target audience on a required question affects who gets asked at all.<br>
-<strong>MEDIUM</strong> for optional and non-mandatory questions.
+<strong>MEDIUM</strong> for optional and non-mandatory questions.<br>
+<strong>INFO</strong> when the template cell is empty and the country filled it.
+</div>
+
+---
+
+### `module_removed`
+
+<div class="logic-box">
+<strong>HIGH</strong> when the template module contains at least one mandatory (core, panel or spiel) question.<br>
+<strong>INFO</strong> when every question of the module is optional: dropping it is an allowed country choice.
+</div>
+
+---
+
+### `replacement_malformed_placeholder`
+
+<div class="logic-box">
+<strong>HIGH</strong> (GeoPoll) when <code>$</code> and <code>#</code> are mixed in one token (<code>$ADM1#</code>).<br>
+<strong>MEDIUM</strong> for other unbalanced markers.
+</div>
+
+---
+
+### `skipPattern_invalid_qname` (GeoPoll)
+
+<div class="logic-box">
+<strong>HIGH</strong> for a target that does not exist — except a target the country dropped that is one of several "OR" alternatives of the rule while another alternative is kept: not reported.
+</div>
+
+---
+
+### `tlu_weight_*`
+
+<div class="logic-box">
+<strong>HIGH</strong> for a missing or non-numeric / non-positive weight (<code>tlu_weight_missing</code>, <code>tlu_weight_invalid</code>).<br>
+<strong>MEDIUM</strong> when the weight differs between language columns (<code>tlu_weight_inconsistent</code>).
 </div>
 
 ---
@@ -120,9 +156,9 @@ A quick lookup: which sheet each issue family appears in and which tool produces
 
 | Sheet | Issue families | Tools |
 |---|---|---|
-| **Critical Sets** | `missing_critical_question` · `critical_mandatory_mismatch` · `advisory_question` · `crop_harvest_violation` | Both |
-| **Questionnaire Structure** | `skip_pattern_empty` · `default_skip_modified` · `skipPattern_invalid_qname` · `skipPattern_invalid_qnameCategory` · `skipPattern_changes` · `skipPattern_range_mismatch` · `skipPattern_range_invalid` · `skipPattern_multiple_issues` · `conditional_changed` · `conditional_removed_mandatory` · `conditional_invalid_qname` · `conditional_range_invalid` · `qtype_changed` · `duplicate_qname` · `module_removed` · `module_added` · `module_missing_for_question` · `mandatory_category_unrecognized` | GeoPoll |
-| **Questionnaire Structure** | `broken_relevant_reference` · `relevant_inexact_reference` · `relevant_modified` · `type_changed` · `duplicate_qname` · `duplicate_choice_name` · `kobo_ref_missing_variable` · `kobo_ref_malformed_syntax` · `kobo_ref_loose_syntax` · `module_removed` · `module_added` · `mandatory_category_unrecognized` | KoBo |
+| **Critical Sets** | `missing_critical_question` · `critical_mandatory_mismatch` · `advisory_question` · `crop_harvest_violation` · `fs_indicator_missing` · `fs_indicator_capi_excess` · `agri_cs_count_insufficient` · `variable_pair_incomplete` · `fixed_codes_mismatch` · `tlu_weight_missing` · `tlu_weight_invalid` · `tlu_weight_inconsistent` | Both |
+| **Questionnaire Structure** | `skip_pattern_empty` · `default_skip_modified` · `skipPattern_invalid_qname` · `skipPattern_invalid_qnameCategory` · `skipPattern_changes` · `skipPattern_range_mismatch` · `skipPattern_range_invalid` · `skipPattern_multiple_issues` · `conditional_changed` · `conditional_removed_mandatory` · `conditional_invalid_qname` · `conditional_range_invalid` · `qtype_changed` · `duplicate_qname` · `module_removed` · `module_added` · `module_missing_for_question` · `mandatory_category_unrecognized` · `qname_too_long` | GeoPoll |
+| **Questionnaire Structure** | `broken_relevant_reference` · `relevant_inexact_reference` · `relevant_modified` · `type_changed` · `duplicate_qname` · `duplicate_choice_name` · `kobo_ref_missing_variable` · `kobo_ref_malformed_syntax` · `kobo_ref_loose_syntax` · `module_removed` · `module_added` · `mandatory_category_unrecognized` · `qname_too_long` | KoBo |
 | **Replacement Issues** | `replacement_additional_info_missing` · `replacement_crop_selection_mismatch` · `replacement_crop_round_delta` · `replacement_missing_key` · `replacement_unresolved_placeholder` · `replacement_malformed_placeholder` | GeoPoll |
 | **Replacement Issues** | `placeholder_not_found` · `placeholder_should_use_kobo_ref` · `replacement_malformed_placeholder` · `replacement_crop_template_mismatch` · `additional_information_replacement_change (...)` | KoBo |
 | **Question Changes** | `mandatory_source_missing` · `removed_question` · `added_question` · `mandatory_to_optional` · `mandatory_column_mismatch` · `question_label_mismatch` · `universe_changed` | GeoPoll |

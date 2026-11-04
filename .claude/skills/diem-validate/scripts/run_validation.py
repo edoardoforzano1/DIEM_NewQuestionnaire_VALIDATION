@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -63,8 +64,11 @@ def main() -> int:
     original_bytes = cfg_path.read_bytes()
     base = yaml.safe_load(original_bytes.decode("utf-8-sig")) or {}
 
-    output_dir = Path(base.get("output_dir") or base.get("working_dir") or "C:/Temp/questionnaire_validation")
-    staging = output_dir / "_skill_staging"
+    output_dir = Path(base.get("output_dir") or base.get("working_dir") or "C:/Temp/DIEM_questionnaire_validation")
+    # All scratch files of agent runs live in <output_dir>/_agent_runs/, which
+    # output housekeeping clears after delete_agent_run_files_after_days.
+    agent_runs = output_dir / "_agent_runs"
+    staging = agent_runs / "staging"
     staging.mkdir(parents=True, exist_ok=True)
     src = Path(args.questionnaire)
     if not src.exists():
@@ -72,6 +76,9 @@ def main() -> int:
         return 2
     staged = staging / src.name
     shutil.copy2(src, staged)
+    # Fresh timestamp: housekeeping (run by validate.py before the validator)
+    # deletes _agent_runs files by age, and copy2 keeps the source's old mtime.
+    os.utime(staged, None)
 
     profile = {
         "tool": args.tool,
@@ -86,12 +93,13 @@ def main() -> int:
         if not prev.is_absolute():
             prev = Path(base.get("working_dir") or ".") / prev
         shutil.copy2(prev, staging / prev.name)
+        os.utime(staging / prev.name, None)
         profile["previous_round_file"] = prev.name
     if args.languages:
         profile["languages_in_scope"] = [l.strip().lower() for l in args.languages.split(",") if l.strip()]
     profile.update(json.loads(args.extra or "{}"))
 
-    profiles_dir = output_dir / "config_profiles"
+    profiles_dir = agent_runs / "profiles"
     profiles_dir.mkdir(parents=True, exist_ok=True)
     stamp = time.strftime("%Y%m%d_%H%M%S")
     profile_path = profiles_dir / f"skill_run_{args.tool}_{args.iso3.upper()}_{stamp}.yaml"
@@ -104,7 +112,8 @@ def main() -> int:
     else:
         patched = new_line + "\n" + text
     bom = b"\xef\xbb\xbf" if original_bytes.startswith(b"\xef\xbb\xbf") else b""
-    log_path = output_dir / f"skill_run_{args.tool}_{args.iso3.upper()}_{stamp}.log"
+    (agent_runs / "logs").mkdir(parents=True, exist_ok=True)
+    log_path = agent_runs / "logs" / f"skill_run_{args.tool}_{args.iso3.upper()}_{stamp}.log"
 
     started = time.time()
     try:

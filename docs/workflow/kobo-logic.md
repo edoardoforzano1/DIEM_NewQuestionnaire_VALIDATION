@@ -35,7 +35,15 @@ Checks whether all required questions defined in `critical_sets.yaml` are presen
 
 ### How rules are defined
 
-`critical_sets.yaml` defines three distinct rule types. `exact_sets` lists named questions individually — each can be marked required (`required: true`) or advisory (`required: false`). A required question that is absent or incorrectly flagged as mandatory triggers a HIGH; an advisory one triggers MEDIUM. `min_count_sets` works on prefixes rather than individual names: it requires a minimum number of questions matching a given prefix to be present, and reports against the `count` field when the threshold is not met. `crop_harvest` checks form composition — the questionnaire must contain either the minimal or the full crop/harvest question set; partial inclusion is a structural violation.
+`critical_sets.yaml` is shared with GeoPoll and KoBo runs the same rule blocks: `exact_sets`, `min_count_sets`, `crop_harvest`, `fs_indicators`, `agri_cs_check`, `variable_pairs`, `fixed_option_codes` and `tlu_weights`. The table and the issue cards are on the [GeoPoll Logic → Critical Sets](geopoll-logic.md#2-critical-sets-sheet) page. KoBo differences:
+
+- `agri_cs_check` reads the `relevant` column instead of Conditional, and uses `kobo_values` where the KoBo choice names differ from the GeoPoll codes.
+- `fixed_option_codes` compares choice names, using `kobo_codes` when given.
+- `tlu_weights` reads the TLU section of the KoBo Additional information sheet.
+- `max_qname_length` (default 32) and `modality` come from `kobo_options`.
+- Custom questions use the `c_` prefix (legacy `o_` still recognised) and `Mandatory = customized`.
+
+The three original rule types work as follows. `exact_sets` lists named questions individually — each can be marked required (`required: true`) or advisory (`required: false`). A required question that is absent or incorrectly flagged as mandatory triggers a HIGH; an advisory one triggers MEDIUM. `min_count_sets` works on prefixes rather than individual names: it requires a minimum number of questions matching a given prefix to be present, and reports against the `count` field when the threshold is not met. `crop_harvest` checks form composition — the questionnaire must contain either the minimal or the full crop/harvest question set; partial inclusion is a structural violation.
 
 ```mermaid
 flowchart LR
@@ -62,7 +70,7 @@ flowchart LR
     style I3 fill:#fff0de,stroke:#e08c00,color:#5a3200
 ```
 
-**min_count_sets thresholds:** `hh_wealth_*` (or `o_hh_wealth_*`) ≥ 1 · `cs_stress_*` ≥ 4 · `cs_crisis_*` ≥ 3 · `cs_emergency_*` ≥ 3
+**min_count_sets thresholds:** `hh_wealth_*` (custom `c_hh_wealth_*` counts too) ≥ 1 · `cs_stress_*` ≥ 4 · `cs_crisis_*` ≥ 3 · `cs_emergency_*` ≥ 3
 
 **crop_harvest sets:** Minimal = `crp_harv_change` only · Full = `crp_harv_change` + `crp_harv_vol` + `crp_harv_unit` + `crp_harv_unit_kg` + `crp_harv_lastyr`
 
@@ -381,6 +389,8 @@ flowchart LR
 ## 4  -  Replacement Issues Sheet
 
 Checks placeholder consistency between the template, the current questionnaire, and the Additional Information sheet. Unresolved tokens appear as raw `#placeholder#` text to enumerators.
+
+`languages_in_scope` (in `validation_config.yaml`) limits the scan to the listed languages; label columns of other languages stay in the file and are not reported. Rows are grouped per placeholder and cause, so the Q Name cell can list several questions. Derived template placeholders are resolved in the validated questionnaire.
 
 !!! info "Previous-round remap note"
     In `previous_round` mode, replacement-driven deltas are remapped to `additional_information_replacement_change (...)` with INFO severity and reported in this sheet.

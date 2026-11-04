@@ -60,7 +60,7 @@ The Summary sheet is the entry point. It contains six status tables, each coveri
 
 ![GeoPoll Summary - Critical Sets](../assets/images/reports/geopoll-sum-critical-sets.png){: .sheet-placeholder }
 
-Shows whether all required critical questions are present and correctly flagged as mandatory. Any non-PASS opens the Critical Sets sheet.
+One row per rule block: WEALTH, CS_stress, CS_crisis, CS_emergency, CRP_HARV, FS_INDICATORS, AGRI_CS, VAR_PAIRS, FIXED_CODES, TLU. Any non-PASS opens the Critical Sets sheet. The "Module presence" row of the next block is FAIL only when a module with core questions is missing; optional-only modules removed show as INFO.
 
 ### QUESTIONNAIRE STRUCTURE CHECKS
 
@@ -238,7 +238,16 @@ Answer-set drift at the option level.
 This output file contains the fully substituted questionnaire, with crop and
 admin placeholders replaced with actual country values.
 
+What the validator does to it:
+
+- every `$token$` replaced in each language column with that language's Additional information value (`Local Language` included); derived values (`$MAX DIGIT DK/REF$`) computed from `MAX AMOUNT`; the verb tense applied the same way in every language;
+- crop questions expanded from the Crop list, selected crops first, in each column's own language, closed by *no crop production / don't know / refused* in that language;
+- `Admin 1 info` and `Admin 2 info` rebuilt from AGOL (`Admin 3 info` kept as supplied);
+- only `#VAR#` runtime variables (`#OPERATOR#`, `#TOPUP#`…) are left — GeoPoll fills them at call time.
+
 Use it to verify:
-- Crop rows are correctly substituted (no remaining `$crop$` tokens).
+- Crop rows are correctly substituted (no remaining crop tokens) and exactly 10 crops are selected.
 - Admin area names are present.
-- All `$token$` placeholders are resolved before uploading to the field data collection platform.
+- No `$token$` placeholder is left, and no word appears twice in a row where a placeholder was replaced (the country text already had the word).
+
+The agent runs these checks automatically (`check_validated_output.py`) and, at the end of a validation, copies the last validated questionnaire into the case folder as `…_validated_questionnaire_FINAL.xlsx`.

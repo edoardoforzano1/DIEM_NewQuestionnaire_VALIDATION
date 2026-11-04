@@ -34,7 +34,18 @@ Checks whether all required questions defined in `critical_sets.yaml` are presen
 
 ### How rules are defined
 
-`critical_sets.yaml` defines three distinct rule types. `exact_sets` lists named questions individually — each can be marked required (`required: true`) or advisory (`required: false`). A required question that is absent or incorrectly flagged as mandatory triggers a HIGH; an advisory one triggers MEDIUM. `min_count_sets` works on prefixes rather than individual names: it requires a minimum number of questions matching a given prefix to be present, and reports against the `count` field when the threshold is not met. `crop_harvest` checks form composition — the questionnaire must contain either the minimal or the full crop/harvest question set; partial inclusion is a structural violation.
+`critical_sets.yaml` holds eight rule blocks, all read on every run (`load_critical_sets` passes every block on; a block that is absent is simply skipped):
+
+| Block | Checks |
+|---|---|
+| `exact_sets` | named questions, each `required: true` (absent or wrong mandatory → HIGH) or `required: false` (absent → MEDIUM) |
+| `min_count_sets` | a minimum number of questions per prefix (wealth, coping strategies) |
+| `crop_harvest` | either the minimal or the full crop/harvest set; a partial set is a violation |
+| `fs_indicators` | FIES, FCS and LCSI present; with `modality: capi`, at most `capi_max` FS indicators |
+| `agri_cs_check` | at least `min_agri_cs` (4) coping strategies whose Conditional limits them to agricultural households (`hh_agricactivity` / agricultural `income_*` codes) |
+| `variable_pairs` | if one variable of a pair is present, the other must be too (e.g. `crp_harv_vol` + `crp_harv_unit`, `ls_main_confirm` + `ls_main`) |
+| `fixed_option_codes` | questions whose answer codes must be exactly a fixed set, because GeoPoll shows the options dynamically but must keep the codes (e.g. `ls_main_confirm`: codes 1–8, no DK/REF) |
+| `tlu_weights` | the Tropical Livestock Unit weights in Additional information: one numeric weight > 0 per species, identical in every language column |
 
 ```mermaid
 flowchart LR
@@ -61,7 +72,9 @@ flowchart LR
     style I3 fill:#fff0de,stroke:#e08c00,color:#5a3200
 ```
 
-**min_count_sets thresholds:** `hh_wealth_*` (or `o_hh_wealth_*`) ≥ 1 · `cs_stress_*` ≥ 4 · `cs_crisis_*` ≥ 3 · `cs_emergency_*` ≥ 3
+**min_count_sets thresholds:** `hh_wealth_*` (custom `c_hh_wealth_*` counts too) ≥ 1 · `cs_stress_*` ≥ 4 · `cs_crisis_*` ≥ 3 · `cs_emergency_*` ≥ 3
+
+**Agriculture-related coping strategies in the template:** `cs_stress_sold_more_animals`, `cs_crisis_harv_immat_crops`, `cs_crisis_consume_seed_stock`, `cs_crisis_decrease_input_exp`, `cs_emergency_sold_last_fem`. Only these five carry an agriculture Conditional, so they are the ones counted (the `lcsi_intro` note mentions "6 available").
 
 **crop_harvest sets:** Minimal = `crp_harv_change` only · Full = `crp_harv_change` + `crp_harv_vol` + `crp_harv_unit` + `crp_harv_unit_kg` + `crp_harv_lastyr`
 
@@ -115,6 +128,70 @@ flowchart LR
   </div>
 </div>
 
+<div class="issue-block">
+  <div class="issue-card issue-card-high">
+    <span class="issue-card-name"><code>fs_indicator_missing</code> · <code>fs_indicator_capi_excess</code></span>
+    <span class="sev sev-high">HIGH</span>
+    <span class="issue-card-body">A mandatory food-security indicator (FIES, FCS, LCSI) has no question in the questionnaire; or, in CAPI, more FS indicators than <code>capi_max</code> are included.</span>
+  </div>
+  <div class="issue-action">
+    <span class="issue-action-label">What to do</span>
+    Restore the indicator block from the template, or remove an optional indicator (HDDS, rCSI) to stay within the CAPI ceiling.
+  </div>
+</div>
+
+<div class="issue-block">
+  <div class="issue-card issue-card-high">
+    <span class="issue-card-name"><code>agri_cs_count_insufficient</code></span>
+    <span class="sev sev-high">HIGH</span>
+    <span class="issue-card-body">Fewer than four coping strategies are limited to agricultural households. The Current value lists the ones found. A strategy asked to all households (e.g. a custom migration strategy) does not count.</span>
+  </div>
+  <div class="issue-action">
+    <span class="issue-action-label">What to do</span>
+    Add back agriculture-related strategies from the template, with their template Conditional. An exception (fewer than four for a country) must be agreed with the SMAR team.
+  </div>
+</div>
+
+<div class="issue-block">
+  <div class="issue-card issue-card-medium">
+    <span class="issue-card-name"><code>variable_pair_incomplete</code></span>
+    <span class="sev sev-medium">MEDIUM</span>
+    <span class="issue-card-body">One variable of a configured pair is present without the other (e.g. a harvest volume without its unit).</span>
+  </div>
+  <div class="issue-action">
+    <span class="issue-action-label">What to do</span>
+    Add the missing variable from the template, or remove both.
+  </div>
+</div>
+
+<div class="issue-block">
+  <div class="issue-card issue-card-high">
+    <span class="issue-card-name"><code>fixed_codes_mismatch</code></span>
+    <span class="sev sev-high">HIGH</span>
+    <span class="issue-card-body">A question whose options are shown dynamically does not have exactly its fixed code set (codes missing, added — e.g. DON'T KNOW / REFUSED — or renumbered). GeoPoll would otherwise deliver list positions instead of the agreed codes.</span>
+  </div>
+  <div class="issue-action">
+    <span class="issue-action-label">What to do</span>
+    Copy the answer options of the question from the template.
+  </div>
+</div>
+
+<div class="issue-block">
+  <div class="issue-block-label"><code>tlu_weight_missing</code> · <code>tlu_weight_invalid</code> · <code>tlu_weight_inconsistent</code></div>
+  <div class="issue-card issue-card-high">
+    <span class="sev sev-high">HIGH</span>
+    <span class="issue-card-body">A species has no weight in the TLU section of Additional information, or the weight is not a number greater than zero. The main livestock (<code>ls_main</code>) cannot be computed.</span>
+  </div>
+  <div class="issue-card issue-card-medium">
+    <span class="sev sev-medium">MEDIUM</span>
+    <span class="issue-card-body"><code>tlu_weight_inconsistent</code>: the weight differs between language columns.</span>
+  </div>
+  <div class="issue-action">
+    <span class="issue-action-label">What to do</span>
+    Fill the weights agreed at planning, the same value in every <code>Replacement (xx)</code> column.
+  </div>
+</div>
+
 ---
 
 ## 3 - Questionnaire Structure Sheet
@@ -141,6 +218,8 @@ flowchart TD
 ```
 
 ### Block 1 · Skip Pattern checks
+
+In the template, a Skip pattern cell is often a **menu**: *go to optional question [A / B] OR C*. The country keeps the path that matches the questions it kept. The validator accepts any kept optional target in place of the default, and a missing target that is one of the **"OR" alternatives** of a rule is not an error when another alternative of the same rule is kept (e.g. *go to crp_harv_storage OR crp_harv_consume* without `crp_harv_storage`).
 
 The current GeoPoll template has a single routing column, `Skip Pattern`. The validator still resolves an **effective skip rule** using the same three-tier priority it has always supported (`Specify skip pattern variable` > `Skip Pattern` > `Default skip patterns & conditional`), so older files with the legacy three-column layout keep working — but on the current template, `Specify` and `Default` simply don't exist as columns, so the effective rule collapses to whatever is in `Skip Pattern`. Issues arise when the resolved rule targets a Q Name that doesn't exist, uses an incorrect category, or has drifted from the baseline without an obvious reason.
 
@@ -210,11 +289,14 @@ Both the current questionnaire and the reference use the same priority to determ
   <div class="issue-card issue-card-high">
     <span class="issue-card-name"><code>skipPattern_invalid_qname</code></span>
     <span class="sev sev-high">HIGH</span>
-    <span class="issue-card-body">The effective skip rule routes to a Q Name that doesn't exist in the current questionnaire.</span>
+    <span class="issue-card-body">The effective skip rule routes to a Q Name that doesn't exist in the current questionnaire. The Field column says what happened to the missing target:<br>
+    · <em>renamed to custom question c_X</em> — the country renamed the target with the <code>c_</code> prefix (or wrote the legacy <code>o_</code>) but not in the skip text;<br>
+    · <em>removed by the country</em> — the target exists in the reference;<br>
+    · <em>not defined in the reference either</em> — an outdated or mistyped name, with the closest existing variable. When the reference has the same text, it is a template problem.</span>
   </div>
   <div class="issue-action">
     <span class="issue-action-label">What to do</span>
-    Check the Skip Pattern for this question. The target Q Name in the routing instruction doesn't exist — look for a typo, or check if the question was renamed or removed. The Excel row column helps you find the exact cell.
+    Use the <code>c_</code> name, restore the removed target (if core) or route to the next kept question, or correct the outdated name. A target that is only one of several "OR" alternatives, with another alternative kept, is not reported.
   </div>
 </div>
 
@@ -309,7 +391,7 @@ The current template carries a dedicated `module` column with a short code per q
 flowchart LR
     DQ["Block 3 · Duplicate Q Names & modules"]
     DQ --> J["duplicate_qname — HIGH"]
-    DQ --> K["module_removed — HIGH"]
+    DQ --> K["module_removed — HIGH / INFO"]
     DQ --> L["module_added — INFO"]
     DQ --> M["module_missing_for_question — HIGH"]
 
@@ -338,7 +420,7 @@ flowchart LR
   <div class="issue-card issue-card-high">
     <span class="issue-card-name"><code>module_removed</code></span>
     <span class="sev sev-high">HIGH</span>
-    <span class="issue-card-body">A question module required by the template is absent from the current questionnaire. The module name in the Field column identifies which thematic block is missing.</span>
+    <span class="issue-card-body">A template module that contains at least one mandatory (core, panel or spiel) question is absent from the current questionnaire. The module name in the Field column identifies which thematic block is missing. <strong>INFO</strong> instead when every question of the module is optional (e.g. remittances, expenditure, migration): dropping it is an allowed country choice; the Summary shows these as "optional-only modules removed".</span>
   </div>
   <div class="issue-action">
     <span class="issue-action-label">What to do</span>
@@ -408,6 +490,14 @@ flowchart LR
 Validates placeholder token coverage. Unresolved placeholders appear as literal `$...$` tokens to the enumerator and invalidate downstream label interpretation.
 
 ### How checks are structured
+
+**What is checked.** Placeholders are replaced in every language column (English, French, Arabic…, and `Local Language`) with that language's `Replacement (xx)` value; a token with a language suffix (`$season AR$`) uses that language. `languages_in_scope` in `validation_config.yaml` limits the scan to the listed languages; other columns stay in the file unchecked. Only template rows of questions the country **kept** are scanned — a placeholder in a removed question needs no value. Rows of the **TLU section** of Additional information are a data table, not placeholders, and are checked by the TLU rule instead.
+
+**Values the country does not type.**
+
+- `$MAX DIGIT DK$` / `$MAX DIGIT REF$` are derived from `MAX AMOUNT` (8s / 9s with the same number of digits) — `geopoll_options.derived_placeholders`.
+- The **crop production verb tense** (past / present / both) is one choice for the whole questionnaire: it is read from the English value (or the first language filled) and applied to every language, for both the tense brackets (`$did [do]$`) and `$expected or nothing$`.
+- The expanded crop lists are written in each column's own language, ending with that language's *no crop production / don't know / refused* (`geopoll_options.crop_list_closing_options`).
 
 The replacement check runs in two stages. First it loads replacement keys from the Additional Information sheet — if this step fails, `replacement_additional_info_missing` is the root cause and all other replacement issues in this run may be side effects of it. Second, every `$token$` placeholder in the questionnaire text is matched against the loaded keys. Crop placeholder resolution is treated as structurally critical (HIGH) because crop rows are generated from the crop list and a failed substitution affects multiple questions simultaneously. Non-crop tokens that survive to the output file are MEDIUM.
 
@@ -500,7 +590,7 @@ flowchart LR
   <div class="issue-card issue-card-medium">
     <span class="issue-card-name"><code>replacement_malformed_placeholder</code></span>
     <span class="sev sev-medium">MEDIUM</span>
-    <span class="issue-card-body">Placeholder token format is malformed - unbalanced markers that cannot be processed.</span>
+    <span class="issue-card-body">Placeholder token format is malformed - unbalanced markers that cannot be processed. <strong>HIGH</strong> when <code>$</code> and <code>#</code> are mixed in one token (e.g. <code>$ADM1#</code>): <code>$KEY$</code> is an Additional information value, <code>#VAR#</code> a runtime variable filled by GeoPoll.</span>
   </div>
   <div class="issue-action">
     <span class="issue-action-label">What to do</span>
@@ -636,6 +726,10 @@ flowchart LR
   <div class="issue-card issue-card-medium">
     <span class="sev sev-medium">MEDIUM</span>
     <span class="issue-card-body">The Universe column changed on a non-mandatory or optional question.</span>
+  </div>
+  <div class="issue-card issue-card-info">
+    <span class="sev sev-info">INFO</span>
+    <span class="issue-card-body">The template leaves the Universe cell empty and the country filled it (e.g. <code>All</code> on a spiel).</span>
   </div>
   <div class="issue-action">
     <span class="issue-action-label">What to do</span>
@@ -783,7 +877,7 @@ flowchart LR
   <div class="issue-card issue-card-medium">
     <span class="issue-card-name"><code>option_label_mismatch</code></span>
     <span class="sev sev-medium">MEDIUM</span>
-    <span class="issue-card-body">Option text changed while the option identity (position or code) still matched.</span>
+    <span class="issue-card-body">Option text changed while the option identity (position or code) still matched. Text is normalised first (case, punctuation, spaces; Arabic spelling variants such as أ/إ/آ → ا, ى → ي, ة → ه and diacritics), so spelling-only differences are not reported.</span>
   </div>
   <div class="issue-action">
     <span class="issue-action-label">What to do</span>
@@ -897,6 +991,10 @@ flowchart LR
   <div class="issue-card issue-card-medium">
     <span class="sev sev-medium">MEDIUM</span>
     <span class="issue-card-body">The number of parsed Codes entries does not match the number of answer options for an optional or non-mandatory question.</span>
+  </div>
+  <div class="issue-card issue-card-info">
+    <span class="sev sev-info">—</span>
+    <span class="issue-card-body"><strong>Matrix Table</strong> questions are not checked: their options are the shared answer scale and their Codes are the matrix rows (sub-variables), so the two lists are not expected to match. Their rows and scale are still compared with the template.</span>
   </div>
   <div class="issue-action">
     <span class="issue-action-label">What to do</span>
