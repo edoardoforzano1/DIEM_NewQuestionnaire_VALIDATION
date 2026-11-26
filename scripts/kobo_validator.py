@@ -7186,7 +7186,7 @@ def write_summary_sheet(wb, all_issues, rules=None, critical_issues=None,
                 ws.cell(row=r, column=2).font = Font(bold=True, size=10, color="274E13")
             elif st == "WARN":
                 ws.cell(row=r, column=2).font = Font(bold=True, size=10, color="B45F06")
-            elif st == "SKIP":
+            elif st in ("SKIP", "INFO"):
                 ws.cell(row=r, column=2).font = Font(bold=True, size=10, color="1F4E78")
             else:
                 ws.cell(row=r, column=2).font = Font(bold=True, size=10, color="CC0000")
@@ -8719,6 +8719,81 @@ def _sheet_scope_mask(ws, languages_in_scope: list[str] | None) -> list[bool]:
     return [_column_in_scope(h, languages_in_scope) for h in (hdr_row or [])]
 
 
+def _drop_unfilled_optional_choices(
+    wb, rules: list[dict] | None, languages_in_scope: list[str] | None = None,
+) -> list[str]:
+    """
+    Delete the choices rows listed in `rules` ({list_name, name}) whose in-scope
+    label cells still hold a #placeholder# after replacement, i.e. the country
+    left the matching Additional information row blank (no local unit used).
+    Returns the deleted rows as 'list_name/name'.
+    """
+    if not rules or "choices" not in wb.sheetnames:
+        return []
+    targets = {
+        (str(r.get("list_name", "")).strip(), str(r.get("name", "")).strip())
+        for r in rules if isinstance(r, dict)
+    }
+    ws = wb["choices"]
+    hdr = [str(c.value or "").strip() for c in ws[1]]
+    if "list_name" not in hdr or "name" not in hdr:
+        return []
+    li, ni = hdr.index("list_name"), hdr.index("name")
+    label_idx = [
+        i for i, h in enumerate(hdr)
+        if h.lower().startswith("label::") and _column_in_scope(h, languages_in_scope)
+    ]
+    to_delete: list[tuple[int, str]] = []
+    for row in ws.iter_rows(min_row=2):
+        key = (str(row[li].value or "").strip(), str(row[ni].value or "").strip())
+        if key not in targets:
+            continue
+        labels = [row[i].value for i in label_idx if i < len(row)]
+        if any(isinstance(v, str) and _PLACEHOLDER_RE.search(v) for v in labels):
+            to_delete.append((row[0].row, f"{key[0]}/{key[1]}"))
+    for excel_row, _ in sorted(to_delete, reverse=True):
+        ws.delete_rows(excel_row, 1)
+    return [k for _, k in to_delete]
+
+
+def _drop_unused_language_columns(
+    wb, languages_in_scope: list[str] | None, sheet_names: tuple[str, ...] = ("survey", "choices"),
+) -> list[str]:
+    """
+    Delete language columns the country does not deploy from the given sheets:
+    every 'xxx::Language (cc)' column whose language is not in
+    languages_in_scope (English is always kept), and every no-language
+    column such as 'label::' (template slot for a local language; a country
+    that uses one names it, e.g. 'label::Bambara (bm)'). With an empty
+    languages_in_scope only the empty no-language columns go.
+    Returns 'sheet!header' of each deleted column.
+    """
+    keep = set(languages_in_scope or []) | {"en"}
+    removed: list[str] = []
+    for sheet in sheet_names:
+        if sheet not in wb.sheetnames:
+            continue
+        ws = wb[sheet]
+        hdr = [str(c.value or "").strip() for c in ws[1]]
+        drop: list[int] = []
+        for i, h in enumerate(hdr):
+            if "::" not in h:
+                continue
+            lang = _column_language(h)
+            if lang:
+                if languages_in_scope and lang not in keep:
+                    drop.append(i)
+            elif languages_in_scope or all(
+                v is None or str(v).strip() == ""
+                for (v,) in ws.iter_rows(min_row=2, min_col=i + 1, max_col=i + 1, values_only=True)
+            ):
+                drop.append(i)
+        for i in sorted(drop, reverse=True):
+            ws.delete_cols(i + 1, 1)
+            removed.append(f"{sheet}!{hdr[i]}")
+    return removed
+
+
 def read_additional_info_keys(country_path: str) -> set[str]:
     """Every 'Original' key in the Additional information sheet, lowercased -- including rows with blank replacements."""
     try:
@@ -9507,6 +9582,24 @@ def produce_validated_questionnaire(
             "info",
         )
 
+    # -- 5b. Drop optional choices left without a country value ---------------
+    # e.g. landsize_unit option 5 '#local measurement units#' when the country
+    # uses no local unit (Additional information row blank); the choices sheet
+    # is locked for the country teams, so DIEM removes it here.
+    if not _skip_restore_and_replacement:
+        _dropped_choices = _drop_unfilled_optional_choices(
+            wb,
+            _kobo_opt_local.get("drop_choices_when_additional_info_blank") or [],
+            languages_in_scope=_languages_in_scope,
+        )
+        if _dropped_choices:
+            _add_row(
+                "Optional choices without country value",
+                "INFO",
+                "Removed (Additional information blank): " + ", ".join(_dropped_choices),
+                "info",
+            )
+
     # Explicit choices-level replacement integrity check
     _ch_unresolved, _ch_examples = _scan_unresolved_placeholders(wb, "choices", languages_in_scope=_languages_in_scope)
     if _ch_unresolved == 0:
@@ -9615,6 +9708,31 @@ def produce_validated_questionnaire(
                     f"{_blank_tgt}/{_total_tgt} crop rows have blank {_lang_norm.upper()} labels",
                     "high",
                 )
+
+    # -- 5c. Remove language columns the country does not deploy --------------
+    if _as_bool(_kobo_opt_local.get("drop_unused_language_columns", True), True):
+        _removed_cols = _drop_unused_language_columns(wb, _languages_in_scope)
+        if _removed_cols:
+            _add_row(
+                "Unused language columns",
+                "INFO",
+                f"Removed {len(_removed_cols)} column(s) outside languages_in_scope or empty: "
+                + ", ".join(_removed_cols),
+                "info",
+            )
+        if "settings" in wb.sheetnames and _languages_in_scope:
+            _set_ws = wb["settings"]
+            _set_hdr = [str(c.value or "").strip() for c in _set_ws[1]]
+            if "default_language" in _set_hdr:
+                _dl = str(_set_ws.cell(row=2, column=_set_hdr.index("default_language") + 1).value or "")
+                _dl_code = _column_language(f"x::{_dl}") or _dl.strip().lower()
+                if _dl.strip() and _dl_code not in (set(_languages_in_scope) | {"en"}):
+                    _add_row(
+                        "Unused language columns",
+                        "WARN",
+                        f"settings default_language '{_dl}' is not in languages_in_scope; its columns were removed",
+                        "medium",
+                    )
 
     wb.save(dest)
 

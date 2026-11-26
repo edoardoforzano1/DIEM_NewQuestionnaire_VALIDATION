@@ -1,9 +1,27 @@
 # Standard validation procedure (operators)
 
 This page is for anyone who validates a country questionnaire with the
-Claude agent in this repository. The agent follows the same steps every
-time, so the result does not depend on who runs it. Developers: the agent's
-side of this procedure is in `.claude/skills/diem-validate/SKILL.md`.
+agent in this repository — Claude, or Codex. The agent follows the same steps
+every time, so the result does not depend on who runs it or on which agent.
+Developers: the agent's side of this procedure is in
+`.claude/skills/diem-validate/SKILL.md` (Claude) and `AGENTS.md` (Codex and
+other agents); both drive the same command, `diem_case`.
+
+!!! note "Use an agent that works inside the repository"
+    The procedure relies on the scripts and the case folders on your
+    computer. Claude Code or Codex opened in this repository follow it; a chat
+    assistant without access to the repository (e.g. ChatGPT in the browser)
+    cannot, and gives different results.
+
+## Before the first validation on a computer
+
+Run `diem_case setup` (or ask the agent to). It checks the Python
+environment, the output folder, the templates, the DIEM Toolbox folder and
+AGOL, and tells you what to fix. On a new computer, `diem_case setup --fix`
+sets the template folders for that computer (see
+[Getting started](../getting-started.md#check-the-setup-of-a-new-computer)).
+The agent runs the same check at the start of every validation and stops if
+something is wrong, so files are never saved in the wrong place.
 
 ## The loop at a glance
 
@@ -64,6 +82,20 @@ The latest templates are taken automatically from the DIEM Toolbox
    what to copy from the template. Problems found in the template itself are
    listed apart (for SMAR); the country has nothing to do on those.
 3. **Short cover email** to send with the document.
+4. When DIEM corrected small text errors itself (see below), the **corrected
+   questionnaire** (`…_DIEM-fixes.xlsx`) to send with the document.
+
+### Small text errors: corrected by DIEM
+
+To keep the country office on the main fixes, the agent proposes to correct
+small text errors itself: typos, doubled words, brackets, an option left in
+English in the French column, a placeholder still showing `#`, a repeated
+instruction. It asks you once; on your yes it corrects them in a copy of the
+file. They are listed at the end of the Word document ("Corrections already
+made by DIEM"), the email asks the country to make the remaining fixes in the
+corrected file, and the final report lists them too. Anything that changes
+what is asked or who is asked (skip patterns, conditions, constraints,
+options) always stays a point for the country.
 
 All results go in the DIEM questionnaire validation folder in Temp, split by
 tool, with one folder per country and round:
@@ -111,6 +143,8 @@ On your yes it creates, in the case folder:
   with who agreed them, and the template issues reported to SMAR;
 - a **final email** text.
 
+The final report also lists the small corrections made by DIEM.
+
 ## Status words
 
 | Status | Meaning |
@@ -127,3 +161,4 @@ On your yes it creates, in the case folder:
 | Placeholder | country: type the value in Additional information |
 | Optional | country, if they want: cleanup with no effect on the data |
 | Template side | SMAR: the template itself needs correcting |
+| Fixed by DIEM | nobody: a small text error DIEM already corrected in the attached file |

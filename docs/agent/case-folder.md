@@ -44,11 +44,22 @@ A file can be protected from housekeeping by creating an empty
 | File | Made | Content |
 |---|---|---|
 | `case.json` | at the start, updated every round | inputs, validation rounds, points and their status |
+| the received file (e.g. `Nigeria_R9_Questionnaire_25_Nov2026.xlsx`) | each round | a copy of the version received |
+| `iter<N>_digest.md` | each round | short digest of the validation report |
 | `iter<N>_output_check.md` | each round | checks on the validated questionnaire |
-| `<ISO3>_<round>_<tool>_points_to_review_v<N>.docx` | each round | the Word document for the country team (open points only) |
+| `iter<N>_iterate.json` | each round | what is fixed, still open or new compared with the open points |
+| `iter<N>_subform_check.xlsx` | each round (GeoPoll programmed form only) | the check of the Subform |
+| `<file>_DIEM-fixes.xlsx` | when DIEM corrects small text errors | the corrected questionnaire to send back |
+| `spec_v<N>.json` | each round | the content of the Word document |
+| `<ISO3>_<round>_<tool>_points_to_fix_v<N>.docx` | each round | the Word document for the country team (open points, then the corrections made by DIEM) |
+| `<ISO3>_<round>_<tool>_email_v<N>.txt` | each round | the email draft |
 | `<ISO3>_<round>_<tool>_validated_questionnaire_FINAL.xlsx` | at closing | the questionnaire to send to GeoPoll / deploy in KoBo |
 | `<ISO3>_<round>_<tool>_final_validation_report.docx` | at closing | the final report |
 | `final_report_spec.json` | at closing | the content of the final report, to adjust and rebuild |
+| `<ISO3>_<round>_<tool>_final_email.txt` | at closing | the final email draft |
+
+Cases started before November 2026 may use older names
+(`…_points_to_review_v<N>.docx`, `…_cover_email_v<N>.txt`).
 
 The Excel **report** and the **validated questionnaire** of each run are in
 `geopoll_output\` or `kobo_output\`, named
@@ -77,6 +88,7 @@ emails and in requests to the agent.
 | Placeholder | a value the country must type in Additional information |
 | Optional | cleanup with no effect on the data |
 | Template side | a problem in the template itself, for SMAR; nothing for the country |
+| Fixed by DIEM | a small text error DIEM corrected itself in the attached file |
 
 ## Country history
 
@@ -115,7 +127,8 @@ Built from the case when no point is open:
 - selected crops;
 - interview length (mandatory + recommended, and total);
 - changes made during the validation, with the round each was raised and
-  fixed;
+  fixed and whether the country or DIEM fixed it;
+- minor corrections made by DIEM (row, question, column, before, after);
 - accepted exceptions, with who agreed them;
 - template issues reported to SMAR.
 

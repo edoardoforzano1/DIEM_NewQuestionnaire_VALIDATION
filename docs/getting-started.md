@@ -58,7 +58,7 @@ validate
 |---|---|---|
 | `tool` | Which validator to run | `kobo` or `geopoll` |
 | `language` | Main (deployment) language for label comparison and output names | `en`, `fr`, `ar`, `es` |
-| `languages_in_scope` | Languages checked in the placeholder / replacement scans | List, e.g. `["en", "ar"]`. Empty = every filled language. Other language columns stay in the file, unchecked (e.g. Arabic columns left over from the template in a French country) |
+| `languages_in_scope` | Languages checked in the placeholder / replacement scans | List, e.g. `["en", "ar"]`. Empty = every filled language. Other language columns are not checked; KoBo also removes them from the validated questionnaire (`kobo_options.drop_unused_language_columns`) |
 | `iso3` | Country code | Three-letter ISO code (e.g. `YEM`, `AFG`) |
 | `reference_mode` | Which baseline to compare against | `latest_template` or `previous_round` |
 | `working_dir` | Folder where your input questionnaire file lives | Set to the folder on your machine that contains the questionnaire |
@@ -99,6 +99,23 @@ C:/Temp/DIEM_questionnaire_validation/
 ```
 
 You can point it to another folder; the subfolders are created automatically.
+
+#### Check the setup of a new computer
+
+`templates_dir` and `templates_source_dir` are paths of one computer. On a new
+computer, run the setup check before the first validation:
+
+```powershell
+diem_case setup          # PASS / WARN / FAIL for each item
+diem_case setup --fix    # sets templates_dir to this repo's Template folder and
+                         # finds the DIEM Toolbox folder under your OneDrive
+```
+
+It checks the Python packages, `validation_config.yaml`, the output folder
+(and creates `geopoll_output/`, `kobo_output/`, `validation_cases/`), the
+templates folder, the DIEM Toolbox folder and the AGOL service. `--fix` only
+rewrites the two path lines (comments are kept). Every validation started
+with `diem_case` runs this check first and stops while a line FAILs.
 
 ### Where to put the input file
 
@@ -225,6 +242,10 @@ kobo_options:
   require_crop_list: true
   max_qname_length: 32
   modality: "capi"
+  drop_choices_when_additional_info_blank:
+    - list_name: "landsize_unit"
+      name: "5"
+  drop_unused_language_columns: true
 ```
 
 `include_admin3` enables AGOL admin3 fetching and rebuilding. By default,
@@ -234,6 +255,13 @@ for an already-personalized workbook. The two `require_*` settings control
 whether missing or invalid input sheets become explicit HIGH replacement
 failures. `max_qname_length` and `modality` work as in `geopoll_options`
 (default 32 characters for KoBo).
+`drop_choices_when_additional_info_blank` lists the choices (`list_name` +
+`name`) deleted from the validated questionnaire when their label is still a
+placeholder because the country left the Additional information row blank
+(no local land unit → option 5 goes). `drop_unused_language_columns` removes
+from `survey` and `choices` the language columns outside `languages_in_scope`
+(English is always kept) and the no-language `label::` / `hint::` columns;
+with `languages_in_scope` empty only empty no-language columns are removed.
 
 ## 4. Admin Tools (Optional)
 

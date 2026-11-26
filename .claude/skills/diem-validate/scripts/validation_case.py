@@ -10,7 +10,8 @@ archives or deletes anything in validation_cases: cases are the record. Every fi
 case (fix document, emails, final report) goes in the same folder.
 
 A *point* is one item sent to the country team (or to SMAR): it has a
-section, a type (To fix / To confirm / Placeholder / Optional / Template side),
+section, a type (To fix / To confirm / Placeholder / Optional / Template side /
+Fixed by DIEM — a minor text fix DIEM made itself, see apply_minor_fixes.py),
 a title, and a status:
     open      still to be solved
     fixed     no longer found in a later run (proposed by `iterate`, confirmed by the agent)
@@ -56,7 +57,7 @@ import openpyxl  # noqa: E402
 from summarize_report import read_issue_rows  # noqa: E402
 
 STATUSES = ("open", "fixed", "accepted", "dropped")
-TAGS = ("To fix", "To confirm", "Placeholder", "Optional", "Template side")
+TAGS = ("To fix", "To confirm", "Placeholder", "Optional", "Template side", "Fixed by DIEM")
 
 
 def case_dir_for(root, tool: str, iso3: str, rnd: str) -> Path:
