@@ -24,6 +24,16 @@ The loop: **intake → run → read → check output → outputs (summary, Word
 document, cover email) → wait for the new version → re-validate against the
 open points → … → when nothing is open, ask, then build the final package.**
 
+**One command for the whole loop — `scripts/diem_case.py`** (`diem_case.bat`
+at the repo root): `setup` → `start` → `run` → (`fix`) → `points` → `outputs`
+→ … `decide` … → `final`. Use it for every case: it runs the setup check
+before anything, refuses to guess intake answers (prints the questions to ask),
+puts every file in the case folder with the standard names, and builds the
+Word document and the email draft. The same procedure is written for other
+agents (Codex) in `AGENTS.md` at the repo root — keep the two in step. The
+sections below give the detail of each step (what to read, how to write the
+points, the message shapes); the low-level scripts stay available.
+
 Repo: the working directory (`validate.py`, `scripts/`, `configuration/`).
 Bundled tools (run with the validation environment's Python; `python-docx`
 is needed for the Word files):
@@ -35,6 +45,10 @@ is needed for the Word files):
 - `scripts/questionnaire_profile.py` — questions by type, added/removed by type, admin levels, crops, interview length
 - `scripts/make_fix_document.py` — Word document in the house style from a JSON spec
 - `scripts/build_final_package.py` — final validated questionnaire + final report from a closed case
+- `scripts/diem_case.py` — the procedure as one command (see above)
+- `scripts/check_setup.py` — setup check of the computer (`--fix` sets the two machine-specific folder paths)
+- `scripts/apply_minor_fixes.py` — minor text fixes made by DIEM on a copy of the file, recorded in the case (tag *Fixed by DIEM*)
+- `scripts/gp_subform_check.py` — check of a GeoPoll programmed form (Subform) against the validated KoBo questionnaire and the GeoPoll template (exception only)
 - `references/issue-guide.md` — what each issue type means, typical fix, known noise. Read it before writing the points.
 
 **Never modify the original files on SharePoint/OneDrive** (templates under
@@ -133,7 +147,7 @@ points still open:
 <env-python> .claude/skills/diem-validate/scripts/inspect_questionnaire.py "<copy of the file>"
 ```
 
-- **Languages in scope**: a language filled in the survey but empty in Additional information is usually a template leftover; out-of-scope columns stay in the file and are not checked (`--languages en,fr`). Never delete a language column unless asked.
+- **Languages in scope**: a language filled in the survey but empty in Additional information is usually a template leftover; out-of-scope columns are not checked (`--languages en,fr`). KoBo removes them, and the no-language `label::` columns, from the validated questionnaire (SMAR, Nov 2026); never touch them in the country's file.
 - **Modality**: CAPI/CATI (KoBo `Sample` calculation; GeoPoll is normally CATI). Sets the FS-indicator ceiling and explains removed `cluster`/`gps_*`.
 - **Form type**: if `looks_like_kii` or not a household questionnaire, there is no matching template — see 2b.
 - **Admin3**: whether admin3 is rebuilt from AGOL (`include_admin3`) when the file has an admin3 list.
@@ -148,6 +162,7 @@ Create the case:
 
 ## 2. Pre-flight
 
+- **Setup check**: `diem_case.py setup` (also run automatically by `start` and `run`). Nothing starts while a line FAILs; on a new computer `setup --fix` sets the two machine-specific folder paths.
 - **Python env**: CLAUDE.md says `diem-validation`. If `conda env list` doesn't have it, use an env that imports `polars`, `openpyxl`, `yaml`, `xlsxwriter`, `docx`, and say which one you used. Call its `python.exe` directly (not `conda run`, which crashes on non-ASCII output on Windows).
 - **Template freshness**: `validate.py` copies newer templates from `templates_source_dir` (DIEM Toolbox) into `templates_dir` before every run. After the run check `template_sync` in the runner output; on a WARNING the run used what was already local — compare `reference` with `toolbox_templates` and tell the operator if it is older (an old template produces dozens of false issues). If a new template appeared since the last iteration, say so: some differences may come from the template, not the country.
 
@@ -232,6 +247,33 @@ output-check finding use `output_match` with text of its WARN/FAIL line
 ```bash
 <env-python> .claude/skills/diem-validate/scripts/validation_case.py add-points --case <case.json> --points points.json --iteration <N>
 ```
+(or `diem_case.py points --case <case.json> --points points.json`).
+
+### 6b. Minor fixes made by DIEM (standard)
+
+To keep the country office on the main fixes, **propose to the operator, in
+one line, to fix the minor text errors yourself** ("I can correct these N
+small text errors in a copy so the country focuses on the main fixes — OK?").
+Minor = text only, no effect on what is asked or who is asked: typos, doubled
+words or punctuation, unbalanced brackets, an option left in English in
+another language column, a placeholder still showing its `#`/`$`, a repeated
+operator instruction, a `Mandatory` value spelled differently. Never routing,
+conditions, `relevant`, constraints, calculations, or adding/removing
+questions or options — those stay points for the country.
+
+On yes, write `fixes.json` (docstring of `apply_minor_fixes.py`) and run
+`diem_case.py fix --case <case.json> --fixes fixes.json`. It writes
+`<file>_DIEM-fixes.xlsx` in the case folder and records each fix as a point
+(tag *Fixed by DIEM*, status fixed). Then:
+- the Word document ends with **"Corrections already made by DIEM"** (row,
+  question, column, before, after), added automatically by `outputs`;
+- the email says how many were corrected and asks the country to make the
+  remaining fixes **in the attached corrected file**;
+- the final report lists them under **"Minor corrections made by DIEM"**.
+Re-check the corrected copy (the minor issues must be gone). For a
+template-format case, the next round starts from the corrected copy the
+country sends back; if DIEM fixed the last file itself, `run` the corrected
+copy before `final`.
 
 ## 7. Outputs of each round
 
@@ -270,7 +312,7 @@ questions; the template's LoI sheet warns above 30 min in total).
 
 Build it with `make_fix_document.py` (house style: Arial, blue headings,
 `Consolas` for names and formulas, shaded tables), **open points only**,
-saved in the case folder (`<output_dir>/<tool>_output/validation_cases/<ISO3>_<round>/`) as `<ISO3>_<round>_<tool>_points_to_review_v<N>.docx`
+saved in the case folder (`<output_dir>/<tool>_output/validation_cases/<ISO3>_<round>/`) as `<ISO3>_<round>_<tool>_points_to_fix_v<N>.docx` (`diem_case.py outputs` builds it with the email draft `<ISO3>_<round>_<tool>_email_v<N>.txt`)
 (new name if Word has it open):
 
 ```bash
