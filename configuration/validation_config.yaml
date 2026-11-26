@@ -153,6 +153,21 @@ kobo_options:
   # 20261007 template's longest name is 29 characters).
   max_qname_length: 32
 
+  # Choices removed from the validated questionnaire when their label is still a
+  # placeholder because the country left the Additional information row blank
+  # (e.g. no local land unit -> option 5 '#local measurement units#' goes).
+  # The choices sheet is locked for country teams, so DIEM removes these.
+  drop_choices_when_additional_info_blank:
+    - list_name: "landsize_unit"
+      name: "5"
+
+  # Remove from survey/choices of the validated questionnaire the language
+  # columns outside languages_in_scope (English is always kept) and the
+  # no-language columns (label::, hint::, ... the template slot for a local
+  # language; a country using one names it, e.g. label::Bambara (bm)).
+  # With languages_in_scope empty, only empty no-language columns go.
+  drop_unused_language_columns: true
+
   # Survey modality: capi | cati
   # Controls whether the FS indicator ceiling check (capi_max in critical_sets.yaml) applies.
   modality: "capi"

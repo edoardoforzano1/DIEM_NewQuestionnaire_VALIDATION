@@ -584,7 +584,7 @@ def _load_effective_config(cfg_path: Path) -> tuple[dict, Path | None, Path]:
         effective_cfg = dict(base_cfg)
 
         if profile_name:
-            profiles_dir = Path(base_cfg.get("config_profiles_dir") or (Path(base_cfg.get("output_dir") or base_cfg.get("working_dir") or "C:/Temp/questionnaire_validation") / "config_profiles"))
+            profiles_dir = Path(base_cfg.get("config_profiles_dir") or (Path(base_cfg.get("output_dir") or base_cfg.get("working_dir") or "C:/Temp/DIEM_questionnaire_validation") / "config_profiles"))
             candidate = Path(profile_name)
             if not candidate.is_absolute():
                 candidate = profiles_dir / candidate

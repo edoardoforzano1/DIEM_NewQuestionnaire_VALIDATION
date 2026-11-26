@@ -390,7 +390,7 @@ flowchart LR
 
 Checks placeholder consistency between the template, the current questionnaire, and the Additional Information sheet. Unresolved tokens appear as raw `#placeholder#` text to enumerators.
 
-`languages_in_scope` (in `validation_config.yaml`) limits the scan to the listed languages; label columns of other languages stay in the file and are not reported. Rows are grouped per placeholder and cause, so the Q Name cell can list several questions. Derived template placeholders are resolved in the validated questionnaire.
+`languages_in_scope` (in `validation_config.yaml`) limits the scan to the listed languages; label columns of other languages are not reported (and are removed from the validated questionnaire, see section 7). Rows are grouped per placeholder and cause, so the Q Name cell can list several questions. Derived template placeholders are resolved in the validated questionnaire.
 
 !!! info "Previous-round remap note"
     In `previous_round` mode, replacement-driven deltas are remapped to `additional_information_replacement_change (...)` with INFO severity and reported in this sheet.
@@ -911,6 +911,18 @@ This is the final ready-to-use questionnaire file produced by the validator.
 - Admin lists refreshed from AGOL where available.
 - Admin3 refreshed only when `kobo_options.include_admin3: true`.
 - All placeholder tokens replaced in text fields.
+- Optional choices whose country value is blank are removed: the rows listed in
+  `kobo_options.drop_choices_when_additional_info_blank` (by default
+  `landsize_unit` option 5, `#local measurement units#`) are deleted when their
+  label is still a placeholder because the Additional information row was left
+  blank. The `choices` sheet is locked for country teams, so DIEM removes them.
+  Shown as an INFO row "Optional choices without country value".
+- Language columns the country does not use are removed from `survey` and
+  `choices` (`kobo_options.drop_unused_language_columns`, on by default): every
+  language outside `languages_in_scope` (English always kept) and the
+  no-language template columns (`label::`, `hint::`, …). Shown as an INFO row
+  "Unused language columns"; a WARN if `settings` `default_language` was one
+  of them.
 - Final scan for remaining unresolved tokens before saving.
 - Invalid admin3 parent cells highlighted and exported to a text audit file.
 

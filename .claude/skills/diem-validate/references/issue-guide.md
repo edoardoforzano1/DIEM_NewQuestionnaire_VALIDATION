@@ -108,6 +108,19 @@ Derived placeholders: `$MAX DIGIT DK$` / `$MAX DIGIT REF$` are computed from
 `geopoll_options.derived_placeholders` — not typed by the country. If
 `MAX AMOUNT` is blank they stay unresolved.
 
+KoBo, done by DIEM in the validated questionnaire (nothing to ask the country;
+the `choices` sheet is locked for them — SMAR, Nov 2026):
+- **No local land unit**: `local measurement unit` blank in Additional
+  information → `landsize_unit` option 5 (`#local measurement units#`) is
+  deleted automatically (`kobo_options.drop_choices_when_additional_info_blank`).
+  Do not raise it as a point; the blank `local measurement unit` rows are fine.
+- **Unused languages**: language columns outside the case languages and the
+  no-language `label::` columns are removed automatically
+  (`kobo_options.drop_unused_language_columns`).
+- **Label wording on a locked sheet** (e.g. a French crop name the country
+  prefers, "Gombo" for okra): agreed with SMAR if the code is unchanged, then
+  changed by DIEM in the final validated file.
+
 ## 7. Known template-side issues (not the country's fault)
 
 Report these separately ("template issue — raise with SMAR/Renzi"), not as

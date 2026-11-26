@@ -3,7 +3,7 @@
 This page is organized by the validator pipeline stages used in the script.
 Use the stage map to navigate quickly, then open each function spec for parameters and full source.
 
-Total functions documented: **239**
+Total functions documented: **241**
 
 ## Pipeline Function Map
 
@@ -278,15 +278,17 @@ Total functions documented: **239**
 - [`_column_language`](#fn--column-language-8700)
 - [`_column_in_scope`](#fn--column-in-scope-8709)
 - [`_sheet_scope_mask`](#fn--sheet-scope-mask-8717)
-- [`read_additional_info_keys`](#fn-read-additional-info-keys-8722)
-- [`build_unresolved_placeholder_issues`](#fn-build-unresolved-placeholder-issues-8747)
-- [`_scan_unresolved_placeholders`](#fn--scan-unresolved-placeholders-8817)
-- [`_collect_unresolved_placeholder_cells`](#fn--collect-unresolved-placeholder-cells-8840)
-- [`_scan_malformed_placeholder_syntax`](#fn--scan-malformed-placeholder-syntax-8886)
-- [`produce_validated_questionnaire`](#fn-produce-validated-questionnaire-8914)
-- [`produce_validated_questionnaire._add_row`](#fn--add-row-8946)
-- [`produce_validated_questionnaire._add_issue`](#fn--add-issue-8954)
-- [`produce_validated_questionnaire._add_issue_row`](#fn--add-issue-row-8968)
+- [`_drop_unfilled_optional_choices`](#fn--drop-unfilled-optional-choices-8722)
+- [`_drop_unused_language_columns`](#fn--drop-unused-language-columns-8759)
+- [`read_additional_info_keys`](#fn-read-additional-info-keys-8797)
+- [`build_unresolved_placeholder_issues`](#fn-build-unresolved-placeholder-issues-8822)
+- [`_scan_unresolved_placeholders`](#fn--scan-unresolved-placeholders-8892)
+- [`_collect_unresolved_placeholder_cells`](#fn--collect-unresolved-placeholder-cells-8915)
+- [`_scan_malformed_placeholder_syntax`](#fn--scan-malformed-placeholder-syntax-8961)
+- [`produce_validated_questionnaire`](#fn-produce-validated-questionnaire-8989)
+- [`produce_validated_questionnaire._add_row`](#fn--add-row-9021)
+- [`produce_validated_questionnaire._add_issue`](#fn--add-issue-9029)
+- [`produce_validated_questionnaire._add_issue_row`](#fn--add-issue-row-9043)
 
 ## Full Specifications
 
@@ -592,7 +594,7 @@ def _load_effective_config(cfg_path: Path) -> tuple[dict, Path | None, Path]:
         effective_cfg = dict(base_cfg)
 
         if profile_name:
-            profiles_dir = Path(base_cfg.get("config_profiles_dir") or (Path(base_cfg.get("output_dir") or base_cfg.get("working_dir") or "C:/Temp/questionnaire_validation") / "config_profiles"))
+            profiles_dir = Path(base_cfg.get("config_profiles_dir") or (Path(base_cfg.get("output_dir") or base_cfg.get("working_dir") or "C:/Temp/DIEM_questionnaire_validation") / "config_profiles"))
             candidate = Path(profile_name)
             if not candidate.is_absolute():
                 candidate = profiles_dir / candidate
@@ -10884,7 +10886,7 @@ def write_summary_sheet(wb, all_issues, rules=None, critical_issues=None, count_
                     ws.cell(row=r, column=2).font = Font(bold=True, size=10, color="274E13")
                 elif st == "WARN":
                     ws.cell(row=r, column=2).font = Font(bold=True, size=10, color="B45F06")
-                elif st == "SKIP":
+                elif st in ("SKIP", "INFO"):
                     ws.cell(row=r, column=2).font = Font(bold=True, size=10, color="1F4E78")
                 else:
                     ws.cell(row=r, column=2).font = Font(bold=True, size=10, color="CC0000")
@@ -13786,11 +13788,140 @@ def _sheet_scope_mask(ws, languages_in_scope: list[str] | None) -> list[bool]:
         return [_column_in_scope(h, languages_in_scope) for h in (hdr_row or [])]
     ```
 
-### `read_additional_info_keys` {#fn-read-additional-info-keys-8722}
+### `_drop_unfilled_optional_choices` {#fn--drop-unfilled-optional-choices-8722}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
 **Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8722`
+
+**Signature**
+
+```python
+def _drop_unfilled_optional_choices(wb, rules: list[dict] | None, languages_in_scope: list[str] | None=None) -> list[str]:
+```
+
+**Returns:** `list[str]`
+
+**What it does:** Delete the choices rows listed in `rules` ({list_name, name}) whose in-scope
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `wb` | positional_or_keyword | Yes | `-` | `-` | Excel workbook/sheet handle used for report writing. |
+| `rules` | positional_or_keyword | Yes | `-` | `list[dict] | None` | Input used by the `Step 12 -- Validated questionnaire output` stage. |
+| `languages_in_scope` | positional_or_keyword | No | `None` | `list[str] | None` | Language selector used for language-specific text columns. |
+
+??? note "Function source"
+
+    ```python
+    def _drop_unfilled_optional_choices(
+        wb, rules: list[dict] | None, languages_in_scope: list[str] | None = None,
+    ) -> list[str]:
+        """
+        Delete the choices rows listed in `rules` ({list_name, name}) whose in-scope
+        label cells still hold a #placeholder# after replacement, i.e. the country
+        left the matching Additional information row blank (no local unit used).
+        Returns the deleted rows as 'list_name/name'.
+        """
+        if not rules or "choices" not in wb.sheetnames:
+            return []
+        targets = {
+            (str(r.get("list_name", "")).strip(), str(r.get("name", "")).strip())
+            for r in rules if isinstance(r, dict)
+        }
+        ws = wb["choices"]
+        hdr = [str(c.value or "").strip() for c in ws[1]]
+        if "list_name" not in hdr or "name" not in hdr:
+            return []
+        li, ni = hdr.index("list_name"), hdr.index("name")
+        label_idx = [
+            i for i, h in enumerate(hdr)
+            if h.lower().startswith("label::") and _column_in_scope(h, languages_in_scope)
+        ]
+        to_delete: list[tuple[int, str]] = []
+        for row in ws.iter_rows(min_row=2):
+            key = (str(row[li].value or "").strip(), str(row[ni].value or "").strip())
+            if key not in targets:
+                continue
+            labels = [row[i].value for i in label_idx if i < len(row)]
+            if any(isinstance(v, str) and _PLACEHOLDER_RE.search(v) for v in labels):
+                to_delete.append((row[0].row, f"{key[0]}/{key[1]}"))
+        for excel_row, _ in sorted(to_delete, reverse=True):
+            ws.delete_rows(excel_row, 1)
+        return [k for _, k in to_delete]
+    ```
+
+### `_drop_unused_language_columns` {#fn--drop-unused-language-columns-8759}
+
+**Pipeline stage:** `Step 12 -- Validated questionnaire output`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8759`
+
+**Signature**
+
+```python
+def _drop_unused_language_columns(wb, languages_in_scope: list[str] | None, sheet_names: tuple[str, ...]=('survey', 'choices')) -> list[str]:
+```
+
+**Returns:** `list[str]`
+
+**What it does:** Delete language columns the country does not deploy from the given sheets:
+
+**Parameters**
+
+| Parameter | Kind | Required | Default | Annotation | Description |
+|---|---|---|---|---|---|
+| `wb` | positional_or_keyword | Yes | `-` | `-` | Excel workbook/sheet handle used for report writing. |
+| `languages_in_scope` | positional_or_keyword | Yes | `-` | `list[str] | None` | Language selector used for language-specific text columns. |
+| `sheet_names` | positional_or_keyword | No | `('survey', 'choices')` | `tuple[str, ...]` | Input used by the `Step 12 -- Validated questionnaire output` stage. |
+
+??? note "Function source"
+
+    ```python
+    def _drop_unused_language_columns(
+        wb, languages_in_scope: list[str] | None, sheet_names: tuple[str, ...] = ("survey", "choices"),
+    ) -> list[str]:
+        """
+        Delete language columns the country does not deploy from the given sheets:
+        every 'xxx::Language (cc)' column whose language is not in
+        languages_in_scope (English is always kept), and every no-language
+        column such as 'label::' (template slot for a local language; a country
+        that uses one names it, e.g. 'label::Bambara (bm)'). With an empty
+        languages_in_scope only the empty no-language columns go.
+        Returns 'sheet!header' of each deleted column.
+        """
+        keep = set(languages_in_scope or []) | {"en"}
+        removed: list[str] = []
+        for sheet in sheet_names:
+            if sheet not in wb.sheetnames:
+                continue
+            ws = wb[sheet]
+            hdr = [str(c.value or "").strip() for c in ws[1]]
+            drop: list[int] = []
+            for i, h in enumerate(hdr):
+                if "::" not in h:
+                    continue
+                lang = _column_language(h)
+                if lang:
+                    if languages_in_scope and lang not in keep:
+                        drop.append(i)
+                elif languages_in_scope or all(
+                    v is None or str(v).strip() == ""
+                    for (v,) in ws.iter_rows(min_row=2, min_col=i + 1, max_col=i + 1, values_only=True)
+                ):
+                    drop.append(i)
+            for i in sorted(drop, reverse=True):
+                ws.delete_cols(i + 1, 1)
+                removed.append(f"{sheet}!{hdr[i]}")
+        return removed
+    ```
+
+### `read_additional_info_keys` {#fn-read-additional-info-keys-8797}
+
+**Pipeline stage:** `Step 12 -- Validated questionnaire output`
+
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8797`
 
 **Signature**
 
@@ -13836,11 +13967,11 @@ def read_additional_info_keys(country_path: str) -> set[str]:
         }
     ```
 
-### `build_unresolved_placeholder_issues` {#fn-build-unresolved-placeholder-issues-8747}
+### `build_unresolved_placeholder_issues` {#fn-build-unresolved-placeholder-issues-8822}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8747`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8822`
 
 **Signature**
 
@@ -13934,11 +14065,11 @@ def build_unresolved_placeholder_issues(unresolved_rows: list[dict], additional_
         return out
     ```
 
-### `_scan_unresolved_placeholders` {#fn--scan-unresolved-placeholders-8817}
+### `_scan_unresolved_placeholders` {#fn--scan-unresolved-placeholders-8892}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8817`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8892`
 
 **Signature**
 
@@ -13985,11 +14116,11 @@ def _scan_unresolved_placeholders(wb, sheet_name: str, limit: int=5, languages_i
         return count, examples
     ```
 
-### `_collect_unresolved_placeholder_cells` {#fn--collect-unresolved-placeholder-cells-8840}
+### `_collect_unresolved_placeholder_cells` {#fn--collect-unresolved-placeholder-cells-8915}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8840`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8915`
 
 **Signature**
 
@@ -14057,11 +14188,11 @@ def _collect_unresolved_placeholder_cells(wb, languages_in_scope: list[str] | No
         return out
     ```
 
-### `_scan_malformed_placeholder_syntax` {#fn--scan-malformed-placeholder-syntax-8886}
+### `_scan_malformed_placeholder_syntax` {#fn--scan-malformed-placeholder-syntax-8961}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8886`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8961`
 
 **Signature**
 
@@ -14113,11 +14244,11 @@ def _scan_malformed_placeholder_syntax(wb, sheet_name: str, limit: int=5, langua
         return count, examples
     ```
 
-### `produce_validated_questionnaire` {#fn-produce-validated-questionnaire-8914}
+### `produce_validated_questionnaire` {#fn-produce-validated-questionnaire-8989}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8914`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8989`
 
 **Signature**
 
@@ -14737,6 +14868,24 @@ def produce_validated_questionnaire(cfg: dict, reference_survey: pl.DataFrame, r
                 "info",
             )
 
+        # -- 5b. Drop optional choices left without a country value ---------------
+        # e.g. landsize_unit option 5 '#local measurement units#' when the country
+        # uses no local unit (Additional information row blank); the choices sheet
+        # is locked for the country teams, so DIEM removes it here.
+        if not _skip_restore_and_replacement:
+            _dropped_choices = _drop_unfilled_optional_choices(
+                wb,
+                _kobo_opt_local.get("drop_choices_when_additional_info_blank") or [],
+                languages_in_scope=_languages_in_scope,
+            )
+            if _dropped_choices:
+                _add_row(
+                    "Optional choices without country value",
+                    "INFO",
+                    "Removed (Additional information blank): " + ", ".join(_dropped_choices),
+                    "info",
+                )
+
         # Explicit choices-level replacement integrity check
         _ch_unresolved, _ch_examples = _scan_unresolved_placeholders(wb, "choices", languages_in_scope=_languages_in_scope)
         if _ch_unresolved == 0:
@@ -14845,6 +14994,31 @@ def produce_validated_questionnaire(cfg: dict, reference_survey: pl.DataFrame, r
                         f"{_blank_tgt}/{_total_tgt} crop rows have blank {_lang_norm.upper()} labels",
                         "high",
                     )
+
+        # -- 5c. Remove language columns the country does not deploy --------------
+        if _as_bool(_kobo_opt_local.get("drop_unused_language_columns", True), True):
+            _removed_cols = _drop_unused_language_columns(wb, _languages_in_scope)
+            if _removed_cols:
+                _add_row(
+                    "Unused language columns",
+                    "INFO",
+                    f"Removed {len(_removed_cols)} column(s) outside languages_in_scope or empty: "
+                    + ", ".join(_removed_cols),
+                    "info",
+                )
+            if "settings" in wb.sheetnames and _languages_in_scope:
+                _set_ws = wb["settings"]
+                _set_hdr = [str(c.value or "").strip() for c in _set_ws[1]]
+                if "default_language" in _set_hdr:
+                    _dl = str(_set_ws.cell(row=2, column=_set_hdr.index("default_language") + 1).value or "")
+                    _dl_code = _column_language(f"x::{_dl}") or _dl.strip().lower()
+                    if _dl.strip() and _dl_code not in (set(_languages_in_scope) | {"en"}):
+                        _add_row(
+                            "Unused language columns",
+                            "WARN",
+                            f"settings default_language '{_dl}' is not in languages_in_scope; its columns were removed",
+                            "medium",
+                        )
 
         wb.save(dest)
 
@@ -14993,11 +15167,11 @@ def produce_validated_questionnaire(cfg: dict, reference_survey: pl.DataFrame, r
         return dest, replacement_status, _replacement_issues_df
     ```
 
-### `produce_validated_questionnaire._add_row` {#fn--add-row-8946}
+### `produce_validated_questionnaire._add_row` {#fn--add-row-9021}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8946`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:9021`
 
 **Signature**
 
@@ -15030,11 +15204,11 @@ def _add_row(check: str, status: str, details: str, severity: str):
             })
     ```
 
-### `produce_validated_questionnaire._add_issue` {#fn--add-issue-8954}
+### `produce_validated_questionnaire._add_issue` {#fn--add-issue-9029}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8954`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:9029`
 
 **Signature**
 
@@ -15073,11 +15247,11 @@ def _add_issue(list_name: str, current: str, reference: str, severity: str='high
             })
     ```
 
-### `produce_validated_questionnaire._add_issue_row` {#fn--add-issue-row-8968}
+### `produce_validated_questionnaire._add_issue_row` {#fn--add-issue-row-9043}
 
 **Pipeline stage:** `Step 12 -- Validated questionnaire output`
 
-**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:8968`
+**Location:** `C:/git/DIEM_NewQuestionnaire_VALIDATION/scripts/kobo_validator.py:9043`
 
 **Signature**
 
